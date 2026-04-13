@@ -1,0 +1,54 @@
+import { createContext, useEffect, useState } from "react";
+import { api } from "../shared/services/axios.js";
+import { API_ENDPOINTS } from "../shared/constants/apiEndpoints.js";
+
+const AuthContext = createContext();
+
+const AuthProvider = ({ children }) => {
+    const [User, setUser] = useState(null);
+    const [Loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const checkAuth = async () => {
+            try {
+                const res = await api.get(API_ENDPOINTS.User.GET);
+                setUser(res.data);
+            } catch (err) {
+                console.log(err);
+                setUser(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        checkAuth();
+    }, []);
+
+    const login = async (credentials) => {
+        const res = await api.post(API_ENDPOINTS.Auth.LOGIN, credentials);
+        setUser(res.data);
+        return res;
+    };
+
+    const register = async (data) => {
+        const res = await api.post(API_ENDPOINTS.Auth.REGISTER, data);
+        setUser(null);
+        return res;
+    };
+
+    const logout = async () => {
+        const res = await api.post(API_ENDPOINTS.Auth.LOGOUT);
+        setUser(null);
+        return res;
+    };
+
+    return (
+        <AuthContext.Provider
+            value={{ User, Loading, login, register, logout, isAuthenticated: !!User }}
+        >
+            {children}
+        </AuthContext.Provider>
+    );
+};
+
+export { AuthContext, AuthProvider };
