@@ -1,7 +1,6 @@
+import { RouterProvider } from 'react-router-dom';
+import router from '../routes/router.js';
+
 export const App = () => {
-  return (
-    <>
-      <h1 style={{ color: "black" }}>hello world</h1>
-    </>
-  );
+    return <RouterProvider router={router} />;
 };
