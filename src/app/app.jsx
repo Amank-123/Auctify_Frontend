@@ -1,6 +1,19 @@
+<<<<<<< HEAD
 import { RouterProvider } from 'react-router-dom';
 import router from '../routes/router.jsx';
 const App = () => {
     return <RouterProvider router={router} />;
+=======
+import { RouterProvider } from "react-router-dom";
+import router from "../routes/router.js";
+import { AuthProvider } from "../context/authContext.jsx";
+
+export const App = () => {
+    return (
+        <AuthProvider>
+            <RouterProvider router={router} />
+        </AuthProvider>
+    );
+>>>>>>> gautam
 };
 export default App; 

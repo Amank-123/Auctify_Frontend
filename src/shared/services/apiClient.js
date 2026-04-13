@@ -1,7 +1,7 @@
-import { axiosInstance } from './axios.js';
+import { api } from './axios.js';
 import { getErrorMessage } from '../utils/errorHandler.js';
 
-axiosInstance.interceptors.response.use(
+api.interceptors.response.use(
     (response) => response,
     (error) => {
         const message = getErrorMessage(error);
@@ -10,9 +10,9 @@ axiosInstance.interceptors.response.use(
     },
 );
 
-axiosInstance.interceptors.request.use(
+api.interceptors.request.use(
     (config) => config,
     (error) => Promise.reject(error),
 );
 
-export default axiosInstance;
+export default api;
