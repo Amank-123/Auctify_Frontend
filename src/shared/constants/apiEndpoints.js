@@ -5,6 +5,5 @@ const API_ENDPOINTS = {
   Auth: {},
   Order: {},
   Payment: {},
-  Order: {},
   Otp: {},
 };
