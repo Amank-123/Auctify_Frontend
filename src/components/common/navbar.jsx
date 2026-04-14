@@ -48,7 +48,7 @@ export default function Navbar() {
                     isScrolled ? "bg-[#F8F8FF]/95 " : "bg-[#F8F8FF] border-b border-gray-200"
                 }`}
             >
-                <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-10 py-3 md:py-4 flex items-center justify-between">
+                <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-20 py-3 md:py-4 flex items-center justify-between">
                     {/* Logo */}
                     <Link to="/" className="flex items-center">
                         <img
@@ -87,14 +87,14 @@ export default function Navbar() {
                         {!isAuthenticated ? (
                             <>
                                 <Link
-                                    to="/login"
+                                    to="/auth/login"
                                     className="text-gray-700 hover:text-blue-600 transition"
                                 >
                                     Login
                                 </Link>
 
                                 <Link
-                                    to="/register"
+                                    to="/auth/register"
                                     className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
                                 >
                                     Register
@@ -168,17 +168,6 @@ export default function Navbar() {
                         {!isAuthenticated && (
                             <>
                                 <NavItem to="/how-it-works">How it Works</NavItem>
-
-                                <Link to="/login" className="block text-gray-700">
-                                    Login
-                                </Link>
-
-                                <Link
-                                    to="/register"
-                                    className="block bg-blue-600 text-white px-4 py-2 rounded-lg text-center"
-                                >
-                                    Register
-                                </Link>
                             </>
                         )}
 

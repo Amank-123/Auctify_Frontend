@@ -1,7 +1,7 @@
 export default function NavbarSkeleton({ isAuth = false }) {
     return (
         <div className="w-full bg-[#F8F8FF] border-b border-gray-200">
-            <div className="mx-auto px-10 py-4 flex items-center justify-between">
+            <div className="mx-auto px-20 py-4 flex items-center justify-between">
                 {/* Logo */}
                 <div className="h-12 w-32 bg-gray-200 rounded-md animate-pulse" />
 
