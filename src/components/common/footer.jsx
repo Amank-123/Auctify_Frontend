@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import logo from "../../assets/logo.png";
 
 const fadeUp = (delay = 0) => ({
@@ -11,19 +12,19 @@ const fadeUp = (delay = 0) => ({
 });
 
 const ColHead = ({ children }) => (
-  <p className="mb-3.5 text-[13px] font-semibold text-[#1F2937]">
+  <p className="mb-3 text-[14px] font-semibold text-[#1F2937]">
     {children}
   </p>
 );
 
-const FooterLink = ({ href, children }) => (
+const FooterLink = ({ to, children }) => (
   <li>
-    <a
-      href={href}
-      className="text-[13px] text-[#6B7280] transition-all duration-150 hover:text-[#2563EB]"
+    <Link
+      to={to}
+      className="text-[14px] text-[#6B7280] transition hover:text-[#2563EB]"
     >
       {children}
-    </a>
+    </Link>
   </li>
 );
 
@@ -38,26 +39,22 @@ const SocialBtn = ({ children }) => (
 
 const Footer = () => {
   return (
-    <footer className="bg-[#F8F8FF] border-t border-[#E5E7EB] ">
-      <div className="max-w-[1700px] mx-auto px-6 pt-12 pb-6">
+    <footer className="bg-[#F8F8FF] border-t border-[#E5E7EB]">
+      <div className="max-w-[1400px] mx-auto px-6 py-12">
 
-        {/* Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-40">
+        {/* TOP */}
+        <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-12 md:gap-20">
 
           {/* LEFT */}
           <motion.div variants={fadeUp(0)} initial="hidden" whileInView="visible">
-            <img
-  src={logo}
-  alt="Auctify Logo"
-  className="h-20 w-auto pb-5"
-/>
+            <img src={logo} alt="Auctify Logo" className="h-16 w-auto mb-4" />
 
-            <p className="text-sm text-[#6B7280] leading-relaxed max-w-[240px]">
+            <p className="text-[14px] text-[#6B7280] leading-6 max-w-[260px]">
               A real-time auction platform enabling seamless buying and selling through competitive bidding.
             </p>
 
-            {/* Social */}
-            <div className="flex gap-2 mt-5">
+            {/* SOCIAL */}
+            <div className="flex gap-3 mt-5">
               <SocialBtn>
                 <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current">
                   <path d="M18.244 2.25h3.308..." />
@@ -74,21 +71,19 @@ const Footer = () => {
                 </svg>
               </SocialBtn>
             </div>
-
-            
           </motion.div>
 
           {/* RIGHT */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-8">
 
             {/* Product */}
             <motion.div variants={fadeUp(0.05)} initial="hidden" whileInView="visible">
               <ColHead>Product</ColHead>
               <ul className="space-y-2">
-                <FooterLink href="/auctions">Live Auctions</FooterLink>
-                <FooterLink href="/categories">Categories</FooterLink>
-                <FooterLink href="/create-auction">Create Auction</FooterLink>
-                <FooterLink href="/dashboard">Dashboard</FooterLink>
+                <FooterLink to="/auctions">Live Auctions</FooterLink>
+                <FooterLink to="/categories">Categories</FooterLink>
+                <FooterLink to="/create-auction">Create Auction</FooterLink>
+                <FooterLink to="/dashboard">Dashboard</FooterLink>
               </ul>
             </motion.div>
 
@@ -96,10 +91,10 @@ const Footer = () => {
             <motion.div variants={fadeUp(0.1)} initial="hidden" whileInView="visible">
               <ColHead>Sell</ColHead>
               <ul className="space-y-2">
-                <FooterLink href="/seller-guide">How to Sell</FooterLink>
-                <FooterLink href="/my-auctions">My Listings</FooterLink>
-                <FooterLink href="/analytics">Analytics</FooterLink>
-                <FooterLink href="/fees">Fees & Payments</FooterLink>
+                <FooterLink to="/seller-guide">How to Sell</FooterLink>
+                <FooterLink to="/my-auctions">My Listings</FooterLink>
+                <FooterLink to="/analytics">Analytics</FooterLink>
+                <FooterLink to="/fees">Fees & Payments</FooterLink>
               </ul>
             </motion.div>
 
@@ -107,10 +102,10 @@ const Footer = () => {
             <motion.div variants={fadeUp(0.15)} initial="hidden" whileInView="visible">
               <ColHead>Account</ColHead>
               <ul className="space-y-2">
-                <FooterLink href="/profile">Profile</FooterLink>
-                <FooterLink href="/bids">My Bids</FooterLink>
-                <FooterLink href="/watchlist">Watchlist</FooterLink>
-                <FooterLink href="/login">Sign In</FooterLink>
+                <FooterLink to="/profile">Profile</FooterLink>
+                <FooterLink to="/bids">My Bids</FooterLink>
+                <FooterLink to="/watchlist">Watchlist</FooterLink>
+                <FooterLink to="/login">Sign In</FooterLink>
               </ul>
             </motion.div>
 
@@ -118,28 +113,40 @@ const Footer = () => {
             <motion.div variants={fadeUp(0.2)} initial="hidden" whileInView="visible">
               <ColHead>Support</ColHead>
               <ul className="space-y-2">
-                <FooterLink href="/support">Help Center</FooterLink>
-                <FooterLink href="/contact">Contact</FooterLink>
-                <FooterLink href="/terms">Terms</FooterLink>
-                <FooterLink href="/privacy">Privacy</FooterLink>
+                <FooterLink to="/support">Help Center</FooterLink>
+                <FooterLink to="/contact">Contact</FooterLink>
+                <FooterLink to="/terms">Terms</FooterLink>
+                <FooterLink to="/privacy">Privacy</FooterLink>
               </ul>
             </motion.div>
 
           </div>
         </div>
 
-        {/* Divider */}
+        {/* DIVIDER */}
         <hr className="mt-10 border-[#E5E7EB]" />
 
-        {/* Bottom */}
-        <div className="flex flex-col md:flex-row justify-between items-center text-sm text-[#6B7280] mt-4">
-          <span>© {new Date().getFullYear()} Auctify. All rights reserved.</span>
+        {/* BOTTOM */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-[14px] text-[#6B7280] mt-6">
 
-          <div className="flex gap-5 mt-2 md:mt-0">
-            <a href="/privacy" className="hover:text-[#2563EB]">Privacy Policy</a>
-            <a href="/terms" className="hover:text-[#2563EB]">Terms</a>
-            <a href="/cookies" className="hover:text-[#2563EB]">Cookies</a>
+          <span className="text-center md:text-left">
+            © {new Date().getFullYear()} Auctify. All rights reserved.
+          </span>
+
+          <div className="flex flex-wrap justify-center md:justify-end gap-4">
+            <Link to="/privacy" className="hover:text-[#2563EB]">
+              Privacy Policy
+            </Link>
+
+            <Link to="/terms" className="hover:text-[#2563EB]">
+              Terms
+            </Link>
+
+            <Link to="/cookies" className="hover:text-[#2563EB]">
+              Cookies
+            </Link>
           </div>
+
         </div>
 
       </div>
