@@ -3,7 +3,7 @@ import Footer from "../components/common/footer.jsx";
 import RootLayout from "../layouts/MainLayout.jsx";
 import NotFound from "../components/common/notFound.jsx";
 import PrivacyPolicy from "../features/policies/PrivacyPolicy.jsx";
-import Terms from "../features/policies/TermsAndConditions.jsx"
+import Terms from "../features/policies/TermsAndConditions.jsx";
 const router = createBrowserRouter([
     {
         path: "/",
