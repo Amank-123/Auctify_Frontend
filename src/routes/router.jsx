@@ -1,16 +1,11 @@
 import { createBrowserRouter } from "react-router-dom";
 import RootLayout from "../layouts/MainLayout.jsx";
 import NotFound from "../components/common/notFound.jsx";
-<<<<<<< HEAD
-import PrivacyPolicy from "../features/home/pages/PrivacyPolicy.jsx";
-import Terms from "../features/home/pages/TermsAndConditions.jsx";
-=======
 import PrivacyPolicy from "../features/policies/PrivacyPolicy.jsx";
 import Terms from "../features/policies/TermsAndConditions.jsx";
 import Homepage from "../features/home/pages/homePage.jsx";
 import LoginPage from "../features/auth/pages/loginPage.jsx";
 import AuthLayout from "../layouts/AuthLayout.jsx";
->>>>>>> gautam
 const router = createBrowserRouter([
     {
         path: "/",
