@@ -7,7 +7,7 @@ const RootLayout = () => {
   return (
     <>
       <Header />
-      <main className="min-h-screen p-6">
+      <main className="min-h-screen">
         <Outlet /> 
       </main>
       <Footer />

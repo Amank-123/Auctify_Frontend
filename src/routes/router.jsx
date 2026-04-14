@@ -2,8 +2,8 @@ import { createBrowserRouter } from "react-router-dom";
 import Footer from "../components/common/footer.jsx";
 import RootLayout from "../layouts/MainLayout.jsx";
 import NotFound from "../components/common/notFound.jsx";
-import PrivacyPolicy from "../features/policies/PrivacyPolicy.jsx";
-import Terms from "../features/policies/TermsAndConditions.jsx";
+import PrivacyPolicy from "../features/home/pages/PrivacyPolicy.jsx";
+import Terms from "../features/home/pages/TermsAndConditions.jsx";
 const router = createBrowserRouter([
     {
         path: "/",

@@ -38,7 +38,7 @@ const SocialBtn = ({ children }) => (
 
 const Footer = () => {
   return (
-    <footer className="bg-[#F8F8FF] border-t border-[#E5E7EB] mt-20">
+    <footer className="bg-[#F8F8FF] border-t border-[#E5E7EB] ">
       <div className="max-w-[1700px] mx-auto px-6 pt-12 pb-6">
 
         {/* Layout */}
