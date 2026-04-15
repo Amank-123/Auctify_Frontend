@@ -43,12 +43,11 @@ export default function SignupPage() {
 
             await register(payload);
 
-            showSuccess("Account created successfully 🎉");
             navigate("/auth/otp", {
-  state: { email: form.email }  // ✅ pass the email
-}); 
+                state: { email: form.email },
+            });
         } catch (err) {
-            showError(err.customMessage || err.message || "Something went wrong");
+            showError(err.customMessage || err || "Something went wrong");
         } finally {
             setLoading(false);
         }
