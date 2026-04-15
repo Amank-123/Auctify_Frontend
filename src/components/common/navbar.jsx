@@ -1,4 +1,4 @@
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth.js";
 import navlogo from "../../assets/logo.png";
 
@@ -7,11 +7,14 @@ import { HiOutlineHeart, HiOutlineBell, HiOutlineMenu, HiOutlineX } from "react-
 import { HiOutlineFire } from "react-icons/hi2";
 import { useEffect, useState } from "react";
 import NavbarSkeleton from "./navbarSkeleton.jsx";
+import { showSuccess } from "../../shared/utils/toast.js";
 
 export default function Navbar() {
     const { isAuthenticated, Loading, User, logout } = useAuth();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+
+    const navigate = useNavigate();
 
     const NavItem = ({ to, children, highlight, icon }) => {
         return (
@@ -38,6 +41,12 @@ export default function Navbar() {
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
+
+    const logoutHandler = () => {
+        logout();
+        showSuccess("User logged out successfully");
+        navigate("/auth/login");
+    };
 
     if (Loading) return <NavbarSkeleton isAuth={false} />;
 
@@ -118,8 +127,8 @@ export default function Navbar() {
                                 <div className="relative group">
                                     <button className="flex items-center gap-5">
                                         <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-lg">
-                                            {User?.porfile ? (
-                                                <img src={User?.porfile} />
+                                            {User.porfile ? (
+                                                <img src={User.porfile} />
                                             ) : (
                                                 User?.firstName?.charAt(0)
                                             )}
@@ -135,7 +144,7 @@ export default function Navbar() {
                                         </Link>
 
                                         <button
-                                            onClick={logout}
+                                            onClick={logoutHandler}
                                             className="w-full text-left px-4 py-2 hover:bg-gray-100"
                                         >
                                             Logout

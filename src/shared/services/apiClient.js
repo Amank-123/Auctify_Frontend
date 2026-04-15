@@ -1,5 +1,5 @@
-import { api } from './axios.js';
-import { getErrorMessage } from '../utils/errorHandler.js';
+import { api } from "./axios.js";
+import { getErrorMessage } from "../utils/errorHandler.js";
 
 api.interceptors.response.use(
     (response) => response,

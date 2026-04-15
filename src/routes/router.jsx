@@ -8,6 +8,7 @@ import LoginPage from "@/features/auth/pages/loginPage.jsx";
 import SignUpPage from "@/features/auth/pages/registrationPage.jsx";
 import AuthLayout from "@/layouts/AuthLayout.jsx";
  import OtpPage from "@/features/auth/pages/otpPage.jsx";
+ import AuthSuccess from "@/features/auth/pages/AuthSuccess.jsx" 
 const router = createBrowserRouter([
     {
         path: "/",
@@ -27,6 +28,7 @@ const router = createBrowserRouter([
             { path: "login", element: <LoginPage /> },
             { path: "register", element: <SignUpPage /> },
             { path: "otp", element: <OtpPage /> },
+            {path:"success", element :<AuthSuccess/>}
         ],
     },
 ]);
