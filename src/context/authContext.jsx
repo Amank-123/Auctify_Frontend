@@ -14,7 +14,6 @@ const AuthProvider = ({ children }) => {
                 const res = await api.get(API_ENDPOINTS.User.GET);
                 setUser(res.data);
             } catch (err) {
-                console.log(err);
                 setUser(null);
             } finally {
                 setLoading(false);

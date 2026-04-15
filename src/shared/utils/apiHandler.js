@@ -1,15 +1,11 @@
 const apiHandler = async (promise) => {
     try {
         const res = await promise;
-        return {
-            success: true,
-            data: res.data,
-        };
+        return res.data; // 🔥 direct
     } catch (error) {
-        return {
-            success: false,
-            error: error.customMessage || 'Something went wrong',
-        };
+        const message = error.customMessage || "Something went wrong";
+        showError(message);
+        throw error; // let caller decide
     }
 };
 
