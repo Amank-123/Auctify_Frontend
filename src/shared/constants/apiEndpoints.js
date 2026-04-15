@@ -51,6 +51,7 @@ const API_ENDPOINTS = {
 
   Otp: {
     VERIFY: '/api/otp/verify',
+    RESEND: '/api/otp/resend'
   },
 
   ChatBot: {
