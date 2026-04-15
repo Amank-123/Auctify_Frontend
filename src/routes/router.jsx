@@ -7,7 +7,9 @@ import Homepage from "@/features/home/pages/homePage.jsx";
 import LoginPage from "@/features/auth/pages/loginPage.jsx";
 import SignUpPage from "@/features/auth/pages/registrationPage.jsx";
 import AuthLayout from "@/layouts/AuthLayout.jsx";
- import OtpPage from "@/features/auth/pages/otpPage.jsx";
+import OtpPage from "@/features/auth/pages/otpPage.jsx";
+import AuthSuccess from "../features/auth/pages/AuthSuccess";
+
 const router = createBrowserRouter([
     {
         path: "/",
