@@ -12,7 +12,7 @@ const AuthProvider = ({ children }) => {
         const checkAuth = async () => {
             try {
                 const res = await api.get(API_ENDPOINTS.User.GET);
-                setUser(res.data);
+                setUser(res.data.data);
             } catch (err) {
                 setUser(null);
             } finally {
@@ -26,7 +26,7 @@ const AuthProvider = ({ children }) => {
     const login = async (credentials) => {
         
         const res = await api.post(API_ENDPOINTS.Auth.LOGIN, credentials);
-        setUser(res.data);
+        setUser(res.data.data);
         return res;
     };
 
@@ -34,7 +34,7 @@ const AuthProvider = ({ children }) => {
         console.log('VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
 console.log('All env vars:', import.meta.env);
         const res = await api.post(API_ENDPOINTS.Auth.REGISTER, data);
-        setUser(null);
+        setUser(res.data.data);
         return res;
     };
 
