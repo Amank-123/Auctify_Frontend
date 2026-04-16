@@ -9,8 +9,16 @@ import SignUpPage from "@/features/auth/pages/registrationPage.jsx";
 import AuthLayout from "@/layouts/AuthLayout.jsx";
 import OtpPage from "@/features/auth/pages/otpPage.jsx";
 import AuthSuccess from "@/features/auth/pages/AuthSuccess.jsx";
+<<<<<<< HEAD
 import CreateAuction from "@/features/auction/pages/CreateAuction.jsx";
 import SellerDashboard from "../features/auction/pages/SellerDashboard.jsx";
+=======
+import ProtectRoute from "../components/auth/ProtectRoute";
+import Profile from "../features/user/pages/userProfile";
+import AuctionItem from "../components/common/navbar/AuctionItem";
+import BidItem from "../components/common/navbar/BidItem";
+import UserSidebar from "../components/common/navbar/UserSidebar";
+>>>>>>> main
 const router = createBrowserRouter([
     {
         path: "/",
@@ -20,6 +28,10 @@ const router = createBrowserRouter([
             { index: true, element: <Homepage /> },
             { path: "privacy", element: <PrivacyPolicy /> },
             { path: "terms", element: <Terms /> },
+            {
+                element: <ProtectRoute />,
+                children: [{ path: "profile", element: <Profile /> }],
+            },
         ],
     },
     {
@@ -40,6 +52,24 @@ const router = createBrowserRouter([
             { path: "create", element: <CreateAuction /> },
              { path: "sell", element: <SellerDashboard /> },
            
+        ],
+    },
+    {
+        path: "/user",
+        element: <ProtectRoute />,
+        errorElement: <NotFound />,
+        children: [
+            {
+                element: <UserSidebar />,
+                children: [
+                    { path: "auctions", element: <AuctionItem /> },
+                    { path: "bids", element: <BidItem /> },
+                    // { path: "watchlist", element: <Watchlist /> },
+                    // { path: "notifications", element: <Notifications /> },
+                    // { path: "settings", element: <AccountSettings /> },
+                    // { path: "activity", element: <AccountActivity /> },
+                ],
+            },
         ],
     },
 ]);
