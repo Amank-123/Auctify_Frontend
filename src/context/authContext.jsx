@@ -12,7 +12,6 @@ const AuthProvider = ({ children }) => {
         const checkAuth = async () => {
             try {
                 const res = await api.get(API_ENDPOINTS.User.GET);
-                console.log("User from Authcontext: ", res);
                 setUser(res.data.data);
             } catch (err) {
                 setUser(null);
@@ -54,7 +53,16 @@ const AuthProvider = ({ children }) => {
 
     return (
         <AuthContext.Provider
-            value={{ User, Loading, login, register, logout, verifyOtp, isAuthenticated: !!User }}
+            value={{
+                User,
+                setUser,
+                Loading,
+                login,
+                register,
+                logout,
+                verifyOtp,
+                isAuthenticated: !!User,
+            }}
         >
             {children}
         </AuthContext.Provider>
