@@ -38,7 +38,7 @@ export default function LoginPage() {
         try {
             setLoading(true);
             await login(form);
-            navigate("/");
+            navigate("/auth/success");
         } catch (err) {
             showError(err);
         } finally {
