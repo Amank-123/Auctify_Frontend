@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "@/shared/services/axios.js";
 import { showError, showSuccess } from "@/shared/utils/toast.js";
 import { API_ENDPOINTS } from "@/shared/constants/apiEndpoints.js";
+import { verifyOtp } from "../authAPI";
+
 
 export default function OtpPage() {
     const navigate = useNavigate();
@@ -48,39 +50,35 @@ export default function OtpPage() {
         }
     };
 
-    // 🚀 verify OTP
-    const handleVerify = async () => {
-        const finalOtp = otp.join("");
+    
 
-        if (finalOtp.length !== 6) {
-            showError("Enter complete OTP");
-            return;
-        }
+const handleVerify = async () => {
+    const finalOtp = otp.join("").trim();
+    if (finalOtp.length !== 6) {
+        showError("Enter complete OTP");
+        return;
+    }
 
-        try {
-            setLoading(true);
-            console.log(email, finalOtp);
-            await api.post(API_ENDPOINTS.Otp.VERIFY, {
-                email,
-                otp: finalOtp,
-            });
-            showSuccess("Account verified 🎉");
-            navigate("/auth/success");
-            
-        } catch (err) {
-            showError(err.response?.data?.message || "Invalid OTP");
-        } finally {
-            setLoading(false);
-        }
-    };
+    try {
+        setLoading(true);
+        await verifyOtp(email, finalOtp); // this now sets User in context
+        showSuccess("Account verified");
+        navigate("/auth/success"); // ✅ skip /auth/success, go directly home
+    } catch (err) {
+        showError(err.response?.data?.message || "Invalid OTP");
+    } finally {
+        setLoading(false);
+    }
+};
+    
 
     // 🔁 resend OTP
     const handleResend = async () => {
         try {
+            setTimer(30);
             await api.post(API_ENDPOINTS.Otp.RESEND, { email });
             showSuccess("OTP sent again");
-
-            setTimer(30);
+            setOtp(["", "", "", "", "", ""]);
         } catch (err) {
             showError("Failed to resend OTP");
         }

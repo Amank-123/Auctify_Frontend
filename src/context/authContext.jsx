@@ -24,16 +24,11 @@ const AuthProvider = ({ children }) => {
     }, []);
 
     const login = async (credentials) => {
-        
         const res = await api.post(API_ENDPOINTS.Auth.LOGIN, credentials);
         setUser(res.data.data);
-        return res;
     };
 
     const register = async (data) => {
-        console.log('VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
-console.log('All env vars:', import.meta.env.VITE_API_BASE_URL);
-
         const res = await api.post(API_ENDPOINTS.Auth.REGISTER, data);
         setUser(res.data.data);
         return res;

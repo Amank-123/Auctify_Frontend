@@ -9,15 +9,17 @@ const AuthSuccess = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (!Loading) {
-            if (User) {
-                showSuccess("User successfully logged in");
-                navigate("/", { replace: true });
-            } else {
-                navigate("/auth/login");
-            }
-        }
-    }, [User, Loading, navigate]);
+    console.log("user : ", User)
+    
+    if (Loading) return; // ✅ wait until loading is done
+    
+    if (User) {
+        showSuccess("User successfully logged in");
+        navigate("/");
+    } else {
+        navigate("/auth/login");
+    }
+}, [User, Loading, navigate]);
 
     return (
         <div className="min-h-screen bg-[#F8F8FF] flex items-center justify-center px-4">
