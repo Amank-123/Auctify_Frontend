@@ -11,6 +11,9 @@ import OtpPage from "@/features/auth/pages/otpPage.jsx";
 import AuthSuccess from "@/features/auth/pages/AuthSuccess.jsx";
 import CreateAuction from "@/features/auction/pages/CreateAuction.jsx";
 import SellerDashboard from "../features/auction/pages/SellerDashboard.jsx";
+import Explore from "../components/common/explore.jsx";
+import Watchlist from "../components/common/watchlist.jsx";
+
 const router = createBrowserRouter([
     {
         path: "/",
@@ -20,6 +23,8 @@ const router = createBrowserRouter([
             { index: true, element: <Homepage /> },
             { path: "privacy", element: <PrivacyPolicy /> },
             { path: "terms", element: <Terms /> },
+            { path: "explore", element: <Explore /> },
+            { path: "watchlist", element: <Watchlist /> },
         ],
     },
     {
@@ -32,14 +37,14 @@ const router = createBrowserRouter([
             { path: "otp", element: <OtpPage /> },
             { path: "success", element: <AuthSuccess /> },
         ],
-    }, {
+    },
+    {
         path: "/auction",
         element: <RootLayout />,
         errorElement: <NotFound />,
         children: [
             { path: "create", element: <CreateAuction /> },
-             { path: "sell", element: <SellerDashboard /> },
-           
+            { path: "sell", element: <SellerDashboard /> },
         ],
     },
 ]);
