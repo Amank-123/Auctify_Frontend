@@ -47,7 +47,7 @@ export default function SignupPage() {
                 state: { email: form.email },
             });
         } catch (err) {
-            showError(err.customMessage || err || "Something went wrong");
+            // showError(err.customMessage || err || "Something went wrong");
         } finally {
             setLoading(false);
         }

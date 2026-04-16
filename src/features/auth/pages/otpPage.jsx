@@ -3,14 +3,16 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "@/shared/services/axios.js";
 import { showError, showSuccess } from "@/shared/utils/toast.js";
 import { API_ENDPOINTS } from "@/shared/constants/apiEndpoints.js";
-import { verifyOtp } from "../authAPI";
+import { useAuth } from "../../../hooks/useAuth.js";
 
 export default function OtpPage() {
+    const { verifyOtp } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
     // 📧 get email from previous page
     const email = location.state?.email;
+    const newUser = location.state?.newUser;
 
     const [otp, setOtp] = useState(["", "", "", "", "", ""]);
     const inputsRef = useRef([]);
@@ -61,11 +63,15 @@ export default function OtpPage() {
         try {
             setLoading(true);
             console.log(email, finalOtp);
-            await verifyOtp(email, finalOtp);
-            showSuccess("Account verified ");
-            navigate("/auth/success");
+            const res = await verifyOtp(email, finalOtp);
+            if (res.data.success) {
+                showSuccess("Account verified ");
+                navigate("/auth/success");
+            } else {
+                throw new Error(res.data?.message || "Invalid OTP");
+            }
         } catch (err) {
-            showError(err.response?.data?.message || "Invalid OTP");
+            // showError(err.response?.data?.message || "Invalid OTP");
         } finally {
             setLoading(false);
         }
