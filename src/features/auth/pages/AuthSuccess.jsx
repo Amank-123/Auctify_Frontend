@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 import loginImage from "@/assets/loginBg.png";
@@ -7,19 +7,19 @@ import { showError, showSuccess } from "@/shared/utils/toast.js";
 const AuthSuccess = () => {
     const { User, Loading } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
     useEffect(() => {
-    console.log("user : ", User)
-    
-    if (Loading) return; // ✅ wait until loading is done
-    
-    if (User) {
-        showSuccess("User successfully logged in");
-        navigate("/");
-    } else {
-        navigate("/auth/login");
-    }
-}, [User, Loading, navigate]);
+        console.log("User log from authsuccess: ", User);
+        if (!Loading) {
+            if (User) {
+                showSuccess("User successfully logged in");
+                navigate("/", { replace: true });
+            } else {
+                navigate("/auth/login");
+            }
+        }
+    }, [User, Loading, navigate]);
 
     return (
         <div className="min-h-screen bg-[#F8F8FF] flex items-center justify-center px-4">

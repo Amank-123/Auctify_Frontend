@@ -3,7 +3,7 @@ import { useAuth } from "../../../hooks/useAuth.js";
 import { Link, useNavigate } from "react-router-dom";
 import loginImage from "../../../assets/loginBg.png";
 import logo from "../../../assets/logo.png";
-import { motion, useViewportScroll } from "motion/react";
+import { motion } from "motion/react";
 import { showError, showSuccess } from "../../../shared/utils/toast.js";
 
 export default function LoginPage() {
@@ -37,12 +37,18 @@ export default function LoginPage() {
         e.preventDefault();
         try {
             setLoading(true);
-            await login(form);
-            navigate("/");
+            const res = await login(form);
+
+            if (res.data?.success) {
+                navigate("/auth/success");
+            } else {
+                throw new Error(res.data?.message || "Login failed");
+            }
         } catch (err) {
-            showError(err);
+            // showError();
         } finally {
             setLoading(false);
+            showError("Login failed");
         }
     };
 

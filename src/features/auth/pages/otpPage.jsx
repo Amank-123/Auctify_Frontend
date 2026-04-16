@@ -3,15 +3,17 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "@/shared/services/axios.js";
 import { showError, showSuccess } from "@/shared/utils/toast.js";
 import { API_ENDPOINTS } from "@/shared/constants/apiEndpoints.js";
-import { verifyOtp } from "../authAPI";
+import { useAuth } from "../../../hooks/useAuth.js";
 
 
 export default function OtpPage() {
+    const { verifyOtp } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
     // 📧 get email from previous page
     const email = location.state?.email;
+    const newUser = location.state?.newUser;
 
     const [otp, setOtp] = useState(["", "", "", "", "", ""]);
     const inputsRef = useRef([]);
@@ -59,18 +61,22 @@ const handleVerify = async () => {
         return;
     }
 
-    try {
-        setLoading(true);
-        await verifyOtp(email, finalOtp); // this now sets User in context
-        showSuccess("Account verified");
-        navigate("/auth/success"); // ✅ skip /auth/success, go directly home
-    } catch (err) {
-        showError(err.response?.data?.message || "Invalid OTP");
-    } finally {
-        setLoading(false);
-    }
-};
-    
+        try {
+            setLoading(true);
+            console.log(email, finalOtp);
+            const res = await verifyOtp(email, finalOtp);
+            if (res.data.success) {
+                showSuccess("Account verified ");
+                navigate("/auth/success");
+            } else {
+                throw new Error(res.data?.message || "Invalid OTP");
+            }
+        } catch (err) {
+            // showError(err.response?.data?.message || "Invalid OTP");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // 🔁 resend OTP
     const handleResend = async () => {

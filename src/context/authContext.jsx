@@ -12,6 +12,7 @@ const AuthProvider = ({ children }) => {
         const checkAuth = async () => {
             try {
                 const res = await api.get(API_ENDPOINTS.User.GET);
+                console.log("User from Authcontext: ", res);
                 setUser(res.data.data);
             } catch (err) {
                 setUser(null);
@@ -34,6 +35,16 @@ const AuthProvider = ({ children }) => {
         return res;
     };
 
+    const verifyOtp = async (email, otp) => {
+        const res = await api.post(API_ENDPOINTS.Otp.VERIFY, {
+            email,
+            otp,
+        });
+
+        setUser(res.data.data);
+        return res;
+    };
+
     const logout = async () => {
         const res = await api.post(API_ENDPOINTS.Auth.LOGOUT);
         setUser(null);
@@ -42,7 +53,7 @@ const AuthProvider = ({ children }) => {
 
     return (
         <AuthContext.Provider
-            value={{ User, Loading, login, register, logout, isAuthenticated: !!User }}
+            value={{ User, Loading, login, register, logout, verifyOtp, isAuthenticated: !!User }}
         >
             {children}
         </AuthContext.Provider>

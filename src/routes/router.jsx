@@ -9,6 +9,8 @@ import SignUpPage from "@/features/auth/pages/registrationPage.jsx";
 import AuthLayout from "@/layouts/AuthLayout.jsx";
 import OtpPage from "@/features/auth/pages/otpPage.jsx";
 import AuthSuccess from "@/features/auth/pages/AuthSuccess.jsx";
+import CreateAuction from "@/features/auction/pages/CreateAuction.jsx";
+import SellerDashboard from "../features/auction/pages/SellerDashboard.jsx";
 const router = createBrowserRouter([
     {
         path: "/",
@@ -29,6 +31,15 @@ const router = createBrowserRouter([
             { path: "register", element: <SignUpPage /> },
             { path: "otp", element: <OtpPage /> },
             { path: "success", element: <AuthSuccess /> },
+        ],
+    }, {
+        path: "/auction",
+        element: <RootLayout />,
+        errorElement: <NotFound />,
+        children: [
+            { path: "create", element: <CreateAuction /> },
+             { path: "sell", element: <SellerDashboard /> },
+           
         ],
     },
 ]);

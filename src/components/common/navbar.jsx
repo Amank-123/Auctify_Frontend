@@ -72,7 +72,7 @@ export default function Navbar() {
                         <NavItem to="/explore">Explore</NavItem>
                         <NavItem to="/categories">Categories</NavItem>
 
-                        <NavItem to="/sell" highlight>
+                        <NavItem to="/auction/sell" highlight>
                             Sell
                         </NavItem>
 
