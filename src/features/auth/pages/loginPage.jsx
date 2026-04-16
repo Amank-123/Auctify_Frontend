@@ -3,6 +3,8 @@ import { useAuth } from "../../../hooks/useAuth.js";
 import { Link, useNavigate } from "react-router-dom";
 import loginImage from "../../../assets/loginBg.png";
 import logo from "../../../assets/logo.png";
+import { motion, useViewportScroll } from "motion/react";
+import { showError, showSuccess } from "../../../shared/utils/toast.js";
 
 export default function LoginPage() {
     const { login } = useAuth();
@@ -14,6 +16,15 @@ export default function LoginPage() {
     });
 
     const [loading, setLoading] = useState(false);
+
+    const slogans = [
+        "Bid smarter",
+        "Win faster",
+        "Real-time auctions",
+        "No fake listings",
+        "Secure deals only",
+        "Zero friction bidding",
+    ];
 
     const handleChange = (e) => {
         setForm({
@@ -29,7 +40,7 @@ export default function LoginPage() {
             await login(form);
             navigate("/");
         } catch (err) {
-            console.error(err);
+            showError(err);
         } finally {
             setLoading(false);
         }
@@ -118,13 +129,77 @@ export default function LoginPage() {
                         </Link>
                     </p>
                 </div>
-
                 {/* RIGHT - VISUAL */}
-                <div className="hidden lg:flex relative bg-linear-to-br from-[#2563EB]/10 to-[#C2410C]/10 items-center justify-center">
-                    <div className="absolute w-96 h-90 bg-[#2563EB]/20 rounded-full blur-3xl right-10" />
-                    <div className="absolute w-72 h-72 bg-[#C2410C]/20 rounded-full blur-3xl left-10" />
+                <div className="hidden lg:flex relative overflow-hidden items-center justify-center">
+                    {/* Background gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#2563EB]/10 via-white to-[#C2410C]/10" />
 
-                    <img src={loginImage} alt="auction" className="relative z-10 bg-cover w-full" />
+                    {/* Animated blobs */}
+                    <motion.div
+                        animate={{ y: [0, -30, 0], x: [0, 20, 0] }}
+                        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute w-80 h-80 bg-[#2563EB]/20 rounded-full blur-3xl top-10 right-10"
+                    />
+
+                    <motion.div
+                        animate={{ y: [0, 30, 0], x: [0, -20, 0] }}
+                        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute w-72 h-72 bg-[#C2410C]/20 rounded-full blur-3xl bottom-10 left-10"
+                    />
+
+                    {/* 🔥 BUBBLES */}
+                    {slogans.map((text, i) => {
+                        const randomX = () => Math.random() * 600 - 300;
+                        const randomY = () => Math.random() * 400 - 200;
+
+                        return (
+                            <motion.div
+                                key={i}
+                                initial={{
+                                    x: randomX(),
+                                    y: randomY(),
+                                    opacity: 0,
+                                }}
+                                animate={{
+                                    x: [randomX(), randomX(), randomX(), randomX()],
+                                    y: [randomY(), randomY(), randomY(), randomY()],
+                                    opacity: [0, 1, 1, 0],
+                                }}
+                                transition={{
+                                    duration: 14 + Math.random() * 10, // different speed per bubble
+                                    repeat: Infinity,
+                                    ease: "linear", // smoother than easeInOut for wandering
+                                    delay: i * 0.1, // stagger start
+                                }}
+                                className="absolute text-sm px-4 py-2 z-20 rounded-full 
+                       bg-white/70 backdrop-blur-md shadow-md 
+                       text-gray-700 whitespace-nowrap"
+                            >
+                                {text}
+                            </motion.div>
+                        );
+                    })}
+
+                    {/* Main image */}
+                    <motion.img
+                        src={loginImage}
+                        alt="auction"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.6 }}
+                        className="relative z-30 w-[420px]"
+                    />
+
+                    {/* Headline */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.6 }}
+                        className="absolute bottom-10 left-10"
+                    >
+                        <h2 className="text-xl font-semibold text-[#1F2937]">Bid. Win. Repeat.</h2>
+                        <p className="text-sm text-[#6B7280]">Real-time auctions. No friction.</p>
+                    </motion.div>
                 </div>
             </div>
         </div>

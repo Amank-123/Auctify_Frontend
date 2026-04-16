@@ -1,3 +1,4 @@
+import { API_ENDPOINTS } from "../../shared/constants/apiEndpoints";
 import { api } from "../../shared/services/axios";
 
 export const verifyOtp = async (email, otp) => {

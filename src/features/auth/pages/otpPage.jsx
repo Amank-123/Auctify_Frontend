@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "@/shared/services/axios.js";
 import { showError, showSuccess } from "@/shared/utils/toast.js";
 import { API_ENDPOINTS } from "@/shared/constants/apiEndpoints.js";
+import { verifyOtp } from "../authAPI";
 
 export default function OtpPage() {
     const navigate = useNavigate();
@@ -50,7 +51,7 @@ export default function OtpPage() {
 
     // 🚀 verify OTP
     const handleVerify = async () => {
-        const finalOtp = otp.join("");
+        const finalOtp = otp.join("").trim();
 
         if (finalOtp.length !== 6) {
             showError("Enter complete OTP");
@@ -61,7 +62,7 @@ export default function OtpPage() {
             setLoading(true);
             console.log(email, finalOtp);
             await verifyOtp(email, finalOtp);
-            showSuccess("Account verified 🎉");
+            showSuccess("Account verified ");
             navigate("/auth/success");
         } catch (err) {
             showError(err.response?.data?.message || "Invalid OTP");
@@ -73,10 +74,10 @@ export default function OtpPage() {
     // 🔁 resend OTP
     const handleResend = async () => {
         try {
+            setTimer(30);
             await api.post(API_ENDPOINTS.Otp.RESEND, { email });
             showSuccess("OTP sent again");
-
-            setTimer(30);
+            setOtp(["", "", "", "", "", ""]);
         } catch (err) {
             showError("Failed to resend OTP");
         }
