@@ -47,6 +47,8 @@ export default function SignupPage() {
                 state: { email: form.email },
             });
         } catch (err) {
+            console.log(form)
+            console.log(err.customMessage, err.message, "Something went wrong")
             showError(err.customMessage || err.message || "Something went wrong");
         } finally {
             setLoading(false);

@@ -1,5 +1,5 @@
 import { createContext, useEffect, useState } from "react";
-import { api } from "../shared/services/axios.js";
+import { api } from "@/shared/services/axios.js";
 import { API_ENDPOINTS } from "../shared/constants/apiEndpoints.js";
 
 const AuthContext = createContext();
@@ -32,7 +32,8 @@ const AuthProvider = ({ children }) => {
 
     const register = async (data) => {
         console.log('VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
-console.log('All env vars:', import.meta.env);
+console.log('All env vars:', import.meta.env.VITE_API_BASE_URL);
+
         const res = await api.post(API_ENDPOINTS.Auth.REGISTER, data);
         setUser(res.data.data);
         return res;

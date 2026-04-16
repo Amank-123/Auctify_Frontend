@@ -60,15 +60,13 @@ export default function OtpPage() {
         try {
             setLoading(true);
             console.log(email, finalOtp);
-            const res = await api.post(API_ENDPOINTS.Otp.VERIFY, {
+            await api.post(API_ENDPOINTS.Otp.VERIFY, {
                 email,
                 otp: finalOtp,
             });
-
-            if (res.data.success) {
-              navigate("/auth/success");
-                showSuccess("Account verified 🎉");
-            }
+            showSuccess("Account verified 🎉");
+            navigate("/auth/success");
+            
         } catch (err) {
             showError(err.response?.data?.message || "Invalid OTP");
         } finally {
