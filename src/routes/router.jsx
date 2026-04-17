@@ -11,8 +11,14 @@ import OtpPage from "@/features/auth/pages/otpPage.jsx";
 import AuthSuccess from "@/features/auth/pages/AuthSuccess.jsx";
 import CreateAuction from "@/features/auction/pages/CreateAuction.jsx";
 import SellerDashboard from "../features/auction/pages/SellerDashboard.jsx";
+import ProtectRoute from "../components/auth/ProtectRoute";
+import Profile from "../features/user/pages/userProfile";
+import AuctionItem from "../components/common/navbar/AuctionItem";
+import BidItem from "../components/common/navbar/BidItem";
+import UserSidebar from "../components/common/navbar/UserSidebar";
 import Explore from "../components/common/explore.jsx";
 import Watchlist from "../components/common/watchlist.jsx";
+
 
 const router = createBrowserRouter([
     {
@@ -23,6 +29,10 @@ const router = createBrowserRouter([
             { index: true, element: <Homepage /> },
             { path: "privacy", element: <PrivacyPolicy /> },
             { path: "terms", element: <Terms /> },
+            {
+                element: <ProtectRoute />,
+                children: [{ path: "profile", element: <Profile /> }],
+            },
             { path: "explore", element: <Explore /> },
             { path: "watchlist", element: <Watchlist /> },
         ],
@@ -45,6 +55,24 @@ const router = createBrowserRouter([
         children: [
             { path: "create", element: <CreateAuction /> },
             { path: "sell", element: <SellerDashboard /> },
+        ],
+    },
+    {
+        path: "/user",
+        element: <ProtectRoute />,
+        errorElement: <NotFound />,
+        children: [
+            {
+                element: <UserSidebar />,
+                children: [
+                    { path: "auctions", element: <AuctionItem /> },
+                    { path: "bids", element: <BidItem /> },
+                    // { path: "watchlist", element: <Watchlist /> },
+                    // { path: "notifications", element: <Notifications /> },
+                    // { path: "settings", element: <AccountSettings /> },
+                    // { path: "activity", element: <AccountActivity /> },
+                ],
+            },
         ],
     },
 ]);
