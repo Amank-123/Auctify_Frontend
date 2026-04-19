@@ -73,7 +73,7 @@ export default function Navbar() {
                             Categories
                         </Link>
                         <Link
-                            to="/sell"
+                            to="/auction/sell"
                             className="text-[#C2410C] font-semibold hover:text-[#9A3412]"
                         >
                             Sell

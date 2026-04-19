@@ -16,9 +16,9 @@ import Profile from "../features/user/pages/userProfile";
 import AuctionItem from "../components/common/navbar/AuctionItem";
 import BidItem from "../components/common/navbar/BidItem";
 import UserSidebar from "../components/common/navbar/UserSidebar";
-import Explore from "../components/common/explore.jsx";
+import AuctionDetails from "../components/common/AuctionDetail.jsx";
 import Watchlist from "../components/common/watchlist.jsx";
-
+import AllAuctions from "../components/common/explore.jsx";
 
 const router = createBrowserRouter([
     {
@@ -33,7 +33,7 @@ const router = createBrowserRouter([
                 element: <ProtectRoute />,
                 children: [{ path: "profile", element: <Profile /> }],
             },
-            { path: "explore", element: <Explore /> },
+            { path: "explore", element: <AllAuctions /> },
             { path: "watchlist", element: <Watchlist /> },
         ],
     },
@@ -55,6 +55,7 @@ const router = createBrowserRouter([
         children: [
             { path: "create", element: <CreateAuction /> },
             { path: "sell", element: <SellerDashboard /> },
+            { path: ":id", element: <AuctionDetails /> },
         ],
     },
     {
