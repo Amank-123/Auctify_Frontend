@@ -15,37 +15,31 @@ export default function LoginNavbar() {
     }, []);
 
     return (
-        <nav
-            className={`sticky top-0 z-50 transition-all duration-300 ${
-                isScrolled
-                    ? "bg-[#F8F8FF]/95 backdrop-blur-md"
-                    : "bg-[#F8F8FF] border-b border-gray-200"
-            }`}
-        >
-            <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-20 py-3 md:py-4 flex items-center justify-between">
+        <nav className="absolute w-full  top-0 z-50 transition-all duration-300 ">
+            <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-20 py-3 md:py-2 flex items-center justify-between">
                 {/* LOGO */}
                 <Link to="/" className="flex items-center">
-                    <img src={navlogo} alt="Auctify logo" className="h-12 w-auto object-contain" />
+                    <img src={navlogo} alt="Auctify logo" className="h-14 w-auto object-contain" />
                 </Link>
 
                 {/* CENTER LINKS (minimal) */}
                 <div className="hidden md:flex items-center gap-10 text-gray-800">
                     <NavLink
-                        to="/explore"
+                        to="/"
                         className={({ isActive }) =>
                             `hover:text-blue-600 ${isActive ? "text-blue-600 font-medium" : ""}`
                         }
                     >
-                        Explore
+                        Home
                     </NavLink>
 
                     <NavLink
-                        to="/categories"
+                        to="/how-it-works"
                         className={({ isActive }) =>
                             `hover:text-blue-600 ${isActive ? "text-blue-600 font-medium" : ""}`
                         }
                     >
-                        Categories
+                        How it works
                     </NavLink>
                 </div>
 

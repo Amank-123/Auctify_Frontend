@@ -5,7 +5,7 @@ import LoginNavbar from "../components/auth/loginNav.jsx";
 const AuthLayout = () => {
     return (
         <>
-            {/* <LoginNavbar /> */}
+            <LoginNavbar />
             <main className="min-h-screen ">
                 <Outlet />
             </main>

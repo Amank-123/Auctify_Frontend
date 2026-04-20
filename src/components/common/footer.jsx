@@ -40,7 +40,7 @@ const Footer = () => {
                 <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-12 md:gap-20">
                     {/* LEFT */}
                     <motion.div variants={fadeUp(0)} initial="hidden" whileInView="visible">
-                        <img src={logo} alt="Auctify Logo" className="h-16 w-auto mb-4" />
+                        <img src={logo} alt="Auctify Logo" className="h-18 w-auto mb-4" />
 
                         <p className="text-[14px] text-[#6B7280] leading-6 max-w-[260px]">
                             A real-time auction platform enabling seamless buying and selling

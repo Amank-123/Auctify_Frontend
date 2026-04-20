@@ -9,6 +9,7 @@ import SidebarSection from "./SidebarSection.jsx";
 import SidebarNavItem from "./SidebarNavItem.jsx";
 import AuctionItem from "./AuctionItem.jsx";
 import BidItem from "./BidItem.jsx";
+import defaultUp from "@/assets/default.png";
 
 export default function UserSidebar({ open, onClose, user }) {
     const { logout } = useAuth();
@@ -38,27 +39,11 @@ export default function UserSidebar({ open, onClose, user }) {
 
                 if (!alive) return;
 
-                const nextProfile =
-                    userRes?.data?.user ||
-                    userRes?.data?.data?.user ||
-                    userRes?.data?.data ||
-                    userRes?.data ||
-                    user ||
-                    null;
+                const nextProfile = userRes?.data?.data || null;
 
-                const nextAuctions =
-                    auctionRes?.data?.auctions ||
-                    auctionRes?.data?.data?.auctions ||
-                    auctionRes?.data?.data ||
-                    auctionRes?.data ||
-                    [];
+                const nextAuctions = auctionRes?.data?.data || [];
 
-                const nextBids =
-                    bidRes?.data?.bids ||
-                    bidRes?.data?.data?.bids ||
-                    bidRes?.data?.data ||
-                    bidRes?.data ||
-                    [];
+                const nextBids = bidRes?.data?.data || [];
 
                 setProfile(nextProfile);
                 setAuctions(Array.isArray(nextAuctions) ? nextAuctions : []);
@@ -103,17 +88,15 @@ export default function UserSidebar({ open, onClose, user }) {
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 z-[60]">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
-
-            <aside className="absolute left-0 top-0 flex h-full w-[360px] max-w-[88vw] flex-col border-r border-[#E5E7EB] bg-[#FFFFFF] shadow-2xl">
+        <div className="fixed inset-0 z-[60] pointer-events-none">
+            <aside className="pointer-events-auto absolute right-0 top-0 flex h-full w-[360px] max-w-[88vw] flex-col border-l border-[#E5E7EB] bg-[#FFFFFF] shadow-2xl">
                 <div className="flex items-center justify-between border-b border-[#E5E7EB] px-5 py-4">
                     <div className="flex min-w-0 items-center gap-3">
                         <button
                             type="button"
                             onClick={() => {
                                 onClose();
-                                navigate("/user/profile");
+                                navigate("/profile");
                             }}
                             className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-[#E5E7EB] text-lg text-[#1F2937]"
                             aria-label="Open profile"
@@ -125,7 +108,11 @@ export default function UserSidebar({ open, onClose, user }) {
                                     className="h-full w-full object-cover"
                                 />
                             ) : (
-                                <span>{profile?.firstName?.charAt(0) || "U"}</span>
+                                <img
+                                    src={defaultUp}
+                                    alt="User profile"
+                                    className="h-full w-full object-cover"
+                                />
                             )}
                         </button>
 
@@ -165,7 +152,7 @@ export default function UserSidebar({ open, onClose, user }) {
                     </SidebarSection>
 
                     <SidebarSection title="Workspace">
-                        <SidebarNavItem to="/user/profile" onClick={onClose}>
+                        <SidebarNavItem to="/profile" onClick={onClose}>
                             Profile
                         </SidebarNavItem>
                         <SidebarNavItem to="/watchlist" onClick={onClose}>
@@ -232,11 +219,11 @@ export default function UserSidebar({ open, onClose, user }) {
                         </div>
                     </SidebarSection>
 
-                    {error && (
+                    {/* {error && (
                         <div className="mt-4 rounded-2xl border border-[#C2410C]/20 bg-[#C2410C]/5 px-4 py-3 text-sm text-[#C2410C]">
                             {error}
                         </div>
-                    )}
+                    )} */}
                 </div>
 
                 <div className="border-t border-[#E5E7EB] p-4">

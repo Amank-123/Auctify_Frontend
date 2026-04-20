@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useAuth } from "../../../hooks/useAuth.js";
 import { Link, useNavigate } from "react-router-dom";
 import loginImage from "../../../assets/loginBg.png";
@@ -9,12 +9,10 @@ import { showError, showSuccess } from "../../../shared/utils/toast.js";
 export default function LoginPage() {
     const { login } = useAuth();
     const navigate = useNavigate();
-
     const [form, setForm] = useState({
         email: "",
         password: "",
     });
-
     const [loading, setLoading] = useState(false);
 
     const slogans = [
@@ -26,6 +24,16 @@ export default function LoginPage() {
         "Zero friction bidding",
     ];
 
+    const bubbleDataRef = useRef(
+        slogans.map(() => ({
+            x: Math.random() * 500 - 250,
+            y: Math.random() * 300 - 150,
+            driftX: Math.random() * 100 - 50,
+            driftY: -(80 + Math.random() * 40),
+            duration: 8 + Math.random() * 6,
+            delay: Math.random() * 4,
+        })),
+    );
     const handleChange = (e) => {
         setForm({
             ...form,
@@ -38,17 +46,17 @@ export default function LoginPage() {
         try {
             setLoading(true);
             const res = await login(form);
-
+            console.log("Response form login page: ", res);
             if (res.data?.success) {
                 navigate("/auth/success");
+                showSuccess(res.data?.data.message || "User logged in successfully");
             } else {
                 throw new Error(res.data?.message || "Login failed");
             }
         } catch (err) {
-            // showError();
+            showError(`${err}`);
         } finally {
             setLoading(false);
-            showError("Login failed");
         }
     };
 
@@ -64,7 +72,7 @@ export default function LoginPage() {
             <div className="w-full max-w-6xl grid lg:grid-cols-2 bg-white rounded-3xl shadow-xl overflow-hidden">
                 {/* LEFT - FORM */}
                 <div className="p-8 sm:p-12 flex flex-col justify-center">
-                    <img src={logo} alt="auctify" className="w-45 pb-4" />
+                    {/* <img src={logo} alt="auctify" className="w-45 pb-4" /> */}
                     <h1 className="text-3xl font-bold text-[#1F2937] mb-2">Welcome back</h1>
                     <p className="text-[#6B7280] mb-6">Enter your credentials to continue</p>
 
@@ -155,31 +163,30 @@ export default function LoginPage() {
 
                     {/* 🔥 BUBBLES */}
                     {slogans.map((text, i) => {
-                        const randomX = () => Math.random() * 600 - 300;
-                        const randomY = () => Math.random() * 400 - 200;
+                        const b = bubbleDataRef.current[i];
 
                         return (
                             <motion.div
                                 key={i}
                                 initial={{
-                                    x: randomX(),
-                                    y: randomY(),
+                                    x: b.x,
+                                    y: b.y,
                                     opacity: 0,
                                 }}
                                 animate={{
-                                    x: [randomX(), randomX(), randomX(), randomX()],
-                                    y: [randomY(), randomY(), randomY(), randomY()],
-                                    opacity: [0, 1, 1, 0],
+                                    x: b.x + b.driftX,
+                                    y: b.y + b.driftY,
+                                    opacity: 0.8,
                                 }}
                                 transition={{
-                                    duration: 14 + Math.random() * 10, // different speed per bubble
+                                    duration: b.duration,
+                                    delay: b.delay,
+                                    ease: "easeOut",
                                     repeat: Infinity,
-                                    ease: "linear", // smoother than easeInOut for wandering
-                                    delay: i * 0.1, // stagger start
                                 }}
                                 className="absolute text-sm px-4 py-2 z-20 rounded-full 
-                       bg-white/70 backdrop-blur-md shadow-md 
-                       text-gray-700 whitespace-nowrap"
+            bg-white/60 backdrop-blur-md shadow-md 
+            text-gray-700 whitespace-nowrap"
                             >
                                 {text}
                             </motion.div>
