@@ -1,7 +1,7 @@
 import { Outlet } from "react-router-dom";
 import Footer from "../components/common/footer.jsx";
 import ScrollTop from "../components/common/scrollTop.js";
-import Navbar from "../components/common/navbar/navbar.jsx";
+import Navbar from "../components/common/navbar/Navbar.jsx";
 
 const RootLayout = () => {
     return (
