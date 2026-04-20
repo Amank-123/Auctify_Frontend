@@ -1,4 +1,4 @@
-import LegalPage from "../../policies/LegalPages";
+import LegalPage from "../../policies/LegalPages.jsx";
 import TermsData from "../../policies/TermAndConditionData.js"
 
 export default function Terms() {
