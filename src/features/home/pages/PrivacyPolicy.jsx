@@ -1,4 +1,4 @@
-import LegalPage from "../../policies/LegalPages";
+import LegalPage from "../../policies/LegalPages.jsx";
 import PolicyData from "../../policies/PrivacyPolicyData.js"
 
 export default function PrivacyPolicy() {
