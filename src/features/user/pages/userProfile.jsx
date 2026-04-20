@@ -1,158 +1,55 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-
-const emptyAddress = {
-    street: "",
-    city: "",
-    state: "",
-    country: "",
-    pin: "",
-};
-
-function getInitialForm(user) {
-    return {
-        username: user?.username || "",
-        email: user?.email || "",
-        firstName: user?.firstName || "",
-        lastName: user?.lastName || "",
-        address: {
-            street: user?.address?.street || "",
-            city: user?.address?.city || "",
-            state: user?.address?.state || "",
-            country: user?.address?.country || "",
-            pin: user?.address?.pin || "",
-        },
-    };
-}
+import defaultUp from "@/assets/default.png";
+import { updateUserProfile } from "../userAPI";
 
 export default function Profile() {
     const { Loading, User, setUser } = useAuth();
 
+    const [activeTab, setActiveTab] = useState("overview");
     const [isEditOpen, setIsEditOpen] = useState(false);
-    const [saving, setSaving] = useState(false);
+    const [form, setForm] = useState({});
     const [profileFile, setProfileFile] = useState(null);
-    const [filePreview, setFilePreview] = useState("");
-    const [error, setError] = useState("");
-    const [form, setForm] = useState(getInitialForm(User));
+    const [preview, setPreview] = useState("");
 
     useEffect(() => {
-        if (User) setForm(getInitialForm(User));
+        if (User) setForm(User);
     }, [User]);
 
     useEffect(() => {
-        if (!profileFile) {
-            setFilePreview("");
-            return;
-        }
-
-        const objectUrl = URL.createObjectURL(profileFile);
-        setFilePreview(objectUrl);
-
-        return () => URL.revokeObjectURL(objectUrl);
+        if (!profileFile) return setPreview("");
+        const url = URL.createObjectURL(profileFile);
+        setPreview(url);
+        return () => URL.revokeObjectURL(url);
     }, [profileFile]);
 
     const displayName = useMemo(() => {
-        const full = `${User?.firstName || ""} ${User?.lastName || ""}`.trim();
-        return full || User?.username || "User";
+        return `${User?.firstName || ""} ${User?.lastName || ""}`.trim() || User?.username;
     }, [User]);
 
-    const openEditor = () => {
-        setError("");
-        setForm(getInitialForm(User));
-        setProfileFile(null);
-        setIsEditOpen(true);
-    };
-
-    const closeEditor = () => {
-        if (saving) return;
-        setIsEditOpen(false);
-        setError("");
-        setProfileFile(null);
-    };
-
     const handleChange = (e) => {
-        const { name, value } = e.target;
-
-        if (name.startsWith("address.")) {
-            const key = name.split(".")[1];
-            setForm((prev) => ({
-                ...prev,
-                address: {
-                    ...prev.address,
-                    [key]: value,
-                },
-            }));
-            return;
-        }
-
-        setForm((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
-    };
-
-    const appendIfChanged = (fd, key, nextValue, prevValue) => {
-        const next = typeof nextValue === "string" ? nextValue.trim() : nextValue;
-        const prev = typeof prevValue === "string" ? prevValue.trim() : prevValue;
-
-        if (next === "" || next === undefined || next === null) return;
-        if (next === prev) return;
-
-        fd.append(key, next);
+        setForm({ ...form, [e.target.name]: e.target.value });
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError("");
 
-        try {
-            const formData = new FormData();
+        const fd = new FormData();
+        Object.keys(form).forEach((key) => {
+            if (form[key] !== User[key]) fd.append(key, form[key]);
+        });
 
-            appendIfChanged(formData, "username", form.username, User?.username);
-            appendIfChanged(formData, "email", form.email, User?.email);
-            appendIfChanged(formData, "firstName", form.firstName, User?.firstName);
-            appendIfChanged(formData, "lastName", form.lastName, User?.lastName);
+        if (profileFile) fd.append("profile", profileFile);
 
-            const addressKeys = Object.keys(emptyAddress);
-            addressKeys.forEach((key) => {
-                appendIfChanged(
-                    formData,
-                    `address.${key}`,
-                    form.address?.[key],
-                    User?.address?.[key],
-                );
-            });
-
-            if (profileFile) {
-                formData.append("profile", profileFile);
-            }
-
-            if (!profileFile && formData.entries().next().done) {
-                setError("No changes to save.");
-                return;
-            }
-
-            setSaving(true);
-
-            const { data } = await api.patch("/user/update", formData);
-
-            const updatedUser = data?.user || data?.data?.user || data?.data || data;
-            if (updatedUser) setUser(updatedUser);
-
-            setIsEditOpen(false);
-            setProfileFile(null);
-        } catch (err) {
-            console.error(err);
-            setError(err?.response?.data?.message || err?.message || "Failed to update profile.");
-        } finally {
-            setSaving(false);
-        }
+        const res = await updateUserProfile(fd);
+        setUser(res?.user || res);
+        setIsEditOpen(false);
     };
 
     if (Loading) {
         return (
-            <div className="min-h-[60vh] flex items-center justify-center bg-[#F8F8FF] px-4">
-                <div className="rounded-2xl border border-[#E5E7EB] bg-white px-6 py-4 text-[#1F2937] shadow-sm">
+            <div className="h-screen flex items-center justify-center bg-[#F8F8FF]">
+                <div className="px-6 py-3 bg-white border border-[#E5E7EB] rounded-xl shadow-sm text-[#1F2937]">
                     Loading profile...
                 </div>
             </div>
@@ -160,360 +57,303 @@ export default function Profile() {
     }
 
     return (
-        <div className="min-h-screen bg-[#F8F8FF] px-4 py-8 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-6xl">
-                <div className="mb-6">
-                    <h1 className="text-3xl font-semibold tracking-tight text-[#1F2937]">
-                        Profile
-                    </h1>
-                    <p className="mt-1 text-sm text-[#6B7280]">
-                        Manage your account details, address, and profile photo.
-                    </p>
-                </div>
+        <div className="min-h-screen bg-[#F8F8FF] p-6">
+            <div className="max-w-7xl mx-auto grid lg:grid-cols-[280px_1fr] gap-6">
+                {/* SIDEBAR */}
+                <aside className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-5">
+                    <div className="text-center">
+                        <img
+                            src={User?.profile || defaultUp}
+                            className="h-24 w-24 rounded-full mx-auto object-cover border-4 border-white shadow"
+                        />
+                        <h2 className="mt-3 font-semibold text-lg text-[#1F2937]">{displayName}</h2>
+                        <p className="text-sm text-[#6B7280]">@{User?.username}</p>
+                    </div>
 
-                <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-                    <aside className="rounded-3xl border border-[#E5E7EB] bg-white p-6 shadow-sm">
-                        <div className="flex flex-col items-center text-center">
-                            <div className="relative">
+                    {/* NAV */}
+                    <div className="mt-6 space-y-2">
+                        {[
+                            ["info", "My Info"],
+                            ["overview", "Overview"],
+                            ["orders", "My Orders"],
+                            ["bids", "My Bids"],
+                            ["wishlist", "Wishlist"],
+                            ["settings", "Settings"],
+                        ].map(([key, label]) => (
+                            <button
+                                key={key}
+                                onClick={() => setActiveTab(key)}
+                                className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition
+                                ${
+                                    activeTab === key
+                                        ? "bg-[#2563EB] text-white shadow"
+                                        : "text-[#1F2937] hover:bg-[#F1F5F9]"
+                                }`}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                </aside>
+
+                {/* MAIN */}
+                <main className="space-y-6">
+                    {activeTab === "info" && (
+                        <section className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6 space-y-6">
+                            {/* HEADER */}
+                            <div className="flex items-center gap-4">
                                 <img
-                                    src={User?.profile || "/default-avatar.png"}
-                                    alt="Profile"
-                                    className="h-28 w-28 rounded-full border-4 border-white object-cover shadow-md"
+                                    src={User?.profile || defaultUp}
+                                    className="h-16 w-16 rounded-full object-cover"
                                 />
-                                {User?.isVerified && (
-                                    <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-[#2563EB] px-3 py-1 text-xs font-medium text-white shadow-sm">
-                                        Verified
-                                    </span>
-                                )}
+                                <div>
+                                    <h3 className="text-lg font-semibold text-[#1F2937]">
+                                        {User?.firstName} {User?.lastName}
+                                    </h3>
+                                    <p className="text-sm text-[#6B7280]">@{User?.username}</p>
+                                    <p className="text-sm text-[#6B7280]">{User?.email}</p>
+                                </div>
                             </div>
 
-                            <h2 className="mt-5 text-2xl font-semibold text-[#1F2937]">
-                                {displayName}
-                            </h2>
-                            <p className="mt-1 text-sm text-[#6B7280]">
-                                @{User?.username || "username"}
-                            </p>
-                            <p className="mt-1 text-sm text-[#6B7280]">{User?.email}</p>
+                            {/* STATS */}
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                <StatCard label="Auctions" value={User?.auctionCount || 0} />
+                                <StatCard label="Bids" value={User?.bidCount || 0} />
+                                <StatCard label="Status" value={User?.status || "Active"} />
+                            </div>
 
-                            <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-                                <span className="rounded-full border border-[#E5E7EB] bg-[#F8F8FF] px-3 py-1 text-xs font-medium text-[#1F2937]">
-                                    Status: {User?.status || "neutral"}
-                                </span>
-                                <span className="rounded-full border border-[#E5E7EB] bg-[#F8F8FF] px-3 py-1 text-xs font-medium text-[#1F2937]">
-                                    Violations: {User?.violationCount ?? 0}
-                                </span>
+                            {/* ADDRESS */}
+                            <div>
+                                <h4 className="text-sm font-semibold text-[#1F2937] mb-2">
+                                    Address
+                                </h4>
+
+                                <div className="border border-[#E5E7EB] rounded-xl p-4 text-sm text-[#6B7280] leading-6">
+                                    {User?.address?.street || "—"} <br />
+                                    {User?.address?.city || ""} {User?.address?.state || ""} <br />
+                                    {User?.address?.country || ""} {User?.address?.pin || ""}
+                                </div>
+                            </div>
+
+                            {/* META */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <InfoMini
+                                    label="Joined"
+                                    value={
+                                        User?.createdAt
+                                            ? new Date(User.createdAt).toLocaleDateString()
+                                            : "-"
+                                    }
+                                />
+                                <InfoMini
+                                    label="Verified"
+                                    value={User?.isVerified ? "Yes" : "No"}
+                                />
+                            </div>
+                        </section>
+                    )}
+                    {/* OVERVIEW */}
+                    {activeTab === "overview" && (
+                        <section className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6">
+                            <h3 className="font-semibold text-lg text-[#1F2937]">
+                                Recent Activity
+                            </h3>
+
+                            <div className="mt-5 space-y-4">
+                                {[1, 2, 3].map((_, i) => (
+                                    <div
+                                        key={i}
+                                        className="flex justify-between items-center border border-[#E5E7EB] rounded-xl p-4 hover:shadow-md transition"
+                                    >
+                                        <div className="flex gap-4 items-center">
+                                            <div className="h-14 w-14 bg-gray-200 rounded-lg" />
+                                            <div>
+                                                <p className="text-sm font-medium text-[#1F2937]">
+                                                    Product Name
+                                                </p>
+                                                <p className="text-xs text-[#6B7280]">Bid placed</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="text-sm font-semibold text-[#C2410C]">
+                                            ₹1200
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
+                    {/* ORDERS */}
+                    {activeTab === "orders" && (
+                        <section className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6">
+                            <h3 className="font-semibold text-lg text-[#1F2937]">My Orders</h3>
+
+                            <div className="mt-5 grid sm:grid-cols-2 gap-5">
+                                {[1, 2].map((_, i) => (
+                                    <div
+                                        key={i}
+                                        className="border border-[#E5E7EB] rounded-xl p-4 hover:shadow-lg transition"
+                                    >
+                                        <div className="h-32 bg-gray-200 rounded-lg" />
+
+                                        <div className="mt-3">
+                                            <p className="text-sm font-medium text-[#1F2937]">
+                                                Item Name
+                                            </p>
+                                            <p className="text-xs text-[#6B7280]">Delivered</p>
+
+                                            <button className="mt-3 text-sm font-medium text-[#2563EB] hover:underline">
+                                                View Details
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
+                    {/* BIDS */}
+                    {activeTab === "bids" && (
+                        <section className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6">
+                            <h3 className="font-semibold text-lg text-[#1F2937]">My Bids</h3>
+
+                            <div className="mt-5 space-y-4">
+                                {[1, 2, 3].map((_, i) => (
+                                    <div className="flex justify-between items-center border border-[#E5E7EB] rounded-xl p-4 hover:shadow transition">
+                                        <span className="text-sm text-[#1F2937]">Auction Item</span>
+
+                                        <span className="text-sm font-semibold text-[#C2410C]">
+                                            ₹900
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
+                    {/* WISHLIST */}
+                    {activeTab === "wishlist" && (
+                        <section className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6">
+                            <h3 className="font-semibold text-lg text-[#1F2937]">Wishlist</h3>
+
+                            <div className="flex gap-4 mt-5 overflow-x-auto">
+                                {[1, 2, 3].map((_, i) => (
+                                    <div className="min-w-[150px] border border-[#E5E7EB] rounded-xl p-3 hover:shadow-md transition">
+                                        <div className="h-24 bg-gray-200 rounded-md" />
+                                        <p className="text-sm mt-2 text-[#1F2937]">Saved Item</p>
+                                        <p className="text-xs text-[#C2410C] font-medium">₹800</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
+                    {/* SETTINGS */}
+                    {activeTab === "settings" && (
+                        <section className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6">
+                            <h3 className="font-semibold text-lg text-[#1F2937]">Account Info</h3>
+
+                            <div className="grid sm:grid-cols-2 gap-4 mt-5">
+                                <Input
+                                    label="Username"
+                                    name="username"
+                                    value={form.username || ""}
+                                    onChange={handleChange}
+                                />
+                                <Input
+                                    label="Email"
+                                    name="email"
+                                    value={form.email || ""}
+                                    onChange={handleChange}
+                                />
+                                <Input
+                                    label="First Name"
+                                    name="firstName"
+                                    value={form.firstName || ""}
+                                    onChange={handleChange}
+                                />
+                                <Input
+                                    label="Last Name"
+                                    name="lastName"
+                                    value={form.lastName || ""}
+                                    onChange={handleChange}
+                                />
                             </div>
 
                             <button
-                                onClick={openEditor}
-                                className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-[#2563EB] px-4 py-3 text-sm font-medium text-white transition hover:bg-[#1D4ED8] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                                onClick={() => setIsEditOpen(true)}
+                                className="mt-5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-5 py-2 rounded-xl text-sm font-medium transition"
                             >
-                                Edit profile
+                                Edit Profile
                             </button>
-                        </div>
-
-                        <div className="mt-6 grid grid-cols-2 gap-3">
-                            <div className="rounded-2xl border border-[#E5E7EB] bg-[#F8F8FF] p-4">
-                                <div className="text-xs text-[#6B7280]">Verified</div>
-                                <div className="mt-1 text-lg font-semibold text-[#1F2937]">
-                                    {User?.isVerified ? "Yes" : "No"}
-                                </div>
-                            </div>
-                            <div className="rounded-2xl border border-[#E5E7EB] bg-[#F8F8FF] p-4">
-                                <div className="text-xs text-[#6B7280]">Joined</div>
-                                <div className="mt-1 text-lg font-semibold text-[#1F2937]">
-                                    {User?.createdAt
-                                        ? new Date(User.createdAt).toLocaleDateString()
-                                        : "-"}
-                                </div>
-                            </div>
-                        </div>
-                    </aside>
-
-                    <main className="space-y-6">
-                        <section className="rounded-3xl border border-[#E5E7EB] bg-white p-6 shadow-sm">
-                            <div className="flex items-center justify-between gap-4">
-                                <div>
-                                    <h3 className="text-lg font-semibold text-[#1F2937]">
-                                        Account overview
-                                    </h3>
-                                    <p className="mt-1 text-sm text-[#6B7280]">
-                                        Your public identity and basic account information.
-                                    </p>
-                                </div>
-                                <div className="rounded-full bg-[#2563EB]/10 px-3 py-1 text-sm font-medium text-[#2563EB]">
-                                    Auctify
-                                </div>
-                            </div>
-
-                            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                                <InfoCard label="Username" value={User?.username} />
-                                <InfoCard label="First name" value={User?.firstName} />
-                                <InfoCard label="Last name" value={User?.lastName} />
-                                <InfoCard label="Email" value={User?.email} wide />
-                                <InfoCard label="Status" value={User?.status || "neutral"} />
-                                <InfoCard
-                                    label="Profile image"
-                                    value={User?.profile ? "Uploaded" : "Not set"}
-                                />
-                            </div>
                         </section>
-
-                        <section className="rounded-3xl border border-[#E5E7EB] bg-white p-6 shadow-sm">
-                            <div className="flex items-center justify-between gap-4">
-                                <div>
-                                    <h3 className="text-lg font-semibold text-[#1F2937]">
-                                        Address
-                                    </h3>
-                                    <p className="mt-1 text-sm text-[#6B7280]">
-                                        Delivery and account location details.
-                                    </p>
-                                </div>
-                                <span className="rounded-full border border-[#E5E7EB] px-3 py-1 text-xs font-medium text-[#6B7280]">
-                                    Optional
-                                </span>
-                            </div>
-
-                            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                                <InfoCard label="Street" value={User?.address?.street} />
-                                <InfoCard label="City" value={User?.address?.city} />
-                                <InfoCard label="State" value={User?.address?.state} />
-                                <InfoCard label="Country" value={User?.address?.country} />
-                                <InfoCard label="PIN" value={User?.address?.pin} />
-                            </div>
-                        </section>
-
-                        <section className="rounded-3xl border border-[#E5E7EB] bg-white p-6 shadow-sm">
-                            <h3 className="text-lg font-semibold text-[#1F2937]">Quick actions</h3>
-                            <div className="mt-4 flex flex-wrap gap-3">
-                                <button
-                                    onClick={openEditor}
-                                    className="rounded-xl bg-[#2563EB] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#1D4ED8]"
-                                >
-                                    Update info
-                                </button>
-                                <button className="rounded-xl border border-[#E5E7EB] px-4 py-2.5 text-sm font-medium text-[#1F2937] transition hover:bg-[#F8F8FF]">
-                                    Change password
-                                </button>
-                                <button className="rounded-xl border border-[#E5E7EB] px-4 py-2.5 text-sm font-medium text-[#C2410C] transition hover:bg-[#C2410C]/5">
-                                    View activity
-                                </button>
-                            </div>
-                        </section>
-                    </main>
-                </div>
+                    )}
+                </main>
             </div>
 
+            {/* MODAL */}
             {isEditOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6 backdrop-blur-sm">
-                    <div className="w-full max-w-3xl overflow-hidden rounded-3xl border border-[#E5E7EB] bg-white shadow-2xl">
-                        <div className="flex items-center justify-between border-b border-[#E5E7EB] px-6 py-4">
-                            <div>
-                                <h3 className="text-xl font-semibold text-[#1F2937]">
-                                    Edit profile
-                                </h3>
-                                <p className="text-sm text-[#6B7280]">
-                                    Update only the fields you want to change.
-                                </p>
-                            </div>
-                            <button
-                                onClick={closeEditor}
-                                className="rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm text-[#1F2937] transition hover:bg-[#F8F8FF]"
-                            >
-                                Close
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+                    <form className="bg-white p-6 rounded-2xl w-full max-w-lg space-y-4 shadow-xl">
+                        <h3 className="font-semibold text-lg text-[#1F2937]">Edit Profile</h3>
+
+                        <Input
+                            label="Username"
+                            name="username"
+                            value={form.username || ""}
+                            onChange={handleChange}
+                        />
+                        <Input
+                            label="Email"
+                            name="email"
+                            value={form.email || ""}
+                            onChange={handleChange}
+                        />
+
+                        <input type="file" onChange={(e) => setProfileFile(e.target.files[0])} />
+
+                        <div className="flex justify-end gap-2 pt-4">
+                            <button type="button" onClick={() => setIsEditOpen(false)}>
+                                Cancel
+                            </button>
+                            <button className="bg-[#2563EB] text-white px-4 py-2 rounded-lg">
+                                Save
                             </button>
                         </div>
-
-                        <form
-                            onSubmit={handleSubmit}
-                            className="grid gap-6 p-6 lg:grid-cols-[1.1fr_0.9fr]"
-                        >
-                            <div className="space-y-5">
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <Field
-                                        label="Username"
-                                        name="username"
-                                        value={form.username}
-                                        onChange={handleChange}
-                                        placeholder="username"
-                                    />
-                                    <Field
-                                        label="Email"
-                                        name="email"
-                                        type="email"
-                                        value={form.email}
-                                        onChange={handleChange}
-                                        placeholder="email@example.com"
-                                    />
-                                </div>
-
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <Field
-                                        label="First name"
-                                        name="firstName"
-                                        value={form.firstName}
-                                        onChange={handleChange}
-                                        placeholder="First name"
-                                    />
-                                    <Field
-                                        label="Last name"
-                                        name="lastName"
-                                        value={form.lastName}
-                                        onChange={handleChange}
-                                        placeholder="Last name"
-                                    />
-                                </div>
-
-                                <div>
-                                    <h4 className="mb-3 text-sm font-semibold text-[#1F2937]">
-                                        Address
-                                    </h4>
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <Field
-                                            label="Street"
-                                            name="address.street"
-                                            value={form.address.street}
-                                            onChange={handleChange}
-                                            placeholder="Street"
-                                        />
-                                        <Field
-                                            label="City"
-                                            name="address.city"
-                                            value={form.address.city}
-                                            onChange={handleChange}
-                                            placeholder="City"
-                                        />
-                                        <Field
-                                            label="State"
-                                            name="address.state"
-                                            value={form.address.state}
-                                            onChange={handleChange}
-                                            placeholder="State"
-                                        />
-                                        <Field
-                                            label="Country"
-                                            name="address.country"
-                                            value={form.address.country}
-                                            onChange={handleChange}
-                                            placeholder="Country"
-                                        />
-                                        <Field
-                                            label="PIN"
-                                            name="address.pin"
-                                            value={form.address.pin}
-                                            onChange={handleChange}
-                                            placeholder="PIN"
-                                        />
-                                    </div>
-                                </div>
-
-                                {error && (
-                                    <div className="rounded-2xl border border-[#C2410C]/20 bg-[#C2410C]/5 px-4 py-3 text-sm text-[#C2410C]">
-                                        {error}
-                                    </div>
-                                )}
-
-                                <div className="flex items-center justify-end gap-3 border-t border-[#E5E7EB] pt-5">
-                                    <button
-                                        type="button"
-                                        onClick={closeEditor}
-                                        className="rounded-xl border border-[#E5E7EB] px-4 py-2.5 text-sm font-medium text-[#1F2937] transition hover:bg-[#F8F8FF]"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={saving}
-                                        className="rounded-xl bg-[#2563EB] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-70"
-                                    >
-                                        {saving ? "Saving..." : "Save changes"}
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="space-y-5 rounded-3xl border border-[#E5E7EB] bg-[#F8F8FF] p-5">
-                                <div>
-                                    <h4 className="text-sm font-semibold text-[#1F2937]">
-                                        Profile image
-                                    </h4>
-                                    <p className="mt-1 text-sm text-[#6B7280]">
-                                        Upload a new profile picture. This goes with the same
-                                        request.
-                                    </p>
-                                </div>
-
-                                <div className="flex items-center gap-4">
-                                    <img
-                                        src={filePreview || User?.profile || "/default-avatar.png"}
-                                        alt="Preview"
-                                        className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-md"
-                                    />
-                                    <div className="space-y-2">
-                                        <label className="inline-flex cursor-pointer items-center rounded-xl bg-[#C2410C] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#9A3412]">
-                                            Choose image
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                className="hidden"
-                                                onChange={(e) =>
-                                                    setProfileFile(e.target.files?.[0] || null)
-                                                }
-                                            />
-                                        </label>
-                                        <p className="text-xs text-[#6B7280]">
-                                            JPG, PNG, WEBP. Keep it sane.
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="rounded-2xl border border-[#E5E7EB] bg-white p-4">
-                                    <div className="text-xs font-medium uppercase tracking-wide text-[#6B7280]">
-                                        Update rule
-                                    </div>
-                                    <p className="mt-2 text-sm leading-6 text-[#1F2937]">
-                                        Only changed values are appended to the request. Empty
-                                        fields are ignored, so your Zod min and max rules do not get
-                                        sabotaged by accidental blanks.
-                                    </p>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
+                    </form>
                 </div>
             )}
         </div>
     );
 }
 
-function Field({ label, name, value, onChange, type = "text", placeholder }) {
+function Input({ label, ...props }) {
     return (
-        <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-[#1F2937]">{label}</span>
+        <div>
+            <label className="text-sm text-[#6B7280]">{label}</label>
             <input
-                name={name}
-                type={type}
-                value={value}
-                onChange={onChange}
-                placeholder={placeholder}
-                className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 text-sm text-[#1F2937] outline-none transition placeholder:text-[#9CA3AF] focus:border-[#2563EB] focus:ring-4 focus:ring-[#2563EB]/10"
+                {...props}
+                className="w-full mt-1 border border-[#E5E7EB] px-3 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB]"
             />
-        </label>
+        </div>
     );
 }
 
-function InfoCard({ label, value, wide = false }) {
+function StatCard({ label, value }) {
     return (
-        <div
-            className={`rounded-2xl border border-[#E5E7EB] bg-[#F8F8FF] p-4 ${
-                wide ? "sm:col-span-2 xl:col-span-2" : ""
-            }`}
-        >
-            <div className="text-xs font-medium uppercase tracking-wide text-[#6B7280]">
-                {label}
-            </div>
-            <div className="mt-2 break-words text-sm font-semibold text-[#1F2937]">
-                {value || "-"}
-            </div>
+        <div className="border border-[#E5E7EB] rounded-xl p-4 text-center">
+            <div className="text-lg font-semibold text-[#2563EB]">{value}</div>
+            <div className="text-xs text-[#6B7280] mt-1">{label}</div>
+        </div>
+    );
+}
+
+function InfoMini({ label, value }) {
+    return (
+        <div className="border border-[#E5E7EB] rounded-xl p-3">
+            <div className="text-xs text-[#6B7280]">{label}</div>
+            <div className="text-sm font-medium text-[#1F2937] mt-1">{value}</div>
         </div>
     );
 }

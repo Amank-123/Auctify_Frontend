@@ -21,12 +21,12 @@ export default function Navbar() {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    useEffect(() => {
-        document.body.style.overflow = sidebarOpen ? "hidden" : "";
-        return () => {
-            document.body.style.overflow = "";
-        };
-    }, [sidebarOpen]);
+    // useEffect(() => {
+    //     document.body.style.overflow = sidebarOpen ? "hidden" : "";
+    //     return () => {
+    //         document.body.style.overflow = "";
+    //     };
+    // }, [sidebarOpen]);
 
     if (Loading) return <NavbarSkeleton isAuth={false} />;
 
@@ -39,28 +39,13 @@ export default function Navbar() {
                         : "bg-[#F8F8FF] border-b border-[#E5E7EB]"
                 }`}
             >
-                <div className="mx-auto flex max-w-8xl items-center justify-between px-4 py-3 sm:px-6 lg:px-20 md:py-4">
+                <div className="mx-auto flex max-w-full items-center justify-between px-4 py-3 sm:px-6 lg:px-10 md:py-2">
                     <div className="flex items-center gap-3">
-                        {isAuthenticated && (
-                            <button
-                                type="button"
-                                onClick={() => setSidebarOpen((prev) => !prev)}
-                                className="rounded-xl border border-[#E5E7EB] bg-white p-2 text-[#1F2937] transition hover:bg-[#F8F8FF] hover:text-[#2563EB]"
-                                aria-label="Toggle dashboard sidebar"
-                            >
-                                {sidebarOpen ? (
-                                    <HiOutlineX className="text-2xl" />
-                                ) : (
-                                    <HiOutlineMenu className="text-2xl" />
-                                )}
-                            </button>
-                        )}
-
                         <Link to="/" className="flex items-center">
                             <img
                                 src={navlogo}
                                 alt="Auctify logo"
-                                className="h-12 w-auto object-contain"
+                                className="h-14 w-auto object-contain"
                             />
                         </Link>
                     </div>
@@ -72,21 +57,18 @@ export default function Navbar() {
                         <Link to="/categories" className="text-[#1F2937] hover:text-[#2563EB]">
                             Categories
                         </Link>
-                        <Link
-                            to="/auction/sell"
-                            className="text-[#C2410C] font-semibold hover:text-[#9A3412]"
-                        >
-                            Sell
-                        </Link>
-
-                        {!isAuthenticated && (
+                        {isAuthenticated && (
                             <Link
-                                to="/how-it-works"
-                                className="text-[#1F2937] hover:text-[#2563EB]"
+                                to="/auction/sell"
+                                className="text-[#C2410C] font-semibold hover:text-[#9A3412]"
                             >
-                                How it Works
+                                Sell
                             </Link>
                         )}
+
+                        <Link to="/how-it-works" className="text-[#1F2937] hover:text-[#2563EB]">
+                            How it Works
+                        </Link>
                     </div>
 
                     <div className="flex items-center gap-4 sm:gap-6">
@@ -117,26 +99,20 @@ export default function Navbar() {
                                         3
                                     </span>
                                 </Link>
-
-                                <Link to="/profile" className="flex items-center">
-                                    <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#E5E7EB] text-lg text-[#1F2937] ring-2 ring-white transition hover:ring-[#2563EB]/20">
-                                        {User?.profile ? (
-                                            <img
-                                                src={User.profile}
-                                                alt="User profile"
-                                                className="h-full w-full object-cover"
-                                            />
-                                        ) : defaultImg ? (
-                                            <img
-                                                src={defaultImg}
-                                                alt="User profile"
-                                                className="h-full w-full object-cover"
-                                            />
+                                {isAuthenticated && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSidebarOpen((prev) => !prev)}
+                                        className="rounded-xl border border-[#E5E7EB] bg-white p-2 text-[#1F2937] transition hover:bg-[#F8F8FF] hover:text-[#2563EB]"
+                                        aria-label="Toggle dashboard sidebar"
+                                    >
+                                        {sidebarOpen ? (
+                                            <HiOutlineX className="text-2xl" />
                                         ) : (
-                                            <span>{User?.firstName?.charAt(0) || "U"}</span>
+                                            <HiOutlineMenu className="text-2xl" />
                                         )}
-                                    </div>
-                                </Link>
+                                    </button>
+                                )}
                             </>
                         )}
                     </div>
