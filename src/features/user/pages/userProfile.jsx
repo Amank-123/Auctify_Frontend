@@ -1,16 +1,39 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import defaultUp from "@/assets/default.png";
-import { updateUserProfile } from "../userAPI";
+import { getMyAuctions, getMyBids, updateUserProfile } from "../userAPI";
+import { useNavigate } from "react-router-dom";
 
 export default function Profile() {
     const { Loading, User, setUser } = useAuth();
 
-    const [activeTab, setActiveTab] = useState("overview");
+    const [activeTab, setActiveTab] = useState("info");
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [form, setForm] = useState({});
     const [profileFile, setProfileFile] = useState(null);
     const [preview, setPreview] = useState("");
+    const [bids, setBids] = useState([]);
+    const [auctions, setAuctions] = useState([]);
+    const [loadingData, setLoadingData] = useState(true);
+
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [bidsRes, auctionsRes] = await Promise.all([getMyBids(), getMyAuctions()]);
+
+                setBids(bidsRes?.data || []);
+                setAuctions(auctionsRes?.data || []);
+            } catch (err) {
+                console.error("Error fetching profile data:", err);
+            } finally {
+                setLoadingData(false);
+            }
+        };
+
+        fetchData();
+    }, []);
 
     useEffect(() => {
         if (User) setForm(User);
@@ -77,7 +100,7 @@ export default function Profile() {
                             ["overview", "Overview"],
                             ["orders", "My Orders"],
                             ["bids", "My Bids"],
-                            ["wishlist", "Wishlist"],
+                            ["auctions", "My Auctions"],
                             ["settings", "Settings"],
                         ].map(([key, label]) => (
                             <button
@@ -160,26 +183,21 @@ export default function Profile() {
                             </h3>
 
                             <div className="mt-5 space-y-4">
-                                {[1, 2, 3].map((_, i) => (
-                                    <div
-                                        key={i}
-                                        className="flex justify-between items-center border border-[#E5E7EB] rounded-xl p-4 hover:shadow-md transition"
-                                    >
-                                        <div className="flex gap-4 items-center">
-                                            <div className="h-14 w-14 bg-gray-200 rounded-lg" />
-                                            <div>
-                                                <p className="text-sm font-medium text-[#1F2937]">
-                                                    Product Name
-                                                </p>
-                                                <p className="text-xs text-[#6B7280]">Bid placed</p>
-                                            </div>
+                                {loadingData ? (
+                                    <p>Loading activity...</p>
+                                ) : bids.length === 0 ? (
+                                    <p>No recent activity</p>
+                                ) : (
+                                    bids.slice(0, 3).map((bid) => (
+                                        <div
+                                            key={bid._id}
+                                            className="flex justify-between border p-3 rounded"
+                                        >
+                                            <span>{bid.auction?.title}</span>
+                                            <span>₹{bid.amount}</span>
                                         </div>
-
-                                        <div className="text-sm font-semibold text-[#C2410C]">
-                                            ₹1200
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))
+                                )}
                             </div>
                         </section>
                     )}
@@ -219,32 +237,103 @@ export default function Profile() {
                             <h3 className="font-semibold text-lg text-[#1F2937]">My Bids</h3>
 
                             <div className="mt-5 space-y-4">
-                                {[1, 2, 3].map((_, i) => (
-                                    <div className="flex justify-between items-center border border-[#E5E7EB] rounded-xl p-4 hover:shadow transition">
-                                        <span className="text-sm text-[#1F2937]">Auction Item</span>
+                                {loadingData ? (
+                                    <p>Loading bids...</p>
+                                ) : bids.length === 0 ? (
+                                    <p className="text-sm text-[#6B7280]">No bids yet</p>
+                                ) : (
+                                    bids.map((bid) => (
+                                        <div
+                                            key={bid._id}
+                                            className="flex justify-between items-center border border-[#E5E7EB] rounded-xl p-4 hover:shadow transition"
+                                        >
+                                            <span className="text-sm text-[#1F2937]">
+                                                {bid.auction?.title || "Auction Item"}
+                                            </span>
 
-                                        <span className="text-sm font-semibold text-[#C2410C]">
-                                            ₹900
-                                        </span>
-                                    </div>
-                                ))}
+                                            <span className="text-sm font-semibold text-[#C2410C]">
+                                                ₹{bid.amount}
+                                            </span>
+                                        </div>
+                                    ))
+                                )}
                             </div>
                         </section>
                     )}
 
-                    {/* WISHLIST */}
-                    {activeTab === "wishlist" && (
+                    {/* AUCTIONS */}
+                    {activeTab === "auctions" && (
                         <section className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6">
-                            <h3 className="font-semibold text-lg text-[#1F2937]">Wishlist</h3>
+                            <h3 className="font-semibold text-lg text-[#1F2937]">My Auctions</h3>
 
-                            <div className="flex gap-4 mt-5 overflow-x-auto">
-                                {[1, 2, 3].map((_, i) => (
-                                    <div className="min-w-[150px] border border-[#E5E7EB] rounded-xl p-3 hover:shadow-md transition">
-                                        <div className="h-24 bg-gray-200 rounded-md" />
-                                        <p className="text-sm mt-2 text-[#1F2937]">Saved Item</p>
-                                        <p className="text-xs text-[#C2410C] font-medium">₹800</p>
-                                    </div>
-                                ))}
+                            <div className="mt-5 space-y-4">
+                                {loadingData ? (
+                                    <p>Loading auctions...</p>
+                                ) : auctions.length === 0 ? (
+                                    <p className="text-sm text-[#6B7280]">
+                                        No auctions created yet
+                                    </p>
+                                ) : (
+                                    auctions.map((auction) => {
+                                        const image = auction?.media?.[0]?.[0];
+
+                                        return (
+                                            <div
+                                                key={auction._id}
+                                                onClick={() => navigate(`/auction/${auction._id}`)}
+                                                className="flex items-center justify-between gap-4 border border-[#E5E7EB] rounded-xl p-4 hover:shadow transition cursor-pointer hover:bg-[#F9FAFB]"
+                                            >
+                                                {/* LEFT */}
+                                                <div className="flex items-center gap-4">
+                                                    {image ? (
+                                                        <img
+                                                            src={image}
+                                                            className="h-14 w-14 rounded-lg object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="h-14 w-14 bg-gray-200 rounded-lg" />
+                                                    )}
+
+                                                    <div>
+                                                        <p className="text-sm font-medium text-[#1F2937]">
+                                                            {auction.name}
+                                                        </p>
+
+                                                        <p className="text-xs text-[#6B7280]">
+                                                            {auction.description}
+                                                        </p>
+
+                                                        <p
+                                                            className={`text-xs mt-1 ${
+                                                                auction.status === "live"
+                                                                    ? "text-green-600"
+                                                                    : auction.status === "draft"
+                                                                      ? "text-gray-400"
+                                                                      : "text-red-500"
+                                                            }`}
+                                                        >
+                                                            {auction.status}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                {/* RIGHT */}
+                                                <div className="text-right">
+                                                    <p className="text-sm font-semibold text-[#2563EB]">
+                                                        ₹
+                                                        {auction.currentHighestBid > 0
+                                                            ? auction.currentHighestBid
+                                                            : auction.startPrice}
+                                                    </p>
+
+                                                    <p className="text-xs text-[#6B7280]">
+                                                        {auction.bidCount} bids
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                )}
                             </div>
                         </section>
                     )}
