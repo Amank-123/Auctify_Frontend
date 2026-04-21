@@ -1,9 +1,35 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Heart, Gavel, Clock, Tag, TrendingUp, User, Eye, Flame, CheckCircle2 } from "lucide-react";
 
+/* ─────────────────────────────────────────
+   BRAND TOKENS  (Auctify palette)
+───────────────────────────────────────── */
+const B = {
+    blue: "#1a3db5", // primary deep blue
+    blueMid: "#2347d6", // nav / banner
+    blueLight: "#e8edfb", // tint bg
+    bluePale: "#f0f3fc", // very soft bg
+    orange: "#e87c1e", // accent / highlight
+    orangeLight: "#fff3e8", // tint
+    white: "#ffffff",
+    gray50: "#f7f8fc",
+    gray100: "#eef0f6",
+    gray300: "#c7cad8",
+    gray500: "#8a8fa8",
+    gray700: "#3d4261",
+    gray900: "#1a1d2e",
+};
+
+const AUCTION_DURATION_HOURS = 2;
+
+/* ─────────────────────────────────────────
+   COUNTDOWN
+───────────────────────────────────────── */
 function Countdown({ endsAt }) {
     const calc = () => {
+        if (!endsAt) return { h: "00", m: "00", s: "00" };
         const diff = Math.max(0, Math.floor((new Date(endsAt) - Date.now()) / 1000));
         return {
             h: String(Math.floor(diff / 3600)).padStart(2, "0"),
@@ -11,83 +37,160 @@ function Countdown({ endsAt }) {
             s: String(diff % 60).padStart(2, "0"),
         };
     };
+
     const [t, setT] = useState(calc);
     useEffect(() => {
         const id = setInterval(() => setT(calc()), 1000);
         return () => clearInterval(id);
-    }, []);
+    }, [endsAt]);
+
+    const labels = ["HRS", "MIN", "SEC"];
 
     return (
-        <div className="flex gap-2 mb-4">
-            {[
-                ["h", "Hours"],
-                ["m", "Mins"],
-                ["s", "Secs"],
-            ].map(([k, label]) => (
-                <div
-                    key={k}
-                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-2 text-center"
-                >
-                    <div className="text-[15px] font-extrabold text-slate-800 leading-none">
-                        {t[k]}
+        <div
+            style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                marginBottom: 14,
+                background: B.blueLight,
+                borderRadius: 10,
+                padding: "8px 10px",
+                border: `1px solid #d0d8f5`,
+            }}
+        >
+            <Clock size={13} color={B.blue} strokeWidth={2.2} style={{ flexShrink: 0 }} />
+            <span
+                style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: B.blue,
+                    letterSpacing: "0.04em",
+                    marginRight: 4,
+                }}
+            >
+                ENDS IN
+            </span>
+            {["h", "m", "s"].map((k, i) => (
+                <div key={k} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <div style={{ textAlign: "center" }}>
+                        <div
+                            style={{
+                                background: B.blue,
+                                color: B.white,
+                                borderRadius: 6,
+                                padding: "3px 7px",
+                                fontSize: 13,
+                                fontWeight: 700,
+                                fontVariantNumeric: "tabular-nums",
+                                minWidth: 28,
+                                lineHeight: 1.4,
+                            }}
+                        >
+                            {t[k]}
+                        </div>
+                        <div
+                            style={{
+                                fontSize: 8,
+                                color: B.gray500,
+                                marginTop: 2,
+                                letterSpacing: "0.06em",
+                            }}
+                        >
+                            {labels[i]}
+                        </div>
                     </div>
-                    <div className="text-[8px] uppercase tracking-widest text-slate-400 mt-0.5 font-semibold">
-                        {label}
-                    </div>
+                    {i < 2 && (
+                        <span
+                            style={{
+                                fontSize: 14,
+                                fontWeight: 700,
+                                color: B.blue,
+                                marginBottom: 10,
+                                opacity: 0.6,
+                            }}
+                        >
+                            :
+                        </span>
+                    )}
                 </div>
             ))}
         </div>
     );
 }
 
+/* ─────────────────────────────────────────
+   FAV BUTTON
+───────────────────────────────────────── */
 function FavBtn() {
     const [on, setOn] = useState(false);
     return (
         <motion.button
-            whileTap={{ scale: 0.88 }}
-            onClick={() => setOn((p) => !p)}
-            className="w-[30px] h-[30px] rounded-full flex items-center justify-center border border-white/30"
-            style={{ background: "rgba(255,255,255,0.22)", backdropFilter: "blur(8px)" }}
+            whileTap={{ scale: 0.85 }}
+            onClick={(e) => {
+                e.stopPropagation();
+                setOn(!on);
+            }}
+            style={{
+                width: 34,
+                height: 34,
+                borderRadius: "50%",
+                border: "none",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: on ? "#ffe4e4" : "rgba(255,255,255,0.88)",
+                backdropFilter: "blur(6px)",
+                cursor: "pointer",
+                transition: "background 0.2s",
+                boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
+            }}
         >
-            <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill={on ? "#ef4444" : "none"}
-                stroke={on ? "#ef4444" : "#fff"}
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            >
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-            </svg>
+            <Heart
+                size={15}
+                strokeWidth={2}
+                color={on ? "#e53e3e" : B.gray500}
+                fill={on ? "#e53e3e" : "none"}
+            />
         </motion.button>
     );
 }
 
+/* ─────────────────────────────────────────
+   STATUS BADGE
+───────────────────────────────────────── */
 function StatusBadge({ status }) {
-    const cfg = {
-        active: { cls: "bg-red-500 text-white", text: "LIVE", dot: true },
-        ended: { cls: "bg-slate-500/90 text-white", text: "ENDED", dot: false },
-        draft: { cls: "bg-amber-500 text-white", text: "DRAFT", dot: false },
+    const config = {
+        active: { bg: B.orange, color: "#fff", icon: <Flame size={10} />, label: "LIVE" },
+        ended: { bg: B.gray500, color: "#fff", icon: <Gavel size={10} />, label: "ENDED" },
+        expired: { bg: B.gray300, color: B.gray700, icon: null, label: "EXPIRED" },
+        draft: { bg: "#f59e0b", color: "#fff", icon: null, label: "DRAFT" },
     };
-    const { cls, text, dot } = cfg[status] ?? cfg.draft;
+    const c = config[status] || config.draft;
     return (
-        <span
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide ${cls}`}
+        <div
+            style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                background: c.bg,
+                color: c.color,
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: "0.07em",
+                padding: "4px 9px",
+                borderRadius: 20,
+            }}
         >
-            {dot && (
-                <motion.span
-                    className="w-1.5 h-1.5 rounded-full bg-red-200 inline-block flex-shrink-0"
-                    animate={{ opacity: [1, 0.2, 1] }}
-                    transition={{ repeat: Infinity, duration: 1.1 }}
-                />
-            )}
-            {text}
-        </span>
+            {c.icon}
+            {c.label}
+        </div>
     );
 }
 
+/* ─────────────────────────────────────────
+   SELLER AVATAR
+───────────────────────────────────────── */
 function SellerAvatar({ name }) {
     const initials =
         name
@@ -97,138 +200,341 @@ function SellerAvatar({ name }) {
             .slice(0, 2)
             .toUpperCase() || "AU";
     return (
-        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-600 to-indigo-500 flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0">
+        <div
+            style={{
+                width: 26,
+                height: 26,
+                borderRadius: "50%",
+                background: `linear-gradient(135deg, ${B.blue} 0%, ${B.blueMid} 100%)`,
+                color: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 10,
+                fontWeight: 700,
+                flexShrink: 0,
+            }}
+        >
             {initials}
         </div>
     );
 }
 
+/* ─────────────────────────────────────────
+   MAIN CARD
+───────────────────────────────────────── */
 export default function AuctionCard({ auction }) {
     const navigate = useNavigate();
 
+    /* ── DATA ── */
     const image = auction?.media?.[0];
     const title = auction?.name || "Untitled Auction";
-    const category = auction?.category || "Auction";
+    const category =
+        auction?.category?.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) || "Auction";
     const price =
         auction?.currentHighestBid > 0 ? auction.currentHighestBid : auction?.startPrice || 0;
     const bids = auction?.bidCount || 0;
     const status = auction?.status || "draft";
-    const seller = auction?.sellerName || "Auctify";
-    const endsAt = auction?.endsAt || new Date(Date.now() + 7200000);
+    const seller = auction?.seller?.username || "Seller";
 
-    const accentGradient =
-        status === "ended"
-            ? "linear-gradient(90deg,#64748b,#94a3b8)"
-            : status === "draft"
-              ? "linear-gradient(90deg,#d97706,#f59e0b)"
-              : "linear-gradient(90deg,#2563eb,#6366f1,#818cf8)";
+    /* ── TIMING ── */
+    const endsAt = auction?.startTime
+        ? new Date(new Date(auction.startTime).getTime() + AUCTION_DURATION_HOURS * 3600 * 1000)
+        : null;
+    const isActive = status === "active" && endsAt && new Date(endsAt) > new Date();
 
+    /* ── BUTTON STATE ── */
     const [bidDone, setBidDone] = useState(false);
 
     const handleBid = () => {
         navigate(`/auction/${auction._id}`);
-        if (status === "active") {
+        if (isActive) {
             setBidDone(true);
-            setTimeout(() => setBidDone(false), 1500);
+            setTimeout(() => setBidDone(false), 1800);
         }
     };
 
-    const btnStyle = bidDone
-        ? {
-              background: "linear-gradient(135deg,#16a34a,#15803d)",
-              boxShadow: "0 4px 14px rgba(22,163,74,0.3)",
-          }
-        : status === "ended"
-          ? {
-                background: "linear-gradient(135deg,#475569,#334155)",
-                boxShadow: "0 4px 14px rgba(71,85,105,0.25)",
-            }
-          : {
-                background: "linear-gradient(135deg,#2563eb,#4f46e5)",
-                boxShadow: "0 4px 14px rgba(37,99,235,0.32)",
-            };
-
+    /* ── UI ── */
     return (
         <motion.div
-            whileHover={{ y: -10, scale: 1.015 }}
-            transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            className="w-[296px] rounded-[28px] overflow-hidden bg-white border border-slate-200"
-            style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}
+            whileHover={{ y: -6, boxShadow: "0 16px 40px rgba(26,61,181,0.14)" }}
+            transition={{ type: "spring", stiffness: 300, damping: 22 }}
+            style={{
+                width: 300,
+                background: B.white,
+                borderRadius: 18,
+                overflow: "hidden",
+                boxShadow: "0 2px 12px rgba(26,61,181,0.08)",
+                border: `1px solid ${B.gray100}`,
+                fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
+                cursor: "pointer",
+            }}
         >
-            {/* Image */}
-            <div className="relative h-48 overflow-hidden bg-slate-100">
+            {/* ── IMAGE ── */}
+            <div
+                style={{
+                    position: "relative",
+                    height: 180,
+                    background: B.gray100,
+                    overflow: "hidden",
+                }}
+            >
                 {image ? (
-                    <motion.img
+                    <img
                         src={image}
                         alt={title}
-                        className="w-full h-full object-cover"
-                        whileHover={{ scale: 1.07 }}
-                        transition={{ duration: 0.55 }}
+                        style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            display: "block",
+                        }}
                     />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm">
-                        No Image
+                    <div
+                        style={{
+                            height: "100%",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 8,
+                            background: B.bluePale,
+                        }}
+                    >
+                        <Gavel size={32} color={B.gray300} strokeWidth={1.5} />
+                        <span style={{ fontSize: 12, color: B.gray500 }}>No Image</span>
                     </div>
                 )}
 
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-black/5 to-transparent" />
-
-                <div className="absolute top-3 left-3 right-3 flex justify-between items-center">
+                {/* Top overlays */}
+                <div style={{ position: "absolute", top: 12, left: 12 }}>
                     <StatusBadge status={status} />
+                </div>
+                <div style={{ position: "absolute", top: 10, right: 10 }}>
                     <FavBtn />
                 </div>
 
-                <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center">
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-blue-600/85 text-white backdrop-blur-sm">
-                        {category}
-                    </span>
-                    <span className="text-[11px] font-medium text-white/85">{bids} bids</span>
+                {/* Category tag */}
+                <div
+                    style={{
+                        position: "absolute",
+                        bottom: 12,
+                        left: 12,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 5,
+                        background: "rgba(26,61,181,0.82)",
+                        backdropFilter: "blur(4px)",
+                        color: "#fff",
+                        fontSize: 11,
+                        fontWeight: 500,
+                        padding: "4px 10px",
+                        borderRadius: 20,
+                    }}
+                >
+                    <Tag size={10} />
+                    {category}
                 </div>
+
+                {/* Bid count pill — top right of image bottom */}
+                {bids > 0 && (
+                    <div
+                        style={{
+                            position: "absolute",
+                            bottom: 12,
+                            right: 12,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                            background: "rgba(232,124,30,0.9)",
+                            color: "#fff",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            padding: "4px 9px",
+                            borderRadius: 20,
+                        }}
+                    >
+                        <TrendingUp size={10} />
+                        {bids} bids
+                    </div>
+                )}
             </div>
 
-            {/* Accent bar */}
-            <div style={{ height: 3, background: accentGradient }} />
+            {/* ── BODY ── */}
+            <div style={{ padding: "16px 16px 14px" }}>
+                {/* Countdown */}
+                {isActive && <Countdown endsAt={endsAt} />}
 
-            {/* Body */}
-            <div className="p-[18px]">
-                {status === "active" && <Countdown endsAt={endsAt} />}
-
-                <h3 className="text-[15px] font-bold text-slate-900 leading-snug line-clamp-2 min-h-[44px] mb-3.5">
+                {/* Title */}
+                <h3
+                    style={{
+                        margin: "0 0 12px",
+                        fontSize: 15,
+                        fontWeight: 700,
+                        lineHeight: 1.4,
+                        color: B.gray900,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                    }}
+                >
                     {title}
                 </h3>
 
-                <div className="flex items-end justify-between mb-3.5">
+                {/* Price section */}
+                <div
+                    style={{
+                        background: B.orangeLight,
+                        border: `1px solid #f5d9b8`,
+                        borderRadius: 10,
+                        padding: "10px 12px",
+                        marginBottom: 12,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                    }}
+                >
                     <div>
-                        <p className="text-[9px] uppercase tracking-[.18em] text-indigo-500 font-bold mb-1">
-                            {status === "ended" ? "Final Bid" : "Current Bid"}
-                        </p>
-                        <p className="text-[27px] font-extrabold text-slate-900 leading-none tracking-tight">
-                            ₹{price.toLocaleString("en-IN")}
-                        </p>
-                    </div>
-
-                    <div className="text-right">
-                        <p className="text-[9px] uppercase tracking-[.14em] text-slate-400 font-semibold mb-1.5">
-                            Seller
-                        </p>
-                        <div className="flex items-center justify-end gap-1.5">
-                            <SellerAvatar name={seller} />
-                            <span className="text-[12px] font-semibold text-slate-500">
-                                {seller}
-                            </span>
+                        <div
+                            style={{
+                                fontSize: 10,
+                                fontWeight: 600,
+                                color: B.orange,
+                                letterSpacing: "0.06em",
+                                marginBottom: 2,
+                            }}
+                        >
+                            {auction?.currentHighestBid > 0 ? "CURRENT BID" : "STARTING BID"}
                         </div>
+                        <div
+                            style={{
+                                fontSize: 20,
+                                fontWeight: 800,
+                                color: B.gray900,
+                                lineHeight: 1,
+                            }}
+                        >
+                            ₹{price.toLocaleString("en-IN")}
+                        </div>
+                    </div>
+                    <Gavel size={22} color={B.orange} strokeWidth={1.8} />
+                </div>
+
+                {/* Seller row */}
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: 14,
+                    }}
+                >
+                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                        <SellerAvatar name={seller} />
+                        <div>
+                            <div
+                                style={{
+                                    fontSize: 10,
+                                    color: B.gray500,
+                                    lineHeight: 1,
+                                    marginBottom: 1,
+                                }}
+                            >
+                                Seller
+                            </div>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: B.gray700 }}>
+                                {seller}
+                            </div>
+                        </div>
+                    </div>
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                            color: B.gray500,
+                            fontSize: 11,
+                        }}
+                    >
+                        <User size={12} />
+                        Verified
                     </div>
                 </div>
 
-                <div className="h-px bg-slate-100 mb-3.5" />
+                {/* Divider */}
+                <div style={{ height: 1, background: B.gray100, marginBottom: 13 }} />
 
+                {/* CTA Button */}
                 <motion.button
                     whileTap={{ scale: 0.97 }}
                     onClick={handleBid}
-                    className="w-full h-[46px] rounded-2xl border-0 font-bold text-[14px] tracking-wide text-white cursor-pointer"
-                    style={btnStyle}
+                    style={{
+                        width: "100%",
+                        padding: "11px 0",
+                        borderRadius: 10,
+                        border: "none",
+                        cursor: "pointer",
+                        fontSize: 14,
+                        fontWeight: 700,
+                        letterSpacing: "0.02em",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 7,
+                        transition: "opacity 0.18s",
+                        ...(bidDone
+                            ? { background: "#16a34a", color: "#fff" }
+                            : isActive
+                              ? {
+                                    background: `linear-gradient(90deg, ${B.blue} 0%, ${B.blueMid} 100%)`,
+                                    color: "#fff",
+                                    boxShadow: `0 4px 14px rgba(26,61,181,0.28)`,
+                                }
+                              : {
+                                    background: B.gray100,
+                                    color: B.gray700,
+                                    border: `1px solid ${B.gray300}`,
+                                }),
+                    }}
                 >
-                    {bidDone ? "Bid Placed!" : status === "active" ? "Place Bid" : "View Details"}
+                    <AnimatePresence mode="wait">
+                        {bidDone ? (
+                            <motion.span
+                                key="done"
+                                initial={{ opacity: 0, y: 6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -6 }}
+                                style={{ display: "flex", alignItems: "center", gap: 6 }}
+                            >
+                                <CheckCircle2 size={15} />
+                                Bid Placed!
+                            </motion.span>
+                        ) : isActive ? (
+                            <motion.span
+                                key="bid"
+                                initial={{ opacity: 0, y: 6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -6 }}
+                                style={{ display: "flex", alignItems: "center", gap: 6 }}
+                            >
+                                <Gavel size={15} />
+                                Place Bid
+                            </motion.span>
+                        ) : (
+                            <motion.span
+                                key="view"
+                                initial={{ opacity: 0, y: 6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -6 }}
+                                style={{ display: "flex", alignItems: "center", gap: 6 }}
+                            >
+                                <Eye size={15} />
+                                View Details
+                            </motion.span>
+                        )}
+                    </AnimatePresence>
                 </motion.button>
             </div>
         </motion.div>
