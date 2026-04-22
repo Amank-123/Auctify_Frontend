@@ -9,11 +9,8 @@ export default function AuctionsGrid({
     subtitle = "Search, filter and discover premium live auctions.",
     initialLimit = 8,
     showAll = false,
-
     auctions: externalAuctions = null,
-
     showFilters = true,
-
     showAllRoute = "/explore",
 }) {
     const navigate = useNavigate();

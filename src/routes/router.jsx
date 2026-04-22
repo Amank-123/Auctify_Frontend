@@ -21,8 +21,10 @@ import BidItem from "../components/common/navbar/BidItem";
 import UserSidebar from "../components/common/navbar/UserSidebar";
 import Watchlist from "../components/common/watchlist.jsx";
 import AllAuctions from "../components/common/explore.jsx";
-import Categories from "../components/common/categories.jsx";
+import CategoryPage from "../components/common/categories.jsx";
 import AuctionDetails from "../features/auction/pages/AuctionDetails.jsx";
+import CategoriesPage from "../components/common/categoriesPage.jsx";
+import GuidePage from "../components/common/HowItWork.jsx";
 
 const router = createBrowserRouter([
     {
@@ -41,7 +43,9 @@ const router = createBrowserRouter([
                 children: [{ path: "profile", element: <Profile /> }],
             },
             { path: "explore", element: <AllAuctions /> },
-            { path: "category/:category", element: <Categories /> },
+            { path: "how-it-works", element: <GuidePage /> },
+            { path: "category/:category", element: <CategoryPage /> },
+            { path: "categories", element: <CategoriesPage /> },
             { path: "watchlist", element: <Watchlist /> },
         ],
     },
