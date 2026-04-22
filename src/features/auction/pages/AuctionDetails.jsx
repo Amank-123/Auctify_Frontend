@@ -9,13 +9,14 @@ import { SellerCard } from "../components/SellerCard";
 import { BidPanel } from "../components/BidPanel";
 import { BidHistory } from "../components/BidHistory";
 import { auctionAPI } from "../auctionAPI";
-import { mockAuctions } from "../../home/pages/homePage";
+
 import { useAuth } from "../../../hooks/useAuth";
 
 export default function AuctionDetails() {
     const { User } = useAuth();
     const { id } = useParams();
     const navigate = useNavigate();
+
     const [activeThumb, setActiveThumb] = useState(0);
     const [watched, setWatched] = useState(false);
     const [auction, setAuction] = useState(null);
@@ -25,12 +26,18 @@ export default function AuctionDetails() {
     useEffect(() => {
         const fetchAuction = async () => {
             try {
+                setLoading(true);
+
                 const data = await auctionAPI.getById(id);
+
                 setAuction(data);
-                if (data.sellerId === User._id) {
+
+                if (User?._id && data?.sellerId === User._id) {
                     setCanBid(false);
+                } else {
+                    setCanBid(true);
                 }
-            } catch (err) {
+            } catch (error) {
                 setAuction(null);
             } finally {
                 setLoading(false);
@@ -38,39 +45,79 @@ export default function AuctionDetails() {
         };
 
         fetchAuction();
-    }, [id]);
+    }, [id, User]);
 
-    if (!auction) {
+    /* ---------------- Loading ---------------- */
+    if (loading) {
         return (
-            <section className="max-w-7xl mx-auto px-6 py-32 text-center">
-                <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}>
-                    <h2 className="text-5xl font-bold text-slate-900">Auction Not Found</h2>
-                    <p className="mt-4 text-slate-500 text-lg">
-                        This listing may have ended or does not exist.
-                    </p>
-                </motion.div>
+            <section className="bg-[#F8F8FF] min-h-screen py-24">
+                <div className="max-w-7xl mx-auto px-6 text-center">
+                    <h2 className="text-4xl font-bold text-slate-900">Loading Auction...</h2>
+
+                    <p className="mt-4 text-slate-500">Please wait while we fetch the listing.</p>
+                </div>
             </section>
         );
     }
 
-    const images = auction?.media?.length ? auction.media : ["/placeholder.jpg"];
-    const currentImage = images[activeThumb] ?? images[0];
+    /* ---------------- Not Found ---------------- */
+    if (!auction) {
+        return (
+            <section className="bg-[#F8F8FF] min-h-screen py-24">
+                <div className="max-w-7xl mx-auto px-6 text-center">
+                    <h2 className="text-5xl font-bold text-slate-900">Auction Not Found</h2>
+
+                    <p className="mt-4 text-slate-500 text-lg">
+                        This listing may have ended or does not exist.
+                    </p>
+
+                    <button
+                        onClick={() => navigate("/explore")}
+                        className="mt-8 px-8 h-12 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition"
+                    >
+                        Browse Auctions
+                    </button>
+                </div>
+            </section>
+        );
+    }
+
+    /* ---------------- Data ---------------- */
+    const images = auction?.media?.length > 0 ? auction.media : ["/placeholder.jpg"];
+
+    const currentImage = images[activeThumb] || images[0];
+
     const currentBid =
         auction?.currentHighestBid > 0 ? auction.currentHighestBid : auction?.startPrice || 0;
-    const status = auction?.status || "draft";
-    const endTime = auction?.endedTime || new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
-    const related = mockAuctions.filter((i) => i._id !== auction._id).slice(0, 4);
 
-    const statusCfg = {
-        active: { label: "Live Auction", bg: "bg-blue-600", dot: true },
-        ended: { label: "Ended", bg: "bg-slate-600", dot: false },
-        draft: { label: "Upcoming", bg: "bg-orange-500", dot: false },
+    const status = auction?.status || "draft";
+
+    const endTime = auction?.endedTime || new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+
+    const statusConfig = {
+        active: {
+            label: "Live Auction",
+            bg: "bg-blue-600",
+            dot: true,
+        },
+        ended: {
+            label: "Ended",
+            bg: "bg-slate-600",
+            dot: false,
+        },
+        expired: {
+            label: "Expired",
+            bg: "bg-red-500",
+            dot: false,
+        },
+        draft: {
+            label: "Upcoming",
+            bg: "bg-orange-500",
+            dot: false,
+        },
     };
-    const {
-        label: statusLabel,
-        bg: statusBg,
-        dot: statusDot,
-    } = statusCfg[status] ?? statusCfg.draft;
+
+    const config = statusConfig[status] || statusConfig.draft;
 
     return (
         <section className="bg-[#F8F8FF] min-h-screen py-12">
@@ -84,33 +131,37 @@ export default function AuctionDetails() {
                 >
                     <button
                         onClick={() => navigate("/")}
-                        className="hover:text-blue-600 transition-colors"
+                        className="hover:text-blue-600 transition"
                     >
                         Home
                     </button>
-                    <span className="text-slate-300">›</span>
+
+                    <span>›</span>
+
                     <button
                         onClick={() => navigate("/explore")}
-                        className="hover:text-blue-600 transition-colors"
+                        className="hover:text-blue-600 transition"
                     >
                         Auctions
                     </button>
-                    <span className="text-slate-300">›</span>
+
+                    <span>›</span>
+
                     <span className="text-slate-700 font-medium truncate max-w-[220px]">
                         {auction.name}
                     </span>
                 </motion.div>
 
-                {/* Main grid */}
+                {/* Main Grid */}
                 <div className="grid lg:grid-cols-[1.1fr_.9fr] gap-10 items-start">
-                    {/* ── LEFT ── */}
+                    {/* LEFT */}
                     <motion.div
                         variants={stagger}
                         initial="hidden"
                         animate="show"
-                        className="lg:sticky lg:top-24 space-y-5"
+                        className="space-y-5 lg:sticky lg:top-24"
                     >
-                        {/* Hero image */}
+                        {/* Hero Image */}
                         <motion.div
                             variants={itemVariant}
                             className="relative rounded-[32px] overflow-hidden bg-white border border-slate-200 shadow-sm group"
@@ -120,115 +171,100 @@ export default function AuctionDetails() {
                                     key={currentImage}
                                     src={currentImage}
                                     alt={auction.name}
-                                    initial={{ opacity: 0, scale: 1.04 }}
-                                    animate={{ opacity: 1, scale: 1 }}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.38 }}
-                                    className="w-full h-[520px] object-cover group-hover:scale-[1.02] transition-transform duration-700"
+                                    transition={{ duration: 0.35 }}
+                                    className="w-full h-[520px] object-cover group-hover:scale-[1.02] transition duration-700"
                                 />
                             </AnimatePresence>
 
-                            {/* Status badge */}
+                            {/* Status */}
                             <div className="absolute top-5 left-5">
-                                <motion.span
-                                    initial={{ scale: 0.7, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    transition={{ type: "spring", damping: 18, delay: 0.2 }}
-                                    className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold tracking-widest text-white ${statusBg}`}
+                                <span
+                                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-[11px] tracking-widest font-bold text-white ${config.bg}`}
                                 >
-                                    {statusDot && (
-                                        <span className="relative flex h-1.5 w-1.5">
-                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-70" />
-                                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white" />
-                                        </span>
+                                    {config.dot && (
+                                        <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
                                     )}
-                                    {statusLabel.toUpperCase()}
-                                </motion.span>
+
+                                    {config.label.toUpperCase()}
+                                </span>
                             </div>
 
-                            {/* Wishlist */}
-                            <motion.button
-                                whileHover={{ scale: 1.12 }}
-                                whileTap={{ scale: 0.9 }}
-                                onClick={() => setWatched((w) => !w)}
-                                className="absolute top-5 right-5 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center border border-slate-200 shadow-sm"
+                            {/* Watchlist */}
+                            <button
+                                onClick={() => setWatched(!watched)}
+                                className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/90 border border-slate-200 flex items-center justify-center shadow"
                             >
-                                <motion.span
-                                    animate={{ scale: watched ? [1, 1.45, 1] : 1 }}
-                                    transition={{ duration: 0.3 }}
-                                    className={`text-lg leading-none select-none ${watched ? "text-red-500" : "text-slate-400"}`}
+                                <span
+                                    className={`text-lg ${
+                                        watched ? "text-red-500" : "text-slate-400"
+                                    }`}
                                 >
                                     {watched ? "♥" : "♡"}
-                                </motion.span>
-                            </motion.button>
+                                </span>
+                            </button>
 
-                            {/* Bid count pill */}
-                            <div className="absolute bottom-5 right-5">
-                                <div className="bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 border border-slate-200 shadow-sm">
-                                    <span className="text-xs font-bold text-slate-700">
-                                        {auction.bidCount || 0} bids
-                                    </span>
-                                </div>
+                            {/* Bid Count */}
+                            <div className="absolute bottom-5 right-5 bg-white/90 px-4 py-2 rounded-full border border-slate-200 shadow">
+                                <span className="text-xs font-bold text-slate-700">
+                                    {auction.bidCount || 0} bids
+                                </span>
                             </div>
                         </motion.div>
 
                         {/* Thumbnails */}
                         <motion.div variants={itemVariant} className="grid grid-cols-4 gap-3">
-                            {images.slice(0, 4).map((img, i) => (
-                                <motion.button
-                                    key={i}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.96 }}
-                                    onClick={() => setActiveThumb(i)}
-                                    className={`rounded-2xl overflow-hidden border-2 h-20 w-full transition-colors duration-200 ${
-                                        activeThumb === i
-                                            ? "border-blue-600 shadow-md shadow-blue-100"
-                                            : "border-slate-200 hover:border-blue-300"
+                            {images.slice(0, 4).map((img, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => setActiveThumb(index)}
+                                    className={`rounded-2xl overflow-hidden h-20 border-2 ${
+                                        activeThumb === index
+                                            ? "border-blue-600"
+                                            : "border-slate-200"
                                     }`}
                                 >
                                     <img src={img} alt="" className="w-full h-full object-cover" />
-                                </motion.button>
+                                </button>
                             ))}
                         </motion.div>
 
                         {/* Description */}
                         <motion.div
                             variants={itemVariant}
-                            className="rounded-[24px] bg-white border border-slate-200/80 p-7 shadow-sm"
+                            className="rounded-[24px] bg-white border border-slate-200 p-7 shadow-sm"
                         >
-                            <h3 className="text-base font-bold text-slate-900 mb-4">
+                            <h3 className="text-lg font-bold text-slate-900 mb-4">
                                 About this listing
                             </h3>
-                            <p className="text-slate-500 text-sm leading-7">
+
+                            <p className="text-sm leading-7 text-slate-500">
                                 {auction.description ||
-                                    "Premium verified auction listing on Auctify marketplace with secure bidding, transparent pricing and trusted sellers."}
+                                    "Premium verified auction listing on Auctify marketplace."}
                             </p>
                         </motion.div>
                     </motion.div>
 
-                    {/* ── RIGHT ── */}
+                    {/* RIGHT */}
                     <motion.div
                         variants={stagger}
                         initial="hidden"
                         animate="show"
                         className="space-y-5"
                     >
-                        {/* Title block */}
+                        {/* Title */}
                         <motion.div variants={itemVariant}>
-                            <div className="flex flex-wrap gap-2 mb-3">
-                                {[auction.category ?? "General"].map((tag) => (
-                                    <span
-                                        key={tag}
-                                        className="text-[11px] font-semibold px-3 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-100"
-                                    >
-                                        {tag}
-                                    </span>
-                                ))}
-                            </div>
-                            <h1 className="text-[2rem] font-extrabold text-slate-900 leading-tight tracking-tight">
+                            <span className="inline-block px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-semibold border border-blue-100">
+                                {auction.category || "General"}
+                            </span>
+
+                            <h1 className="mt-4 text-[2rem] font-extrabold text-slate-900 leading-tight">
                                 {auction.name}
                             </h1>
-                            <p className="mt-3 text-slate-500 text-sm leading-6">
+
+                            <p className="mt-3 text-sm text-slate-500 leading-6">
                                 Secure bidding, verified seller, real-time auction activity.
                             </p>
                         </motion.div>
@@ -236,14 +272,15 @@ export default function AuctionDetails() {
                         {/* Countdown */}
                         {status === "active" && (
                             <motion.div variants={itemVariant}>
-                                <p className="text-[11px] uppercase tracking-[2px] text-slate-400 font-semibold mb-3">
+                                <p className="text-xs uppercase tracking-[2px] text-slate-400 font-semibold mb-3">
                                     Auction ends in
                                 </p>
+
                                 <Countdown endTime={endTime} />
                             </motion.div>
                         )}
 
-                        {/* Bid panel */}
+                        {/* Bid Panel */}
                         <motion.div variants={itemVariant}>
                             <BidPanel
                                 canBid={canBid}
@@ -254,85 +291,73 @@ export default function AuctionDetails() {
                             />
                         </motion.div>
 
-                        {/* Seller card */}
+                        {/* Seller */}
                         <motion.div variants={itemVariant}>
                             <SellerCard sellerName={auction.sellerName} />
                         </motion.div>
 
-                        {/* Stat chips */}
-                        <motion.div variants={stagger} className="grid grid-cols-3 gap-3">
+                        {/* Stats */}
+                        <motion.div
+                            variants={itemVariant}
+                            className="grid grid-cols-2 md:grid-cols-3 gap-3"
+                        >
                             {[
                                 [
                                     "Start Price",
-                                    `₹${(auction.startPrice ?? 0).toLocaleString("en-IN")}`,
+                                    `₹${(auction.startPrice || 0).toLocaleString("en-IN")}`,
                                 ],
                                 ["Auction ID", `#${auction._id}`],
-                                ["Status", status.charAt(0).toUpperCase() + status.slice(1)],
+                                ["Status", status],
                                 ["Min Step", "₹500"],
-                                ["Condition", auction.condition ?? "Excellent"],
+                                ["Condition", auction.condition || "Excellent"],
                             ].map(([label, value]) => (
-                                <motion.div
+                                <div
                                     key={label}
-                                    variants={itemVariant}
-                                    className="bg-white border border-slate-100 rounded-2xl p-4 text-center hover:border-blue-200 transition-colors"
+                                    className="bg-white border border-slate-200 rounded-2xl p-4 text-center"
                                 >
                                     <p className="text-[10px] uppercase tracking-[2px] text-slate-400 font-semibold">
                                         {label}
                                     </p>
-                                    <p className="mt-1.5 text-xs font-bold text-slate-900 truncate">
+
+                                    <p className="mt-2 text-sm font-bold text-slate-900 truncate">
                                         {value}
                                     </p>
-                                </motion.div>
+                                </div>
                             ))}
                         </motion.div>
 
-                        {/* Bid history */}
+                        {/* Bid History */}
                         <motion.div variants={itemVariant}>
                             <BidHistory auctionId={id} />
                         </motion.div>
                     </motion.div>
                 </div>
 
-                {/* ── Related Auctions ── */}
-                <motion.div
-                    variants={stagger}
-                    initial="hidden"
-                    whileInView="show"
-                    viewport={{ once: true, margin: "-60px" }}
-                    className="mt-20"
-                >
-                    <motion.div
-                        variants={itemVariant}
-                        className="flex items-center justify-between mb-8"
-                    >
+                {/* Related */}
+                <div className="mt-20">
+                    <div className="flex items-center justify-between mb-8">
                         <div>
                             <p className="text-xs font-semibold uppercase tracking-[2px] text-blue-500 mb-1">
-                                More listings
+                                More Listings
                             </p>
+
                             <h3 className="text-2xl font-extrabold text-slate-900">
                                 Similar Auctions
                             </h3>
                         </div>
-                        <motion.button
-                            whileHover={{ scale: 1.04 }}
-                            whileTap={{ scale: 0.96 }}
+
+                        <button
                             onClick={() => navigate("/explore")}
                             className="px-5 py-2.5 rounded-xl border-2 border-blue-600 text-blue-600 text-sm font-bold hover:bg-blue-50 transition"
                         >
                             View All
-                        </motion.button>
-                    </motion.div>
+                        </button>
+                    </div>
 
                     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                        {related.map((item) => (
-                            <RelatedCard
-                                key={item._id}
-                                item={item}
-                                onClick={() => navigate(`/auction/${item._id}`)}
-                            />
-                        ))}
+                        {/* Add related cards later */}
                     </div>
-                </motion.div>
+                </div>
             </div>
         </section>
     );

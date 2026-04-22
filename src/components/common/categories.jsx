@@ -1,142 +1,129 @@
+import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import AuctionsGrid from "@/features/home/pages/AuctionsGrid.jsx";
 import { api } from "@/shared/services/axios";
 import { API_ENDPOINTS } from "@/shared/constants/apiEndpoints";
-import AuctionCard from "../../components/common/AuctionCard.jsx";
 
-export default function CategoriesPage() {
-    const [allAuctions, setAllAuctions] = useState([]);
-    const [categories, setCategories] = useState([]);
-    const [selectedCat, setSelectedCat] = useState(null);
-    const [filteredAuctions, setFilteredAuctions] = useState([]);
+export default function CategoryAuctionsPage() {
+    const { category } = useParams();
+    const navigate = useNavigate();
+
+    const [auctions, setAuctions] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [search, setSearch] = useState("");
 
-    /* =========================
-       FETCH DATA
-    ========================= */
+    const categoryName = category?.charAt(0).toUpperCase() + category?.slice(1);
+
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchCategoryAuctions = async () => {
             try {
+                setLoading(true);
+
                 const res = await api.get(API_ENDPOINTS.Auction.GET_ALL, {
-                    params: { limit: 100 },
+                    params: {
+                        page: 1,
+                        limit: 100,
+                        sortBy: "createdAt",
+                        order: "desc",
+                    },
                 });
 
-                // ✅ FIXED: correct data extraction
-                const auctions = res?.data?.data || [];
+                const data = res?.data?.data || [];
 
-                setAllAuctions(auctions);
+                const filtered = data.filter(
+                    (item) =>
+                        item?.category?.trim().toLowerCase() === category?.trim().toLowerCase(),
+                );
 
-                // ✅ Build categories safely
-                const map = {};
-                auctions.forEach((a) => {
-                    const cat = a?.category || "others";
-                    map[cat] = (map[cat] || 0) + 1;
-                });
-
-                const catArr = Object.entries(map).map(([name, count]) => ({
-                    name,
-                    count,
-                }));
-
-                setCategories(catArr);
-
-                // ✅ Auto select first category
-                if (catArr.length > 0) {
-                    setSelectedCat(catArr[0].name);
-                }
-            } catch (err) {
-                console.error("Error fetching:", err);
+                setAuctions(filtered);
+            } catch (error) {
+                console.log("Category fetch error:", error);
+                setAuctions([]);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchData();
-    }, []);
-
-    /* =========================
-       FILTER LOGIC
-    ========================= */
-    useEffect(() => {
-        if (!selectedCat) return;
-
-        const term = search.toLowerCase();
-
-        const filtered = allAuctions.filter((a) => {
-            const matchCat = (a?.category || "others") === selectedCat;
-
-            const matchSearch =
-                !term ||
-                a?.name?.toLowerCase().includes(term) ||
-                a?.description?.toLowerCase().includes(term);
-
-            return matchCat && matchSearch;
-        });
-
-        setFilteredAuctions(filtered);
-    }, [selectedCat, search, allAuctions]);
-
-    /* =========================
-       LOADING
-    ========================= */
-    if (loading) {
-        return <p className="text-center mt-10">Loading...</p>;
-    }
+        fetchCategoryAuctions();
+    }, [category]);
 
     return (
-        <div className="max-w-7xl mx-auto px-6 py-10">
-            {/* HEADER */}
-            <h1 className="text-3xl font-bold mb-6">Browse Categories</h1>
-
-            {/* =========================
-               CATEGORY GRID
-            ========================= */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-                {categories.map((cat) => (
-                    <motion.div
-                        key={cat.name}
-                        whileHover={{ scale: 1.05 }}
-                        onClick={() => setSelectedCat(cat.name)}
-                        className={`cursor-pointer p-4 rounded-xl border ${
-                            selectedCat === cat.name ? "bg-blue-600 text-white" : "bg-white"
-                        }`}
+        <section className="min-h-screen bg-[#F8F8FF] py-12">
+            <div className="max-w-7xl mx-auto px-6">
+                {/* Breadcrumb */}
+                <div className="text-sm text-slate-400 mb-6">
+                    <button
+                        onClick={() => navigate("/")}
+                        className="hover:text-blue-600 transition"
                     >
-                        <h2 className="font-semibold capitalize">{cat.name.replace("_", " ")}</h2>
-                        <p className="text-sm opacity-70">{cat.count} auctions</p>
-                    </motion.div>
-                ))}
-            </div>
+                        Home
+                    </button>
 
-            {/* =========================
-               SEARCH BAR
-            ========================= */}
-            {selectedCat && (
-                <div className="mb-6">
-                    <input
-                        type="text"
-                        placeholder={`Search ${selectedCat}...`}
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="w-full border px-4 py-2 rounded-lg"
+                    <span className="mx-2">/</span>
+
+                    <button
+                        onClick={() => navigate("/explore")}
+                        className="hover:text-blue-600 transition"
+                    >
+                        Explore
+                    </button>
+
+                    <span className="mx-2">/</span>
+
+                    <span className="text-slate-700 font-medium">{categoryName}</span>
+                </div>
+
+                {/* Header */}
+                <div className="rounded-[34px] bg-white border border-slate-200 p-10 mb-10 shadow-sm">
+                    <p className="text-xs uppercase tracking-[3px] text-blue-600 font-bold">
+                        Category Collection
+                    </p>
+
+                    <h1 className="mt-4 text-5xl font-bold tracking-tight text-slate-900">
+                        {categoryName} Auctions
+                    </h1>
+
+                    <p className="mt-4 text-lg text-slate-500 max-w-2xl leading-8">
+                        Explore premium {categoryName.toLowerCase()} listings with real-time bidding
+                        and trusted sellers on Auctify.
+                    </p>
+
+                    <div className="mt-6 flex flex-wrap gap-4">
+                        <div className="px-5 py-3 rounded-2xl bg-[#F8F8FF] border border-slate-200">
+                            <p className="text-xs text-slate-400 uppercase tracking-[2px]">
+                                Total Auctions
+                            </p>
+
+                            <p className="mt-1 text-2xl font-bold text-slate-900">
+                                {auctions.length}
+                            </p>
+                        </div>
+
+                        <div className="px-5 py-3 rounded-2xl bg-[#F8F8FF] border border-slate-200">
+                            <p className="text-xs text-slate-400 uppercase tracking-[2px]">
+                                Category
+                            </p>
+
+                            <p className="mt-1 text-2xl font-bold text-slate-900">{categoryName}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Content */}
+                {loading ? (
+                    <div className="bg-white rounded-3xl border border-slate-200 p-16 text-center">
+                        <h3 className="text-2xl font-semibold text-slate-900">
+                            Loading Auctions...
+                        </h3>
+                    </div>
+                ) : (
+                    <AuctionsGrid
+                        filteredAuctions={auctions}
+                        showAll={true}
+                        title={`${categoryName} Auctions`}
+                        subtitle={`Browse all ${categoryName.toLowerCase()} auctions available right now.`}
                     />
-                </div>
-            )}
-
-            {/* =========================
-               AUCTIONS
-            ========================= */}
-            <AnimatePresence>
-                <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {filteredAuctions.length > 0 ? (
-                        filteredAuctions.map((auction) => (
-                            <AuctionCard key={auction._id} auction={auction} />
-                        ))
-                    ) : (
-                        <p className="text-gray-500">No auctions found in this category</p>
-                    )}
-                </div>
-            </AnimatePresence>
-        </div>
+                )}
+            </div>
+        </section>
     );
 }

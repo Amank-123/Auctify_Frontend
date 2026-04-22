@@ -4,22 +4,35 @@ import AuctionCard from "@/components/common/AuctionCard.jsx";
 import { api } from "@/shared/services/axios";
 import { API_ENDPOINTS } from "@/shared/constants/apiEndpoints";
 
-export default function AuctionsGrid({ title, subtitle, initialLimit, showAll }) {
+export default function AuctionsGrid({
+    title = "Explore Auctions",
+    subtitle = "Search, filter and discover premium live auctions.",
+    initialLimit = 8,
+    showAll = false,
+
+    auctions: externalAuctions = null,
+
+    showFilters = true,
+
+    showAllRoute = "/explore",
+}) {
     const navigate = useNavigate();
+
+    const usingExternal = Array.isArray(externalAuctions);
 
     const [search, setSearch] = useState("");
     const [status, setStatus] = useState("all");
     const [sort, setSort] = useState("latest");
 
-    const [auctions, setAuctions] = useState([]);
+    const [internalAuctions, setInternalAuctions] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    const sectionTitle = title || "Explore Auctions";
-    const sectionSubtitle = subtitle || "Search, filter and discover premium live auctions.";
+    const auctions = usingExternal ? externalAuctions : internalAuctions;
 
-    const limit = initialLimit || 8;
-
+    /* fetch only if no external auctions */
     useEffect(() => {
+        if (usingExternal) return;
+
         const fetchAuctions = async () => {
             try {
                 setLoading(true);
@@ -29,25 +42,39 @@ export default function AuctionsGrid({ title, subtitle, initialLimit, showAll })
                         search: search || undefined,
                         status: status === "all" ? undefined : status,
                         page: 1,
-                        limit: showAll ? 50 : limit,
+                        limit: showAll ? 100 : initialLimit,
                         sortBy: "createdAt",
                         order: sort === "latest" ? "desc" : "asc",
                     },
                 });
 
-                setAuctions(res.data.data);
-            } catch (err) {
-                console.error(err);
+                setInternalAuctions(res?.data?.data || []);
+            } catch (error) {
+                console.log(error);
+                setInternalAuctions([]);
             } finally {
                 setLoading(false);
             }
         };
 
         fetchAuctions();
-    }, [search, status, sort]);
+    }, [usingExternal, search, status, sort, showAll, initialLimit]);
 
+    /* local filtering + sorting */
     const processedAuctions = useMemo(() => {
         let data = [...auctions];
+
+        if (usingExternal) {
+            if (search.trim()) {
+                data = data.filter((item) =>
+                    item?.name?.toLowerCase().includes(search.toLowerCase()),
+                );
+            }
+
+            if (status !== "all") {
+                data = data.filter((item) => item?.status === status);
+            }
+        }
 
         if (sort === "price-low") {
             data.sort(
@@ -65,60 +92,70 @@ export default function AuctionsGrid({ title, subtitle, initialLimit, showAll })
             );
         }
 
-        return data;
-    }, [auctions, sort]);
+        if (sort === "latest") {
+            data.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+        }
 
-    const visibleAuctions = showAll ? processedAuctions : processedAuctions.slice(0, limit);
+        return data;
+    }, [auctions, usingExternal, search, status, sort]);
+
+    const visibleAuctions = showAll ? processedAuctions : processedAuctions.slice(0, initialLimit);
 
     return (
         <section className="max-w-7xl mx-auto px-6 py-16">
-            {/* Heading */}
+            {/* heading */}
             <div className="mb-10">
-                <h2 className="text-4xl font-semibold text-slate-900">{sectionTitle}</h2>
-                <p className="mt-2 text-slate-500">{sectionSubtitle}</p>
+                <h2 className="text-4xl font-semibold text-slate-900">{title}</h2>
+
+                <p className="mt-2 text-slate-500">{subtitle}</p>
             </div>
 
-            {/* Filters */}
-            <div className="grid lg:grid-cols-3 gap-4 mb-8">
-                {/* Search */}
-                <input
-                    type="text"
-                    placeholder="Search auctions..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="h-12 rounded-2xl border px-4"
-                />
+            {/* filters */}
+            {showFilters && (
+                <div className="grid lg:grid-cols-3 gap-4 mb-8">
+                    <input
+                        type="text"
+                        placeholder="Search auctions..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="h-12 rounded-2xl border border-slate-200 bg-white px-4 outline-none"
+                    />
 
-                {/* Status */}
-                <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    className="h-12 rounded-2xl border px-4"
-                >
-                    <option value="all">All Auctions</option>
-                    <option value="draft">Draft</option>
-                    <option value="active">Live</option>
-                    <option value="ended">Ended</option>
-                    <option value="expired">Expired</option>
-                </select>
+                    <select
+                        value={status}
+                        onChange={(e) => setStatus(e.target.value)}
+                        className="h-12 rounded-2xl border border-slate-200 bg-white px-4 outline-none"
+                    >
+                        <option value="all">All Auctions</option>
+                        <option value="draft">Draft</option>
+                        <option value="active">Live</option>
+                        <option value="ended">Ended</option>
+                        <option value="expired">Expired</option>
+                    </select>
 
-                {/* Sort */}
-                <select
-                    value={sort}
-                    onChange={(e) => setSort(e.target.value)}
-                    className="h-12 rounded-2xl border px-4"
-                >
-                    <option value="latest">Latest First</option>
-                    <option value="price-low">Price Low</option>
-                    <option value="price-high">Price High</option>
-                </select>
-            </div>
+                    <select
+                        value={sort}
+                        onChange={(e) => setSort(e.target.value)}
+                        className="h-12 rounded-2xl border border-slate-200 bg-white px-4 outline-none"
+                    >
+                        <option value="latest">Latest First</option>
+                        <option value="price-low">Price Low</option>
+                        <option value="price-high">Price High</option>
+                    </select>
+                </div>
+            )}
 
-            {/* Loading */}
-            {loading && <p className="text-center text-gray-500">Loading auctions...</p>}
+            {/* count */}
+            {!loading && (
+                <p className="mb-6 text-sm text-slate-500">
+                    Showing {visibleAuctions.length} auctions
+                </p>
+            )}
 
-            {/* Grid */}
-            {!loading && visibleAuctions.length > 0 ? (
+            {/* loading */}
+            {loading ? (
+                <div className="text-center py-10 text-slate-500">Loading auctions...</div>
+            ) : visibleAuctions.length > 0 ? (
                 <>
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {visibleAuctions.map((item) => (
@@ -126,11 +163,11 @@ export default function AuctionsGrid({ title, subtitle, initialLimit, showAll })
                         ))}
                     </div>
 
-                    {!showAll && processedAuctions.length > limit && (
+                    {!showAll && processedAuctions.length > initialLimit && (
                         <div className="mt-10 text-center">
                             <button
-                                onClick={() => navigate("/explore")}
-                                className="px-8 h-12 rounded-2xl bg-blue-600 text-white"
+                                onClick={() => navigate(showAllRoute)}
+                                className="px-8 h-12 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition"
                             >
                                 Show All Auctions
                             </button>
@@ -138,12 +175,11 @@ export default function AuctionsGrid({ title, subtitle, initialLimit, showAll })
                     )}
                 </>
             ) : (
-                !loading && (
-                    <div className="text-center">
-                        <h3 className="text-xl font-semibold">No Auctions Found</h3>
-                        <p className="text-gray-500">Try changing search or filters</p>
-                    </div>
-                )
+                <div className="bg-white rounded-3xl border border-slate-200 p-14 text-center">
+                    <h3 className="text-2xl font-semibold text-slate-900">No Auctions Found</h3>
+
+                    <p className="mt-2 text-slate-500">Try changing search or filters.</p>
+                </div>
             )}
         </section>
     );

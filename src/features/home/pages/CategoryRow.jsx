@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 
 const CATS = [
     {
@@ -63,17 +64,21 @@ const CATS = [
     },
 ];
 
-export default function CategoryRow({ onSelect }) {
+export default function CategoryRow() {
+    const navigate = useNavigate();
     const scrollRef = useRef(null);
+
     const [showLeft, setShowLeft] = useState(false);
     const [showRight, setShowRight] = useState(false);
 
     const updateArrows = useCallback(() => {
         const el = scrollRef.current;
         if (!el) return;
+
         const overflowing = el.scrollWidth > el.clientWidth + 2;
         const atStart = el.scrollLeft <= 4;
         const atEnd = el.scrollLeft >= el.scrollWidth - el.clientWidth - 4;
+
         setShowLeft(overflowing && !atStart);
         setShowRight(overflowing && !atEnd);
     }, []);
@@ -81,10 +86,14 @@ export default function CategoryRow({ onSelect }) {
     useEffect(() => {
         const el = scrollRef.current;
         if (!el) return;
+
         el.addEventListener("scroll", updateArrows);
+
         const ro = new ResizeObserver(updateArrows);
         ro.observe(el);
+
         const t = setTimeout(updateArrows, 150);
+
         return () => {
             el.removeEventListener("scroll", updateArrows);
             ro.disconnect();
@@ -92,139 +101,74 @@ export default function CategoryRow({ onSelect }) {
         };
     }, [updateArrows]);
 
-    const scrollLeft = () => scrollRef.current?.scrollBy({ left: -300, behavior: "smooth" });
+    const scrollLeft = () =>
+        scrollRef.current?.scrollBy({
+            left: -300,
+            behavior: "smooth",
+        });
 
-    const scrollRight = () => scrollRef.current?.scrollBy({ left: 300, behavior: "smooth" });
+    const scrollRight = () =>
+        scrollRef.current?.scrollBy({
+            left: 300,
+            behavior: "smooth",
+        });
+
+    const handleCategoryClick = (category) => {
+        navigate(`/category/${category.toLowerCase()}`);
+    };
 
     return (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 pl-20px">
-            {/* ── Header — title only, NO arrows here ── */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+            {/* Header */}
             <div className="mb-8">
                 <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
                     Explore Popular Categories
                 </h2>
+
                 <p className="mt-1 text-sm text-slate-500">Browse premium auction collections</p>
             </div>
 
-            {/* ── Slider wrapper — left arrow | track | right arrow ── */}
             <div className="relative flex items-center">
-                {/* LEFT arrow: sits on the far-left edge of the slider, vertically centered */}
+                {/* LEFT */}
                 <button
                     onClick={scrollLeft}
-                    aria-label="Scroll left"
-                    className={[
-                        "hidden md:flex",
-                        "absolute left-0 top-1/2 -translate-y-1/2 z-20",
-                        "w-10 h-10 rounded-full bg-white border border-slate-200",
-                        "shadow-[0_4px_14px_rgba(15,23,42,0.10)]",
-                        "hover:shadow-[0_6px_20px_rgba(37,99,235,0.15)] hover:border-blue-200",
-                        "items-center justify-center transition-all duration-300 group",
-                        showLeft
-                            ? "opacity-100 pointer-events-auto"
-                            : "opacity-0 pointer-events-none",
-                    ].join(" ")}
+                    className={`hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white border border-slate-200 items-center justify-center shadow transition ${
+                        showLeft ? "opacity-100" : "opacity-0 pointer-events-none"
+                    }`}
                 >
-                    <svg
-                        className="w-4 h-4 text-slate-500 group-hover:text-blue-600 transition-colors"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        viewBox="0 0 24 24"
-                    >
-                        <path d="M15 18l-6-6 6-6" />
-                    </svg>
+                    ←
                 </button>
 
-                {/* Fade — left edge */}
-                <div
-                    className={[
-                        "hidden md:block absolute left-0 top-0 bottom-0 w-14 z-10 pointer-events-none",
-                        "bg-gradient-to-r from-white to-transparent transition-opacity duration-300",
-                        showLeft ? "opacity-100" : "opacity-0",
-                    ].join(" ")}
-                />
-
-                {/* Fade — right edge */}
-                <div
-                    className={[
-                        "hidden md:block absolute right-0 top-0 bottom-0 w-14 z-10 pointer-events-none",
-                        "bg-gradient-to-l from-white to-transparent transition-opacity duration-300",
-                        showRight ? "opacity-100" : "opacity-0",
-                    ].join(" ")}
-                />
-
-                {/* RIGHT arrow: sits on the far-right edge of the slider, vertically centered */}
+                {/* RIGHT */}
                 <button
                     onClick={scrollRight}
-                    aria-label="Scroll right"
-                    className={[
-                        "hidden md:flex",
-                        "absolute right-0 top-1/2 -translate-y-1/2 z-20",
-                        "w-10 h-10 rounded-full bg-white border border-slate-200",
-                        "shadow-[0_4px_14px_rgba(15,23,42,0.10)]",
-                        "hover:shadow-[0_6px_20px_rgba(37,99,235,0.15)] hover:border-blue-200",
-                        "items-center justify-center transition-all duration-300 group",
-                        showRight
-                            ? "opacity-100 pointer-events-auto"
-                            : "opacity-0 pointer-events-none",
-                    ].join(" ")}
+                    className={`hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white border border-slate-200 items-center justify-center shadow transition ${
+                        showRight ? "opacity-100" : "opacity-0 pointer-events-none"
+                    }`}
                 >
-                    <svg
-                        className="w-4 h-4 text-slate-500 group-hover:text-blue-600 transition-colors"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        viewBox="0 0 24 24"
-                    >
-                        <path d="M9 6l6 6-6 6" />
-                    </svg>
+                    →
                 </button>
 
-                {/* ── Scrollable track ── */}
+                {/* Track */}
                 <div
                     ref={scrollRef}
-                    className="
-            w-full
-            flex gap-4 sm:gap-8 overflow-x-auto scroll-smooth
-            py-3 px-1
-            snap-x snap-mandatory
-            [-ms-overflow-style:none]
-            [scrollbar-width:none]
-            [&::-webkit-scrollbar]:hidden
-          "
+                    className="w-full flex gap-4 sm:gap-8 overflow-x-auto scroll-smooth py-3 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                 >
                     {CATS.map((cat) => (
                         <button
                             key={cat.label}
-                            onClick={() => onSelect?.(cat.label)}
-                            className="flex-shrink-0 w-[84px] snap-start group flex flex-col items-center gap-2.5"
+                            onClick={() => handleCategoryClick(cat.label)}
+                            className="flex-shrink-0 w-[84px] group flex flex-col items-center gap-2.5"
                         >
-                            {/* Circle image */}
-                            <div
-                                className="
-                  w-24 h-24 rounded-full overflow-hidden
-                  border-2 border-slate-200 bg-slate-100
-                  group-hover:border-blue-300
-                  group-hover:shadow-[0_8px_22px_rgba(37,99,235,0.15)]
-                  group-hover:-translate-y-1
-                  transition-all duration-300
-                "
-                            >
+                            <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-slate-200 bg-slate-100 group-hover:border-blue-300 group-hover:-translate-y-1 transition-all duration-300">
                                 <img
                                     src={cat.image}
                                     alt={cat.label}
-                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                    className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
                                 />
                             </div>
 
-                            {/* Label */}
-                            <span
-                                className="
-                  text-[10px] font-bold uppercase tracking-[1px]
-                  text-slate-600 group-hover:text-blue-600
-                  transition-colors duration-200 leading-tight text-center
-                "
-                            >
+                            <span className="text-[10px] font-bold uppercase tracking-[1px] text-slate-600 group-hover:text-blue-600 text-center">
                                 {cat.label}
                             </span>
                         </button>

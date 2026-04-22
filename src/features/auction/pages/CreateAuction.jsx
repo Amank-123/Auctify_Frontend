@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { api } from "@/shared/services/axios";
-import { API_ENDPOINTS } from "@/shared/constants/apiEndpoints";
-import { showError, showSuccess } from "@/shared/utils/toast";
+import { api } from "@/shared/services/axios.js";
+import { API_ENDPOINTS } from "@/shared/constants/apiEndpoints.js";
+import { showError, showSuccess } from "@/shared/utils/toast.js";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -60,9 +60,12 @@ export default function CreateAuction() {
             Object.keys(form).forEach((key) => formData.append(key, form[key]));
             files.forEach((file) => formData.append("media", file));
 
-            await api.post(API_ENDPOINTS.Auction.CREATE, formData, {
+            console.log(API_ENDPOINTS.Auction.CREATE);
+            const res = await api.post(API_ENDPOINTS.Auction.CREATE, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
+
+            console.log(res);
 
             showSuccess("Auction created successfully!");
             navigate("/auction/seller");

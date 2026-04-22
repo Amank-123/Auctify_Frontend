@@ -41,7 +41,7 @@ const router = createBrowserRouter([
                 children: [{ path: "profile", element: <Profile /> }],
             },
             { path: "explore", element: <AllAuctions /> },
-            { path: "categories", element: <Categories /> },
+            { path: "category/:category", element: <Categories /> },
             { path: "watchlist", element: <Watchlist /> },
         ],
     },
