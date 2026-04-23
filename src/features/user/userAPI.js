@@ -6,7 +6,7 @@ import { API_ENDPOINTS } from "../../shared/constants/apiEndpoints";
 export const updateUserProfile = async (formData) => {
     console.log("Log reached update ", formData);
 
-    const res = await api.patch(API_ENDPOINTS.User.UPDATE, formData);
+    const res = await api.post(API_ENDPOINTS.User.UPDATE, formData);
     console.log("Log from userApi: ", res);
 
     return res.data;
