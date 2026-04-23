@@ -2,8 +2,8 @@ import { api } from "@/shared/services/axios.js";
 import { API_ENDPOINTS } from "../../shared/constants/apiEndpoints";
 
 export const auctionAPI = {
-    getAll: async () => {
-        const res = await api.get(API_ENDPOINTS.Auction.GET_ALL);
+    getAll: async (getQuery) => {
+        const res = await api.get(API_ENDPOINTS.Auction.GET_ALL, { params: getQuery });
         return res.data.data;
     },
 

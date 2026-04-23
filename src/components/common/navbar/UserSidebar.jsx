@@ -47,7 +47,7 @@ export default function UserSidebar({ open, onClose, user }) {
 
                 setProfile(nextProfile);
                 setAuctions(Array.isArray(nextAuctions) ? nextAuctions : []);
-                setBids(Array.isArray(nextBids) ? nextBids : []);
+                setBids(nextBids || []);
             } catch (err) {
                 if (!alive) return;
                 setError(
@@ -194,15 +194,9 @@ export default function UserSidebar({ open, onClose, user }) {
                             {loading ? (
                                 <SidebarPlaceholder text="Loading bids..." />
                             ) : bids.length > 0 ? (
-                                bids
-                                    .slice(0, 6)
-                                    .map((bid) => (
-                                        <BidItem
-                                            key={bid._id || bid.id}
-                                            bid={bid}
-                                            onClick={onClose}
-                                        />
-                                    ))
+                                bids.map((bid) => (
+                                    <BidItem key={bid._id || bid.id} bid={bid} onClick={onClose} />
+                                ))
                             ) : (
                                 <SidebarPlaceholder text="No bids yet." />
                             )}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { bidAPI } from "../auctionAPI";
+import defaultImg from "@/assets/default.png";
 
 export function BidHistory({ auctionId }) {
     const [bids, setBids] = useState([]);
@@ -72,14 +73,22 @@ export function BidHistory({ auctionId }) {
                             }`}
                         >
                             {/* LEFT */}
-                            <div>
-                                <p className="text-sm font-semibold text-slate-900">
-                                    User {bid.userId?.slice(-4) || "----"}
-                                </p>
+                            <div className="flex gap-3">
+                                <img
+                                    src={bid.userId?.profile || defaultImg}
+                                    className="w-11 h-11 rounded-4xl "
+                                    alt="user profile"
+                                />
 
-                                <p className="text-xs text-slate-400">
-                                    {new Date(bid.createdAt).toLocaleString()}
-                                </p>
+                                <div className="flex flex-col gap-1">
+                                    <p className="text-sm font-semibold text-slate-900">
+                                        {bid.userId?.username || `User-${bid.userId?.slice(-4)}`}
+                                    </p>
+
+                                    <p className="text-xs text-slate-400">
+                                        {new Date(bid.createdAt).toLocaleString()}
+                                    </p>
+                                </div>
                             </div>
 
                             {/* RIGHT */}

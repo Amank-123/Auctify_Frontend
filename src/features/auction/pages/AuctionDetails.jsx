@@ -11,6 +11,8 @@ import { BidHistory } from "../components/BidHistory";
 import { auctionAPI } from "../auctionAPI";
 
 import { useAuth } from "../../../hooks/useAuth";
+import AuctionCard from "../../../components/common/AuctionCard";
+import { showError } from "../../../shared/utils/toast";
 
 export default function AuctionDetails() {
     const { User } = useAuth();
@@ -20,6 +22,7 @@ export default function AuctionDetails() {
     const [activeThumb, setActiveThumb] = useState(0);
     const [watched, setWatched] = useState(false);
     const [auction, setAuction] = useState(null);
+    const [relatedAuctions, setRelatedAuctions] = useState([]);
     const [canBid, setCanBid] = useState(true);
     const [loading, setLoading] = useState(true);
 
@@ -46,6 +49,29 @@ export default function AuctionDetails() {
 
         fetchAuction();
     }, [id, User]);
+
+    useEffect(() => {
+        if (!auction?.category) return;
+
+        const fetchAuction = async () => {
+            try {
+                const data = await auctionAPI.getAll({
+                    category: auction.category,
+                    page: 1,
+                    limit: 4,
+                    sortBy: "createdAt",
+                });
+                // console.log("response from prouct page of related products : ", data);
+
+                setRelatedAuctions(data);
+            } catch (error) {
+                console.log(`${error}`);
+                setRelatedAuctions([]);
+            }
+        };
+
+        fetchAuction();
+    }, [setLoading, auction]);
 
     /* ---------------- Loading ---------------- */
     if (loading) {
@@ -293,7 +319,7 @@ export default function AuctionDetails() {
 
                         {/* Seller */}
                         <motion.div variants={itemVariant}>
-                            <SellerCard sellerName={auction.sellerName} />
+                            <SellerCard seller={auction.sellerId} />
                         </motion.div>
 
                         {/* Stats */}
@@ -355,7 +381,9 @@ export default function AuctionDetails() {
                     </div>
 
                     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                        {/* Add related cards later */}
+                        {relatedAuctions.map((auction) => (
+                            <AuctionCard key={auction._id} auction={auction} />
+                        ))}
                     </div>
                 </div>
             </div>

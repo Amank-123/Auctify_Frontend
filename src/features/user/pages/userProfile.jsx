@@ -54,19 +54,58 @@ export default function Profile() {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
+    const buildFormData = (form, profileFile) => {
+        const fd = new FormData();
+
+        // whitelist fields (no garbage)
+        const allowedFields = ["username", "email", "firstName", "lastName"];
+
+        allowedFields.forEach((key) => {
+            const value = form[key];
+            if (value !== undefined && value !== null && value !== "") {
+                fd.append(key, value);
+            }
+        });
+
+        // handle nested address properly
+        if (form.address) {
+            Object.entries(form.address).forEach(([key, value]) => {
+                if (value) {
+                    fd.append(`address[${key}]`, value);
+                }
+            });
+        }
+
+        // file
+        if (profileFile) {
+            fd.append("profile", profileFile);
+        }
+
+        return fd;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const fd = new FormData();
-        Object.keys(form).forEach((key) => {
-            if (form[key] !== User[key]) fd.append(key, form[key]);
-        });
+        try {
+            const fd = buildFormData(form, profileFile);
 
-        if (profileFile) fd.append("profile", profileFile);
+            // debug (now actually useful)
+            for (let pair of fd.entries()) {
+                console.log(pair[0], pair[1]);
+            }
 
-        const res = await updateUserProfile(fd);
-        setUser(res?.user || res);
-        setIsEditOpen(false);
+            console.log("Log reached update", fd);
+
+            const res = await updateUserProfile(fd);
+
+            // exactly as you wanted
+            setUser(res.data);
+
+            setIsEditOpen(false);
+        } catch (err) {
+            console.error("Update failed:", err);
+        }
     };
 
     if (Loading) {
@@ -406,7 +445,10 @@ export default function Profile() {
                             <button type="button" onClick={() => setIsEditOpen(false)}>
                                 Cancel
                             </button>
-                            <button className="bg-[#2563EB] text-white px-4 py-2 rounded-lg">
+                            <button
+                                className="bg-[#2563EB] text-white px-4 py-2 rounded-lg"
+                                onClick={handleSubmit}
+                            >
                                 Save
                             </button>
                         </div>

@@ -62,7 +62,7 @@ export function BidPanel({ canBid, currentBid, bidCount, status, auctionId }) {
             </div>
 
             {/* Reserve bar */}
-            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden mb-1.5">
+            {/* <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden mb-1.5">
                 <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: "72%" }}
@@ -70,7 +70,7 @@ export function BidPanel({ canBid, currentBid, bidCount, status, auctionId }) {
                     className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full"
                 />
             </div>
-            <p className="text-xs text-slate-400 font-medium mb-6">72% of reserve met</p>
+            <p className="text-xs text-slate-400 font-medium mb-6">72% of reserve met</p> */}
 
             {/* Bid input — only shown when auction is active */}
             {status === "active" && canBid && (

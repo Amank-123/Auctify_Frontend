@@ -21,8 +21,17 @@ export default function CategoryAuctionsPage() {
             try {
                 setLoading(true);
                 const res = await api.get(API_ENDPOINTS.Auction.GET_ALL, {
-                    params: { page: 1, limit: 100, sortBy: "createdAt", order: "desc" },
+                    params: {
+                        page: 1,
+                        category: categoryName,
+                        limit: 100,
+                        sortBy: "createdAt",
+                        order: "desc",
+                    },
                 });
+
+                console.log("response from category page: ", res);
+
                 const data = res?.data?.data || [];
                 const filtered = data.filter(
                     (item) =>
@@ -448,7 +457,7 @@ export default function CategoryAuctionsPage() {
                         transition={{ duration: 0.45, delay: 0.1 }}
                     >
                         <AuctionsGrid
-                            filteredAuctions={auctions}
+                            auctions={auctions}
                             showAll={false}
                             title={`${categoryName} Auctions`}
                             subtitle={`Browse all ${categoryName.toLowerCase()} auctions available right now.`}

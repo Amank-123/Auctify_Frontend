@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 
 export default function BidItem({ bid, onClick }) {
+    console.log(bid);
+
     const id = bid?._id || bid?.id;
-    const auctionId = bid?.auction?._id || bid?.auctionId;
+    const auctionId = bid?.auctionId?._id || bid?.auctionId;
     const auctionTitle = bid?.auctionTitle || bid?.auction?.title || bid?.itemTitle || "Auction";
     const amount = bid?.amount ?? bid?.bidAmount ?? "-";
     const status = bid?.status || "placed";
