@@ -54,7 +54,7 @@ export default function Navbar() {
                         <Link to="/explore" className="text-[#1F2937] hover:text-[#2563EB]">
                             Explore
                         </Link>
-                        <Link to="/categories" className="text-[#1F2937] hover:text-[#2563EB]">
+                        <Link to="/category" className="text-[#1F2937] hover:text-[#2563EB]">
                             Categories
                         </Link>
                         {isAuthenticated && (

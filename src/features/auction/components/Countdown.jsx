@@ -3,21 +3,31 @@ import { useEffect, useState } from "react";
 export function Countdown({ endTime }) {
     const getTime = () => {
         const diff = Math.max(0, Math.floor((new Date(endTime) - new Date()) / 1000));
+
+        const days = Math.floor(diff / 86400);
+        const hours = Math.floor((diff % 86400) / 3600);
+        const minutes = Math.floor((diff % 3600) / 60);
+        const seconds = diff % 60;
+
         return {
-            h: String(Math.floor(diff / 3600)).padStart(2, "0"),
-            m: String(Math.floor((diff % 3600) / 60)).padStart(2, "0"),
-            s: String(diff % 60).padStart(2, "0"),
+            d: String(days).padStart(2, "0"),
+            h: String(hours).padStart(2, "0"),
+            m: String(minutes).padStart(2, "0"),
+            s: String(seconds).padStart(2, "0"),
         };
     };
+
     const [time, setTime] = useState(getTime());
+
     useEffect(() => {
         const id = setInterval(() => setTime(getTime()), 1000);
         return () => clearInterval(id);
-    }, []);
+    }, [endTime]); // ← subtle but important fix
 
     return (
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-4 gap-3">
             {[
+                [time.d, "Days"],
                 [time.h, "Hours"],
                 [time.m, "Minutes"],
                 [time.s, "Seconds"],

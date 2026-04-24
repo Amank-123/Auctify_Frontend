@@ -107,6 +107,8 @@ export default function AuctionCard({ auction }) {
     const navigate = useNavigate();
 
     const image = auction?.media?.[0];
+    // console.log("images from auction card: ", image);
+
     const title = auction?.name || "Untitled Auction";
     const category = auction?.category || "Auction";
     const price =
@@ -158,13 +160,19 @@ export default function AuctionCard({ auction }) {
             {/* Image */}
             <div className="relative h-48 overflow-hidden bg-slate-100">
                 {image ? (
-                    <motion.img
-                        src={image}
-                        alt={title}
-                        className="w-full h-full object-cover"
-                        whileHover={{ scale: 1.07 }}
-                        transition={{ duration: 0.55 }}
-                    />
+                    image.map((img, index) => (
+                        <img
+                            src={img}
+                            key={index}
+                            alt={title}
+                            style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                display: "block",
+                            }}
+                        />
+                    ))
                 ) : (
                     <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm">
                         No Image

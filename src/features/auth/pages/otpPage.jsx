@@ -5,7 +5,6 @@ import { showError, showSuccess } from "@/shared/utils/toast.js";
 import { API_ENDPOINTS } from "@/shared/constants/apiEndpoints.js";
 import { useAuth } from "../../../hooks/useAuth.js";
 
-
 export default function OtpPage() {
     const { verifyOtp } = useAuth();
     const navigate = useNavigate();
@@ -20,6 +19,10 @@ export default function OtpPage() {
 
     const [loading, setLoading] = useState(false);
     const [timer, setTimer] = useState(30);
+
+    useEffect(() => {
+        inputsRef.current[0].focus();
+    }, []);
 
     // ⏱️ countdown timer
     useEffect(() => {
@@ -52,14 +55,12 @@ export default function OtpPage() {
         }
     };
 
-    
-
-const handleVerify = async () => {
-    const finalOtp = otp.join("").trim();
-    if (finalOtp.length !== 6) {
-        showError("Enter complete OTP");
-        return;
-    }
+    const handleVerify = async () => {
+        const finalOtp = otp.join("").trim();
+        if (finalOtp.length !== 6) {
+            showError("Enter complete OTP");
+            return;
+        }
 
         try {
             setLoading(true);
@@ -82,6 +83,7 @@ const handleVerify = async () => {
     const handleResend = async () => {
         try {
             setTimer(30);
+            inputsRef.current[0].focus();
             await api.post(API_ENDPOINTS.Otp.RESEND, { email });
             showSuccess("OTP sent again");
             setOtp(["", "", "", "", "", ""]);
@@ -97,31 +99,33 @@ const handleVerify = async () => {
                 <p className="text-gray-500 mb-6 text-sm">
                     Enter the 6-digit code sent to your email
                 </p>
+                <form>
+                    {/* OTP Inputs */}
+                    <div className="flex justify-between mb-6 gap-2">
+                        {otp.map((digit, index) => (
+                            <input
+                                required
+                                key={index}
+                                type="text"
+                                maxLength="1"
+                                value={digit}
+                                ref={(el) => (inputsRef.current[index] = el)}
+                                onChange={(e) => handleChange(e.target.value, index)}
+                                onKeyDown={(e) => handleKeyDown(e, index)}
+                                className="w-12 h-12 border rounded-lg text-center text-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            />
+                        ))}
+                    </div>
 
-                {/* OTP Inputs */}
-                <div className="flex justify-between mb-6 gap-2">
-                    {otp.map((digit, index) => (
-                        <input
-                            key={index}
-                            type="text"
-                            maxLength="1"
-                            value={digit}
-                            ref={(el) => (inputsRef.current[index] = el)}
-                            onChange={(e) => handleChange(e.target.value, index)}
-                            onKeyDown={(e) => handleKeyDown(e, index)}
-                            className="w-12 h-12 border rounded-lg text-center text-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                        />
-                    ))}
-                </div>
-
-                {/* Verify Button */}
-                <button
-                    onClick={handleVerify}
-                    disabled={loading}
-                    className="w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition"
-                >
-                    {loading ? "Verifying..." : "Verify"}
-                </button>
+                    {/* Verify Button */}
+                    <button
+                        onClick={handleVerify}
+                        disabled={loading}
+                        className="w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition"
+                    >
+                        {loading ? "Verifying..." : "Verify"}
+                    </button>
+                </form>
 
                 {/* Resend */}
                 <div className="mt-4 text-sm">

@@ -53,13 +53,16 @@ export default function AuctionDetails() {
         );
     }
 
-    const images = auction?.media?.length ? auction.media : ["/placeholder.jpg"];
-    const currentImage = images[activeThumb] ?? images[0];
+    /* ---------------- Data ---------------- */
+    const images = auction?.media?.[0]?.length > 0 ? auction.media?.[0] : ["/placeholder.jpg"];
+
+    const currentImage = images[activeThumb] || images[0];
+
     const currentBid =
         auction?.currentHighestBid > 0 ? auction.currentHighestBid : auction?.startPrice || 0;
     const status = auction?.status || "draft";
-    const endTime = auction?.endedTime || new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
-    const related = mockAuctions.filter((i) => i._id !== auction._id).slice(0, 4);
+
+    const endTime = auction?.endTime || auction?.countdownEnd;
 
     const statusCfg = {
         active: { label: "Live Auction", bg: "bg-blue-600", dot: true },

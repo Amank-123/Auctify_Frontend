@@ -18,7 +18,9 @@ export function SellerCard({ sellerName }) {
                 <h3 className="text-sm font-bold text-slate-900 mt-0.5 truncate">
                     {sellerName || "Auctify Verified Seller"}
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">⭐ 4.9 · 312 auctions · Verified</p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                    Username: {seller?.username || "unknown"}
+                </p>
             </div>
             <motion.button
                 whileHover={{ scale: 1.04 }}

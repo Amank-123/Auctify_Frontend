@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import loginImage from "@/assets/loginBg.png";
 import logo from "@/assets/logo.png";
-
+import { motion } from "motion/react";
 import { showError, showSuccess } from "@/shared/utils/toast.js";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -20,6 +20,26 @@ export default function SignupPage() {
     });
 
     const [loading, setLoading] = useState(false);
+
+    const slogans = [
+        "Bid smarter",
+        "Win faster",
+        "Real-time auctions",
+        "No fake listings",
+        "Secure deals only",
+        "Zero friction bidding",
+    ];
+
+    const bubbleDataRef = useRef(
+        slogans.map(() => ({
+            x: Math.random() * 500 - 250,
+            y: Math.random() * 300 - 150,
+            driftX: Math.random() * 100 - 50,
+            driftY: -(80 + Math.random() * 40),
+            duration: 8 + Math.random() * 6,
+            delay: Math.random() * 4,
+        })),
+    );
 
     const handleChange = (e) => {
         setForm({
@@ -65,7 +85,7 @@ export default function SignupPage() {
             <div className="w-full max-w-6xl grid lg:grid-cols-2 bg-white rounded-3xl shadow-xl overflow-hidden">
                 {/* LEFT - FORM */}
                 <div className="p-8 sm:p-12 flex flex-col justify-center">
-                    <img src={logo} alt="auctify" className="w-45 pb-4" />
+                    {/* <img src={logo} alt="auctify" className="w-45 pb-4" /> */}
                     <h1 className="text-3xl font-bold text-[#1F2937] mb-2">Create account</h1>
                     <p className="text-[#6B7280] mb-6">Start bidding and winning today</p>
 
@@ -189,10 +209,75 @@ export default function SignupPage() {
                 </div>
 
                 {/* RIGHT - VISUAL */}
-                <div className="hidden lg:flex relative bg-linear-to-br from-[#2563EB]/10 to-[#C2410C]/10 items-center justify-center">
-                    <div className="absolute w-96 h-96 bg-[#2563EB]/20 rounded-full blur-3xl right-10" />
-                    <div className="absolute w-72 h-72 bg-[#C2410C]/20 rounded-full blur-3xl left-10" />
-                    <img src={loginImage} alt="auction" className="relative z-10 bg-cover w-full" />
+                <div className="hidden lg:flex relative overflow-hidden items-center justify-center">
+                    {/* Background gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#2563EB]/10 via-white to-[#C2410C]/10" />
+
+                    {/* Animated blobs */}
+                    <motion.div
+                        animate={{ y: [0, -30, 0], x: [0, 20, 0] }}
+                        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute w-80 h-80 bg-[#2563EB]/20 rounded-full blur-3xl top-10 right-10"
+                    />
+
+                    <motion.div
+                        animate={{ y: [0, 30, 0], x: [0, -20, 0] }}
+                        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute w-72 h-72 bg-[#C2410C]/20 rounded-full blur-3xl bottom-10 left-10"
+                    />
+
+                    {/* 🔥 BUBBLES */}
+                    {slogans.map((text, i) => {
+                        const b = bubbleDataRef.current[i];
+
+                        return (
+                            <motion.div
+                                key={i}
+                                initial={{
+                                    x: b.x,
+                                    y: b.y,
+                                    opacity: 0,
+                                }}
+                                animate={{
+                                    x: b.x + b.driftX,
+                                    y: b.y + b.driftY,
+                                    opacity: 0.8,
+                                }}
+                                transition={{
+                                    duration: b.duration,
+                                    delay: b.delay,
+                                    ease: "easeOut",
+                                    repeat: Infinity,
+                                }}
+                                className="absolute text-sm px-4 py-2 z-20 rounded-full 
+                            bg-white/60 backdrop-blur-md shadow-md 
+                            text-gray-700 whitespace-nowrap"
+                            >
+                                {text}
+                            </motion.div>
+                        );
+                    })}
+
+                    {/* Main image */}
+                    <motion.img
+                        src={loginImage}
+                        alt="auction"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.6 }}
+                        className="relative z-30 w-[500px]"
+                    />
+
+                    {/* Headline */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.6 }}
+                        className="absolute bottom-10 left-10"
+                    >
+                        <h2 className="text-xl font-semibold text-[#1F2937]">Bid. Win. Repeat.</h2>
+                        <p className="text-sm text-[#6B7280]">Real-time auctions. No friction.</p>
+                    </motion.div>
                 </div>
             </div>
         </div>
