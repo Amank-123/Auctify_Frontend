@@ -45,14 +45,14 @@ const router = createBrowserRouter([
             { path: "explore", element: <AllAuctions /> },
             { path: "how-it-works", element: <GuidePage /> },
             { path: "category/:category", element: <CategoryPage /> },
-            { path: "categories", element: <CategoriesPage /> },
+            { path: "category", element: <CategoriesPage /> },
             { path: "watchlist", element: <Watchlist /> },
         ],
     },
     {
         path: "/auth",
         element: <AuthLayout />,
-        errorElement: <NotFound />,
+        // errorElement: <NotFound />,
         children: [
             { path: "login", element: <LoginPage /> },
             { path: "register", element: <SignUpPage /> },

@@ -97,7 +97,7 @@ export default function HeroBannerSlider() {
                         />
 
                         {/* Content */}
-                        <div className="absolute left-6 md:left-16 top-1/2 -translate-y-1/2 max-w-xl text-white pr-6">
+                        <div className="absolute left-6 md:left-36 top-1/2 -translate-y-1/2 max-w-xl text-white pr-6">
                             <motion.p
                                 initial={{ opacity: 0, y: 16 }}
                                 animate={{ opacity: 1, y: 0 }}

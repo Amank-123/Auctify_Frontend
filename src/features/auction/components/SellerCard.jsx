@@ -15,7 +15,7 @@ export function SellerCard({ seller }) {
                     {`${seller?.firstName + " " + seller?.lastName}`}
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                    Username:{seller?.username || "unknown"}
+                    Username: {seller?.username || "unknown"}
                 </p>
             </div>
             {/* <motion.button

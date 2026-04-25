@@ -352,7 +352,7 @@ export default function PremiumCategories() {
             variants={cardVariants}
             initial="hidden"
             animate={isInView ? "visible" : "hidden"}
-            onClick={() => navigate(`/auctions?category=${cat.slug}`)}
+            onClick={() => navigate(`/category/${cat.slug}`)}
             className="group"
             style={{
                 gridColumn: cat.gc,
@@ -645,7 +645,7 @@ export default function PremiumCategories() {
                             transition={{ duration: 0.45, delay: 0.25 }}
                             whileHover={{ scale: 1.03, background: "#1A3EE5", color: "#fff" }}
                             whileTap={{ scale: 0.97 }}
-                            onClick={() => navigate("/categories")}
+                            onClick={() => navigate("/category")}
                             style={{
                                 background: "transparent",
                                 border: "1.5px solid #1A3EE5",

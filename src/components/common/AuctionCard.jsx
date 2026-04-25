@@ -1,40 +1,23 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, Gavel, Clock, Tag, TrendingUp, User, Eye, Flame, CheckCircle2 } from "lucide-react";
+import { Heart, Clock, Tag, Gavel, Flame, TrendingUp } from "lucide-react";
 
-/* ─────────────────────────────────────────
-   BRAND TOKENS  (Auctify palette)
-───────────────────────────────────────── */
-const B = {
-    blue: "#1a3db5", // primary deep blue
-    blueMid: "#2347d6", // nav / banner
-    blueLight: "#e8edfb", // tint bg
-    bluePale: "#f0f3fc", // very soft bg
-    orange: "#e87c1e", // accent / highlight
-    orangeLight: "#fff3e8", // tint
-    white: "#ffffff",
-    gray50: "#f7f8fc",
-    gray100: "#eef0f6",
-    gray300: "#c7cad8",
-    gray500: "#8a8fa8",
-    gray700: "#3d4261",
-    gray900: "#1a1d2e",
-};
-
+import { api } from "@/shared/services/axios";
+import { API_ENDPOINTS } from "@/shared/constants/apiEndpoints";
+import { showError } from "@/shared/utils/toast";
+import { useAuth } from "@/hooks/useAuth.js";
 const AUCTION_DURATION_HOURS = 2;
 
-/* ─────────────────────────────────────────
-   COUNTDOWN
-───────────────────────────────────────── */
 function Countdown({ endsAt }) {
     const calc = () => {
-        if (!endsAt) return { h: "00", m: "00", s: "00" };
+        if (!endsAt) return { h: "00", m: "00", s: "00", urgent: false };
         const diff = Math.max(0, Math.floor((new Date(endsAt) - Date.now()) / 1000));
         return {
             h: String(Math.floor(diff / 3600)).padStart(2, "0"),
             m: String(Math.floor((diff % 3600) / 60)).padStart(2, "0"),
             s: String(diff % 60).padStart(2, "0"),
+            urgent: diff < 600,
         };
     };
 
@@ -44,497 +27,242 @@ function Countdown({ endsAt }) {
         return () => clearInterval(id);
     }, [endsAt]);
 
-    const labels = ["HRS", "MIN", "SEC"];
-
     return (
         <div
-            style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                marginBottom: 14,
-                background: B.blueLight,
-                borderRadius: 10,
-                padding: "8px 10px",
-                border: `1px solid #d0d8f5`,
-            }}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold mb-2.5 border
+            ${
+                t.urgent
+                    ? "bg-red-50 border-red-200 text-red-600"
+                    : "bg-blue-50 border-blue-200 text-[#1a3db5]"
+            }`}
         >
-            <Clock size={13} color={B.blue} strokeWidth={2.2} style={{ flexShrink: 0 }} />
-            <span
-                style={{
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: B.blue,
-                    letterSpacing: "0.04em",
-                    marginRight: 4,
-                }}
-            >
-                ENDS IN
+            {t.urgent ? (
+                <Flame size={11} className="fill-red-500 text-red-500" />
+            ) : (
+                <Clock size={11} strokeWidth={2.5} />
+            )}
+            <span className="tabular-nums tracking-wider">
+                {t.h}:{t.m}:{t.s}
             </span>
-            {["h", "m", "s"].map((k, i) => (
-                <div key={k} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <div style={{ textAlign: "center" }}>
-                        <div
-                            style={{
-                                background: B.blue,
-                                color: B.white,
-                                borderRadius: 6,
-                                padding: "3px 7px",
-                                fontSize: 13,
-                                fontWeight: 700,
-                                fontVariantNumeric: "tabular-nums",
-                                minWidth: 28,
-                                lineHeight: 1.4,
-                            }}
-                        >
-                            {t[k]}
-                        </div>
-                        <div
-                            style={{
-                                fontSize: 8,
-                                color: B.gray500,
-                                marginTop: 2,
-                                letterSpacing: "0.06em",
-                            }}
-                        >
-                            {labels[i]}
-                        </div>
-                    </div>
-                    {i < 2 && (
-                        <span
-                            style={{
-                                fontSize: 14,
-                                fontWeight: 700,
-                                color: B.blue,
-                                marginBottom: 10,
-                                opacity: 0.6,
-                            }}
-                        >
-                            :
-                        </span>
-                    )}
-                </div>
-            ))}
+            {t.urgent && <span className="font-semibold text-red-500">· Ending soon</span>}
         </div>
     );
 }
 
-/* ─────────────────────────────────────────
-   FAV BUTTON
-───────────────────────────────────────── */
-function FavBtn() {
+function FavBtn({ auctionId, sellerId }) {
+    const { User, loading: autLoading } = useAuth();
+    const [loading, setLoading] = useState(false);
     const [on, setOn] = useState(false);
+
+    useEffect(() => {
+        if (!auctionId || !User?._id) return;
+        (async () => {
+            try {
+                const { data } = await api.get(API_ENDPOINTS.User.FETCH_WATCHLIST);
+                setOn(data?.data?.some((item) => item?._id === auctionId));
+            } catch (e) {
+                console.error(e);
+            }
+        })();
+    }, [auctionId, User?._id]);
+
+    if (authLoading || !User?._id || User._id === sellerId) return null;
+
+    const toggle = async (e) => {
+        e.stopPropagation();
+        if (loading) return;
+        try {
+            setLoading(true);
+            await api.post(API_ENDPOINTS.User.TOGGLE_WATCHLIST(auctionId));
+            setOn((p) => !p);
+        } catch (err) {
+            showError(err?.response?.data?.message || "Failed to update watchlist");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <motion.button
-            whileTap={{ scale: 0.85 }}
-            onClick={(e) => {
-                e.stopPropagation();
-                setOn(!on);
-            }}
-            style={{
-                width: 34,
-                height: 34,
-                borderRadius: "50%",
-                border: "none",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: on ? "#ffe4e4" : "rgba(255,255,255,0.88)",
-                backdropFilter: "blur(6px)",
-                cursor: "pointer",
-                transition: "background 0.2s",
-                boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
-            }}
+            whileTap={{ scale: 0.82 }}
+            whileHover={{ scale: 1.1 }}
+            onClick={toggle}
+            disabled={loading}
+            className={`w-8 h-8 rounded-full flex items-center justify-center border backdrop-blur-sm shadow-md transition-all
+                ${on ? "bg-red-50 border-red-200" : "bg-white/85 border-white/60"}
+                ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
         >
             <Heart
-                size={15}
+                size={14}
                 strokeWidth={2}
-                color={on ? "#e53e3e" : B.gray500}
-                fill={on ? "#e53e3e" : "none"}
+                className={on ? "fill-red-500 text-red-500" : "text-gray-400"}
             />
         </motion.button>
     );
 }
 
-/* ─────────────────────────────────────────
-   STATUS BADGE
-───────────────────────────────────────── */
-function StatusBadge({ status }) {
-    const config = {
-        active: { bg: B.orange, color: "#fff", icon: <Flame size={10} />, label: "LIVE" },
-        ended: { bg: B.gray500, color: "#fff", icon: <Gavel size={10} />, label: "ENDED" },
-        expired: { bg: B.gray300, color: B.gray700, icon: null, label: "EXPIRED" },
-        draft: { bg: "#f59e0b", color: "#fff", icon: null, label: "DRAFT" },
+function StatusBadge({ status, isActive }) {
+    const map = {
+        active: {
+            label: "Live",
+            cls: "bg-emerald-50 text-emerald-700 border-emerald-200",
+            dot: "bg-emerald-500 animate-pulse",
+        },
+        upcoming: {
+            label: "Upcoming",
+            cls: "bg-blue-50 text-[#1a3db5] border-blue-200",
+            dot: "bg-[#1a3db5]",
+        },
+        ended: {
+            label: "Ended",
+            cls: "bg-gray-100 text-gray-500 border-gray-200",
+            dot: "bg-gray-400",
+        },
+        draft: {
+            label: "Draft",
+            cls: "bg-yellow-50 text-yellow-700 border-yellow-200",
+            dot: "bg-yellow-500",
+        },
     };
-    const c = config[status] || config.draft;
+    const c = map[isActive ? "active" : status] ?? map.draft;
     return (
         <div
-            style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4,
-                background: c.bg,
-                color: c.color,
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: "0.07em",
-                padding: "4px 9px",
-                borderRadius: 20,
-            }}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold tracking-wide ${c.cls}`}
         >
-            {c.icon}
+            <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
             {c.label}
         </div>
     );
 }
 
-/* ─────────────────────────────────────────
-   SELLER AVATAR
-───────────────────────────────────────── */
-function SellerAvatar({ name }) {
-    const initials =
-        name
-            ?.split(" ")
-            .map((w) => w[0])
-            .join("")
-            .slice(0, 2)
-            .toUpperCase() || "AU";
-    return (
-        <div
-            style={{
-                width: 26,
-                height: 26,
-                borderRadius: "50%",
-                background: `linear-gradient(135deg, ${B.blue} 0%, ${B.blueMid} 100%)`,
-                color: "#fff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 10,
-                fontWeight: 700,
-                flexShrink: 0,
-            }}
-        >
-            {initials}
-        </div>
-    );
-}
-
-/* ─────────────────────────────────────────
-   MAIN CARD
-───────────────────────────────────────── */
 export default function AuctionCard({ auction }) {
     const navigate = useNavigate();
+    const [imgErr, setImgErr] = useState(false);
+    const [hovered, setHovered] = useState(false);
 
-    /* ── DATA ── */
     const image = auction?.media?.[0];
     const title = auction?.name || "Untitled Auction";
-    const category =
-        auction?.category?.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) || "Auction";
+    const category = auction?.category || "";
     const price =
         auction?.currentHighestBid > 0 ? auction.currentHighestBid : auction?.startPrice || 0;
-    const bids = auction?.bidCount || 0;
     const status = auction?.status || "draft";
-    const seller = auction?.seller?.username || "Seller";
+    const hasBids = auction?.currentHighestBid > 0;
 
-    /* ── TIMING ── */
     const endsAt = auction?.startTime
         ? new Date(new Date(auction.startTime).getTime() + AUCTION_DURATION_HOURS * 3600 * 1000)
         : null;
     const isActive = status === "active" && endsAt && new Date(endsAt) > new Date();
 
-    /* ── BUTTON STATE ── */
-    const [bidDone, setBidDone] = useState(false);
-
-    const handleBid = () => {
-        navigate(`/auction/${auction._id}`);
-        if (isActive) {
-            setBidDone(true);
-            setTimeout(() => setBidDone(false), 1800);
-        }
-    };
-
-    /* ── UI ── */
     return (
         <motion.div
-            whileHover={{ y: -6, boxShadow: "0 16px 40px rgba(26,61,181,0.14)" }}
-            transition={{ type: "spring", stiffness: 300, damping: 22 }}
-            style={{
-                width: 300,
-                background: B.white,
-                borderRadius: 18,
-                overflow: "hidden",
-                boxShadow: "0 2px 12px rgba(26,61,181,0.08)",
-                border: `1px solid ${B.gray100}`,
-                fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
-                cursor: "pointer",
-            }}
+            onHoverStart={() => setHovered(true)}
+            onHoverEnd={() => setHovered(false)}
+            whileHover={{ y: -7, boxShadow: "0 24px 56px rgba(232,124,30,0.18)" }}
+            transition={{ type: "spring", stiffness: 280, damping: 22 }}
+            onClick={() => navigate(`/auction/${auction._id}`)}
+            className="relative w-[300px] bg-white rounded-2xl overflow-hidden border border-gray-100 cursor-pointer select-none"
+            style={{ boxShadow: "0 4px 18px rgba(26,61,181,0.08)" }}
         >
+            {/* ── Top accent bar ── */}
+            <div className="h-[3px] w-full bg-gradient-to-r from-[#1a3db5] via-[#e87c1e] to-[#f5a652]" />
+
             {/* ── IMAGE ── */}
-            <div
-                style={{
-                    position: "relative",
-                    height: 180,
-                    background: B.gray100,
-                    overflow: "hidden",
-                }}
-            >
-                {image ? (
-                    <img
+            <div className="relative h-[195px] bg-gray-100 overflow-hidden">
+                {image && !imgErr ? (
+                    <motion.img
                         src={image}
                         alt={title}
-                        style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                            display: "block",
-                        }}
+                        onError={() => setImgErr(true)}
+                        animate={{ scale: hovered ? 1.06 : 1 }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                        className="w-full h-full object-cover"
                     />
                 ) : (
-                    <div
-                        style={{
-                            height: "100%",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: 8,
-                            background: B.bluePale,
-                        }}
-                    >
-                        <Gavel size={32} color={B.gray300} strokeWidth={1.5} />
-                        <span style={{ fontSize: 12, color: B.gray500 }}>No Image</span>
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-orange-50">
+                        <Gavel size={44} strokeWidth={1.2} className="text-[#e87c1e] opacity-60" />
                     </div>
                 )}
 
-                {/* Top overlays */}
-                <div style={{ position: "absolute", top: 12, left: 12 }}>
-                    <StatusBadge status={status} />
-                </div>
-                <div style={{ position: "absolute", top: 10, right: 10 }}>
-                    <FavBtn />
+                {/* bottom image gradient */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+
+                {/* Status — top left */}
+                <div className="absolute top-2.5 left-2.5">
+                    <StatusBadge status={status} isActive={isActive} />
                 </div>
 
-                {/* Category tag */}
-                <div
-                    style={{
-                        position: "absolute",
-                        bottom: 12,
-                        left: 12,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 5,
-                        background: "rgba(26,61,181,0.82)",
-                        backdropFilter: "blur(4px)",
-                        color: "#fff",
-                        fontSize: 11,
-                        fontWeight: 500,
-                        padding: "4px 10px",
-                        borderRadius: 20,
-                    }}
-                >
-                    <Tag size={10} />
-                    {category}
+                {/* Watchlist — top right */}
+                <div className="absolute top-2.5 right-2.5">
+                    <FavBtn auctionId={auction._id} sellerId={auction.sellerId} />
                 </div>
 
-                {/* Bid count pill — top right of image bottom */}
-                {bids > 0 && (
-                    <div
-                        style={{
-                            position: "absolute",
-                            bottom: 12,
-                            right: 12,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
-                            background: "rgba(232,124,30,0.9)",
-                            color: "#fff",
-                            fontSize: 11,
-                            fontWeight: 600,
-                            padding: "4px 9px",
-                            borderRadius: 20,
-                        }}
-                    >
+                {/* Category chip — bottom left */}
+                {category && (
+                    <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/90 backdrop-blur-sm text-[11px] font-600 text-[#1a3db5]">
+                        <Tag size={9} className="text-[#e87c1e]" />
+                        {category.charAt(0).toUpperCase() + category.slice(1).replace("_", " ")}
+                    </div>
+                )}
+
+                {/* Bid count chip — bottom right */}
+                {hasBids && (
+                    <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/90 backdrop-blur-sm text-[11px] font-bold text-emerald-600">
                         <TrendingUp size={10} />
-                        {bids} bids
+                        {auction.totalBids ?? ""} bids
                     </div>
                 )}
             </div>
 
             {/* ── BODY ── */}
-            <div style={{ padding: "16px 16px 14px" }}>
+            <div className="px-4 pt-3.5 pb-4 space-y-3">
                 {/* Countdown */}
                 {isActive && <Countdown endsAt={endsAt} />}
 
                 {/* Title */}
                 <h3
-                    style={{
-                        margin: "0 0 12px",
-                        fontSize: 15,
-                        fontWeight: 700,
-                        lineHeight: 1.4,
-                        color: B.gray900,
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                    }}
+                    className="text-[15px] font-bold text-gray-900 leading-snug line-clamp-2"
+                    style={{ fontFamily: "'DM Serif Display', serif" }}
                 >
                     {title}
                 </h3>
 
-                {/* Price section */}
-                <div
-                    style={{
-                        background: B.orangeLight,
-                        border: `1px solid #f5d9b8`,
-                        borderRadius: 10,
-                        padding: "10px 12px",
-                        marginBottom: 12,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                    }}
-                >
+                {/* Price box */}
+                <div className="rounded-xl px-3.5 py-2.5 border bg-[#fff4eb] border-orange-100 flex items-center justify-between">
                     <div>
-                        <div
-                            style={{
-                                fontSize: 10,
-                                fontWeight: 600,
-                                color: B.orange,
-                                letterSpacing: "0.06em",
-                                marginBottom: 2,
-                            }}
-                        >
-                            {auction?.currentHighestBid > 0 ? "CURRENT BID" : "STARTING BID"}
-                        </div>
-                        <div
-                            style={{
-                                fontSize: 20,
-                                fontWeight: 800,
-                                color: B.gray900,
-                                lineHeight: 1,
-                            }}
-                        >
+                        <p className="text-[10px] font-extrabold tracking-widest text-[#e87c1e] uppercase mb-0.5">
+                            {hasBids ? "Current Bid" : "Starting Bid"}
+                        </p>
+                        <p className="text-[22px] font-black text-gray-900 leading-none">
                             ₹{price.toLocaleString("en-IN")}
-                        </div>
+                        </p>
                     </div>
-                    <Gavel size={22} color={B.orange} strokeWidth={1.8} />
-                </div>
-
-                {/* Seller row */}
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        marginBottom: 14,
-                    }}
-                >
-                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                        <SellerAvatar name={seller} />
-                        <div>
-                            <div
-                                style={{
-                                    fontSize: 10,
-                                    color: B.gray500,
-                                    lineHeight: 1,
-                                    marginBottom: 1,
-                                }}
-                            >
-                                Seller
-                            </div>
-                            <div style={{ fontSize: 12, fontWeight: 600, color: B.gray700 }}>
-                                {seller}
-                            </div>
-                        </div>
-                    </div>
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
-                            color: B.gray500,
-                            fontSize: 11,
-                        }}
-                    >
-                        <User size={12} />
-                        Verified
+                    {/* Orange accent glyph */}
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#e87c1e] to-[#f5a652] flex items-center justify-center shadow-md shadow-orange-200">
+                        <Gavel size={18} className="text-white" strokeWidth={2} />
                     </div>
                 </div>
 
-                {/* Divider */}
-                <div style={{ height: 1, background: B.gray100, marginBottom: 13 }} />
-
-                {/* CTA Button */}
+                {/* CTA */}
                 <motion.button
                     whileTap={{ scale: 0.97 }}
-                    onClick={handleBid}
-                    style={{
-                        width: "100%",
-                        padding: "11px 0",
-                        borderRadius: 10,
-                        border: "none",
-                        cursor: "pointer",
-                        fontSize: 14,
-                        fontWeight: 700,
-                        letterSpacing: "0.02em",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 7,
-                        transition: "opacity 0.18s",
-                        ...(bidDone
-                            ? { background: "#16a34a", color: "#fff" }
-                            : isActive
-                              ? {
-                                    background: `linear-gradient(90deg, ${B.blue} 0%, ${B.blueMid} 100%)`,
-                                    color: "#fff",
-                                    boxShadow: `0 4px 14px rgba(26,61,181,0.28)`,
-                                }
-                              : {
-                                    background: B.gray100,
-                                    color: B.gray700,
-                                    border: `1px solid ${B.gray300}`,
-                                }),
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/auction/${auction._id}`);
                     }}
+                    className={`w-full py-3 rounded-xl text-sm font-bold tracking-wide transition-all duration-200 flex items-center justify-center gap-2
+                        ${
+                            isActive
+                                ? "bg-gradient-to-r from-[#e87c1e] to-[#f5a652] text-white shadow-lg shadow-orange-200 hover:shadow-orange-300 hover:brightness-105"
+                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        }`}
                 >
-                    <AnimatePresence mode="wait">
-                        {bidDone ? (
-                            <motion.span
-                                key="done"
-                                initial={{ opacity: 0, y: 6 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -6 }}
-                                style={{ display: "flex", alignItems: "center", gap: 6 }}
-                            >
-                                <CheckCircle2 size={15} />
-                                Bid Placed!
-                            </motion.span>
-                        ) : isActive ? (
-                            <motion.span
-                                key="bid"
-                                initial={{ opacity: 0, y: 6 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -6 }}
-                                style={{ display: "flex", alignItems: "center", gap: 6 }}
-                            >
-                                <Gavel size={15} />
-                                Place Bid
-                            </motion.span>
-                        ) : (
-                            <motion.span
-                                key="view"
-                                initial={{ opacity: 0, y: 6 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -6 }}
-                                style={{ display: "flex", alignItems: "center", gap: 6 }}
-                            >
-                                <Eye size={15} />
-                                View Details
-                            </motion.span>
-                        )}
-                    </AnimatePresence>
+                    {isActive ? (
+                        <>
+                            <Gavel size={14} /> Place Bid
+                        </>
+                    ) : (
+                        "View Details"
+                    )}
                 </motion.button>
             </div>
         </motion.div>

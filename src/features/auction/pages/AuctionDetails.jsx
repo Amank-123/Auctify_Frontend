@@ -86,35 +86,16 @@ export default function AuctionDetails() {
         );
     }
 
-    /* ---------------- Not Found ---------------- */
-    if (!auction) {
-        return (
-            <section className="bg-[#F8F8FF] min-h-screen py-24">
-                <div className="max-w-7xl mx-auto px-6 text-center">
-                    <h2 className="text-5xl font-bold text-slate-900">Auction Not Found</h2>
-
-                    <p className="mt-4 text-slate-500 text-lg">
-                        This listing may have ended or does not exist.
-                    </p>
-
-                    <button
-                        onClick={() => navigate("/explore")}
-                        className="mt-8 px-8 h-12 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition"
-                    >
-                        Browse Auctions
-                    </button>
-                </div>
-            </section>
-        );
-    }
-
     /* ---------------- Data ---------------- */
-    const images = auction?.media?.length > 0 ? auction.media : ["/placeholder.jpg"];
+    const images = auction?.media?.[0]?.length > 0 ? auction.media?.[0] : ["/placeholder.jpg"];
 
     const currentImage = images[activeThumb] || images[0];
 
     const currentBid =
         auction?.currentHighestBid > 0 ? auction.currentHighestBid : auction?.startPrice || 0;
+    // const status = auction?.status || "draft";
+
+    // const endTime = auction?.endTime || auction?.countdownEnd;
 
     const status = auction?.status || "draft";
 

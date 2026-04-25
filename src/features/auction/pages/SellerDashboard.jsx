@@ -52,6 +52,20 @@ function ChartTooltip({ active, payload, label }) {
     );
 }
 
+const fadeUp = {
+    hidden: {
+        opacity: 0,
+        y: 20,
+    },
+    visible: (delay = 0) => ({
+        opacity: 1,
+        y: 0,
+        transition: {
+            delay: delay * 0.1,
+            duration: 0.4,
+        },
+    }),
+};
 export default function SellerDashboard() {
     const [auctions, setAuctions] = useState([]);
     const [loading, setLoading] = useState(true);
