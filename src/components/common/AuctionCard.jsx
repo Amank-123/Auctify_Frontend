@@ -6,9 +6,11 @@ import { Heart, Clock, Tag, Gavel, Flame, TrendingUp } from "lucide-react";
 import { api } from "@/shared/services/axios";
 import { API_ENDPOINTS } from "@/shared/constants/apiEndpoints";
 import { showError } from "@/shared/utils/toast";
+// import { AuthContext } from "@/context/AuthContext";
 import { useAuth } from "@/hooks/useAuth.js";
 const AUCTION_DURATION_HOURS = 2;
 
+/* ── COUNTDOWN ── */
 function Countdown({ endsAt }) {
     const calc = () => {
         if (!endsAt) return { h: "00", m: "00", s: "00", urgent: false };
@@ -49,11 +51,13 @@ function Countdown({ endsAt }) {
     );
 }
 
+/* ── WATCHLIST BUTTON — hooks-rule-safe ── */
 function FavBtn({ auctionId, sellerId }) {
-    const { User, loading: autLoading } = useAuth();
+    const { User, loading: authLoading } = useAuth();
     const [loading, setLoading] = useState(false);
     const [on, setOn] = useState(false);
 
+    // ✅ ALL hooks at top — no early returns before this
     useEffect(() => {
         if (!auctionId || !User?._id) return;
         (async () => {
@@ -66,6 +70,7 @@ function FavBtn({ auctionId, sellerId }) {
         })();
     }, [auctionId, User?._id]);
 
+    // ✅ Early returns AFTER all hooks
     if (authLoading || !User?._id || User._id === sellerId) return null;
 
     const toggle = async (e) => {
@@ -101,6 +106,7 @@ function FavBtn({ auctionId, sellerId }) {
     );
 }
 
+/* ── STATUS BADGE ── */
 function StatusBadge({ status, isActive }) {
     const map = {
         active: {
@@ -135,6 +141,7 @@ function StatusBadge({ status, isActive }) {
     );
 }
 
+/* ── MAIN CARD ── */
 export default function AuctionCard({ auction }) {
     const navigate = useNavigate();
     const [imgErr, setImgErr] = useState(false);

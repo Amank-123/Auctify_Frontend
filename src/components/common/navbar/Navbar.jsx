@@ -6,6 +6,7 @@ import { HiOutlineBell, HiOutlineMenu, HiOutlineX } from "react-icons/hi";
 import NavbarSkeleton from "./navbarSkeleton.jsx";
 import UserSidebar from "./UserSidebar.jsx";
 import defaultImg from "@/assets/default.png";
+import NotificationBell from "./notificationBell.jsx";
 
 export default function Navbar() {
     const { isAuthenticated, Loading, User } = useAuth();
@@ -90,15 +91,8 @@ export default function Navbar() {
                             </>
                         ) : (
                             <>
-                                <Link
-                                    to="/notifications"
-                                    className="relative text-[#1F2937] transition hover:text-[#2563EB]"
-                                >
-                                    <HiOutlineBell className="text-2xl" />
-                                    <span className="absolute -top-1 -right-1 rounded-full bg-[#C2410C] px-1.5 py-0.5 text-xs text-white">
-                                        3
-                                    </span>
-                                </Link>
+                                <NotificationBell />
+
                                 {isAuthenticated && (
                                     <button
                                         type="button"

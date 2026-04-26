@@ -17,6 +17,7 @@ import SellerDashboard from "../features/auction/pages/SellerDashboard.jsx";
 import ProtectRoute from "../components/auth/ProtectRoute";
 import Profile from "../features/user/pages/userProfile";
 import AuctionItem from "../components/common/navbar/AuctionItem";
+import Notification from "../components/common/navbar/notification.jsx";
 import BidItem from "../components/common/navbar/BidItem";
 import UserSidebar from "../components/common/navbar/UserSidebar";
 import Watchlist from "../components/common/watchlist.jsx";
@@ -92,6 +93,10 @@ const router = createBrowserRouter([
                 ],
             },
         ],
+    },
+    {
+        path: "notifications",
+        element: <Notification />,
     },
 ]);
 

@@ -59,6 +59,11 @@ const API_ENDPOINTS = {
     ChatBot: {
         CHAT: "/api/chat/chat",
     },
+    Notification: {
+        GET_NOTIFICATION: "/api/notify",
+        PUSH_NOTIFICATION: "/api/notify/push",
+        BROADCAST_NOTIFICATION: "/api/notify/broadCast",
+    },
 };
 
 export { API_ENDPOINTS };
