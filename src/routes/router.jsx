@@ -26,6 +26,7 @@ import CategoryPage from "../components/common/categories.jsx";
 import AuctionDetails from "../features/auction/pages/AuctionDetails.jsx";
 import CategoriesPage from "../components/common/categoriesPage.jsx";
 import GuidePage from "../components/common/HowItWork.jsx";
+import BroadcastNotificationPage from "../shared/utils/BroadCastNotification.jsx";
 
 const router = createBrowserRouter([
     {
@@ -97,6 +98,10 @@ const router = createBrowserRouter([
     {
         path: "notifications",
         element: <Notification />,
+    },
+    {
+        path: "/admin",
+        element: <BroadcastNotificationPage />,
     },
 ]);
 

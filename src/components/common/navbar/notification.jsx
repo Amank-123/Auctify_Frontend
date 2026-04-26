@@ -84,6 +84,28 @@ export default function NotificationDrawer({ open = true }) {
                             {notificationsDB.map((item) => (
                                 <button
                                     key={item._id}
+                                    onClick={async () => {
+                                        try {
+                                            await api.post(`/api/notify/${item._id}`);
+
+                                            setNotificationsDB((prev) =>
+                                                prev.map((n) =>
+                                                    n._id === item._id
+                                                        ? {
+                                                              ...n,
+                                                              isRead: true,
+                                                          }
+                                                        : n,
+                                                ),
+                                            );
+
+                                            if (item.ctaLink) {
+                                                navigate(item.ctaLink);
+                                            }
+                                        } catch (error) {
+                                            console.log(error);
+                                        }
+                                    }}
                                     className={`w-full text-left px-5 py-4 border-b hover:bg-slate-50 transition ${
                                         !item.isRead ? "bg-blue-50/50" : ""
                                     }`}
