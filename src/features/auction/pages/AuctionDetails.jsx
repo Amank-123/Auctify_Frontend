@@ -27,7 +27,12 @@ export default function AuctionDetails() {
             try {
                 const data = await auctionAPI.getById(id);
                 setAuction(data);
+<<<<<<< Updated upstream
                 if (data.sellerId === User._id) {
+=======
+
+                if (User?._id && data?.sellerId._id === User._id) {
+>>>>>>> Stashed changes
                     setCanBid(false);
                 }
             } catch (err) {
@@ -63,6 +68,11 @@ export default function AuctionDetails() {
     const status = auction?.status || "draft";
 
     const endTime = auction?.endTime || auction?.countdownEnd;
+<<<<<<< Updated upstream
+=======
+
+    // const endTime = auction?.endTime || auction?.countdownEnd;
+>>>>>>> Stashed changes
 
     const statusCfg = {
         active: { label: "Live Auction", bg: "bg-blue-600", dot: true },

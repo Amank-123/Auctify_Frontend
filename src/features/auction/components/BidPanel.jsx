@@ -75,7 +75,7 @@ export function BidPanel({ canBid, currentBid, bidCount, status, auctionId }) {
             {/* Bid input — only shown when auction is active */}
             {status === "active" && canBid && (
                 <div className="space-y-3">
-                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-[1.5px]">
+                    {/* <label className="block text-xs font-semibold text-slate-600 uppercase tracking-[1.5px]">
                         Your bid amount
                     </label>
                     <div className="flex gap-3">
@@ -103,7 +103,7 @@ export function BidPanel({ canBid, currentBid, bidCount, status, auctionId }) {
                     </div>
 
                     {/* Feedback message */}
-                    <AnimatePresence>
+                    {/* <AnimatePresence>
                         {bidMsg && (
                             <motion.p
                                 initial={{ opacity: 0, y: -6 }}
@@ -118,7 +118,7 @@ export function BidPanel({ canBid, currentBid, bidCount, status, auctionId }) {
                                 {bidMsg}
                             </motion.p>
                         )}
-                    </AnimatePresence>
+                    </AnimatePresence> */}
 
                     {/* Join live */}
                     <motion.button

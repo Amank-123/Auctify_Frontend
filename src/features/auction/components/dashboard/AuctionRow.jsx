@@ -5,11 +5,6 @@ import { fmtINR } from "../../utils/format";
 import MagButton from "./MagButton";
 
 export default function AuctionRow({ auction, index, onStart, onEnd }) {
-    console.log("auction:", auction);
-    console.log("index:", index);
-    console.log("onStart:", onStart);
-    console.log("onEnd:", onEnd);
-
     const cfg = STATUS[auction.status] || STATUS.draft;
     const stripeColor =
         auction.status === "active"
