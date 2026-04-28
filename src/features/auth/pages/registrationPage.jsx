@@ -51,23 +51,29 @@ export default function SignupPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        console.log("====== FORM SUBMIT START ======");
+        console.log("🧾 FULL FORM:", form);
+
         if (form.password !== form.confirmPassword) {
+            console.log("❌ Password mismatch");
             showError("Passwords do not match");
             return;
         }
 
         try {
             setLoading(true);
+            let payload = { ...form };
+            delete payload.confirmPassword;
 
-            const { confirmPassword, ...payload } = form;
+            if (!payload.firstName) delete payload.firstName;
+            if (!payload.lastName) delete payload.lastName;
 
-            await register(payload);
-
+            const res = await register(payload);
             navigate("/auth/otp", {
                 state: { email: form.email },
             });
         } catch (err) {
-            // showError(err.customMessage || err || "Something went wrong");
+            showError(err.response?.data?.message || "Registration failed");
         } finally {
             setLoading(false);
         }
