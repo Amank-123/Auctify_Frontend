@@ -4,8 +4,12 @@ import defaultImg from "@/assets/default.png";
 export function SellerCard({ seller }) {
     return (
         <motion.div className="rounded-[24px] bg-white border border-slate-200/80 p-5 shadow-sm flex items-center gap-4">
-            <div className="w-13 h-13 p-1 overflow-hidden rounded-full bg-gradient-to-br from-blue-600 to-orange-500 flex items-center justify-center text-white font-extrabold text-base flex-shrink-0">
-                <img src={seller?.profile || defaultImg} alt="user profile" className="w-fit " />
+            <div className="w-13 h-13  overflow-hidden rounded-full bg-gradient-to-br from-blue-600 to-orange-500 flex items-center justify-center text-white font-extrabold text-base flex-shrink-0">
+                <img
+                    src={seller?.profile || defaultImg}
+                    alt="user profile"
+                    className="h-full w-full object-cover "
+                />
             </div>
             <div className="flex-1 min-w-0">
                 <p className="text-[10px] uppercase tracking-[2px] text-slate-400 font-semibold">

@@ -372,7 +372,6 @@ export default function HowItWorksPage() {
                                     alignItems: "center",
                                     gap: 8,
                                     backdropFilter: "blur(8px)",
-                                    border: "1px solid black",
                                 }}
                             >
                                 Sell an Item <ArrowRight size={15} />

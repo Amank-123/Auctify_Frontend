@@ -148,6 +148,8 @@ export default function AuctionCard({ auction }) {
     const [hovered, setHovered] = useState(false);
 
     const image = auction?.media?.[0];
+    // console.log("images from auction card: ", image);
+
     const title = auction?.name || "Untitled Auction";
     const category = auction?.category || "";
     const price =
@@ -170,20 +172,22 @@ export default function AuctionCard({ auction }) {
             className="relative w-[300px] bg-white rounded-2xl overflow-hidden border border-gray-100 cursor-pointer select-none"
             style={{ boxShadow: "0 4px 18px rgba(26,61,181,0.08)" }}
         >
-            {/* ── Top accent bar ── */}
-            <div className="h-[3px] w-full bg-gradient-to-r from-[#1a3db5] via-[#e87c1e] to-[#f5a652]" />
-
-            {/* ── IMAGE ── */}
-            <div className="relative h-[195px] bg-gray-100 overflow-hidden">
-                {image && !imgErr ? (
-                    <motion.img
-                        src={image}
-                        alt={title}
-                        onError={() => setImgErr(true)}
-                        animate={{ scale: hovered ? 1.06 : 1 }}
-                        transition={{ duration: 0.5, ease: "easeOut" }}
-                        className="w-full h-full object-cover"
-                    />
+            {/* Image */}
+            <div className="relative h-48 overflow-hidden bg-slate-100">
+                {image ? (
+                    image.map((img, index) => (
+                        <img
+                            src={img}
+                            key={index}
+                            alt={title}
+                            style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                display: "block",
+                            }}
+                        />
+                    ))
                 ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-orange-50">
                         <Gavel size={44} strokeWidth={1.2} className="text-[#e87c1e] opacity-60" />

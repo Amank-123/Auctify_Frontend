@@ -35,7 +35,7 @@ export default function AuctionDetails() {
 
                 setAuction(data);
 
-                if (User?._id && data?.sellerId === User._id) {
+                if (User?._id && data?.sellerId._id === User._id) {
                     setCanBid(false);
                 } else {
                     setCanBid(true);
@@ -93,13 +93,10 @@ export default function AuctionDetails() {
 
     const currentBid =
         auction?.currentHighestBid > 0 ? auction.currentHighestBid : auction?.startPrice || 0;
-    // const status = auction?.status || "draft";
-
-    // const endTime = auction?.endTime || auction?.countdownEnd;
 
     const status = auction?.status || "draft";
 
-    const endTime = auction?.endedTime || new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+    const endTime = auction?.endTime || auction?.countdownEnd;
 
     const statusConfig = {
         active: {
@@ -125,6 +122,14 @@ export default function AuctionDetails() {
     };
 
     const config = statusConfig[status] || statusConfig.draft;
+
+    if (!auction) {
+        return (
+            <section className="min-h-screen flex items-center justify-center">
+                <p className="text-slate-500 text-lg">Auction not found</p>
+            </section>
+        );
+    }
 
     return (
         <section className="bg-[#F8F8FF] min-h-screen py-12">
@@ -155,7 +160,7 @@ export default function AuctionDetails() {
                     <span>›</span>
 
                     <span className="text-slate-700 font-medium truncate max-w-[220px]">
-                        {auction.name}
+                        {auction?.name}
                     </span>
                 </motion.div>
 
@@ -177,7 +182,7 @@ export default function AuctionDetails() {
                                 <motion.img
                                     key={currentImage}
                                     src={currentImage}
-                                    alt={auction.name}
+                                    alt={auction?.name}
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
@@ -268,7 +273,7 @@ export default function AuctionDetails() {
                             </span>
 
                             <h1 className="mt-4 text-[2rem] font-extrabold text-slate-900 leading-tight">
-                                {auction.name}
+                                {auction?.name}
                             </h1>
 
                             <p className="mt-3 text-sm text-slate-500 leading-6">
