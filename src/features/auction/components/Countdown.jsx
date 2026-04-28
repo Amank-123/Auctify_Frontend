@@ -3,12 +3,10 @@ import { useEffect, useState } from "react";
 export function Countdown({ endTime }) {
     const getTime = () => {
         const diff = Math.max(0, Math.floor((new Date(endTime) - new Date()) / 1000));
-
         const days = Math.floor(diff / 86400);
         const hours = Math.floor((diff % 86400) / 3600);
         const minutes = Math.floor((diff % 3600) / 60);
         const seconds = diff % 60;
-
         return {
             d: String(days).padStart(2, "0"),
             h: String(hours).padStart(2, "0"),
@@ -22,27 +20,30 @@ export function Countdown({ endTime }) {
     useEffect(() => {
         const id = setInterval(() => setTime(getTime()), 1000);
         return () => clearInterval(id);
-    }, [endTime]); // ← subtle but important fix
+    }, [endTime]);
+
+    const units = [
+        [time.d, "DAYS"],
+        [time.h, "HOURS"],
+        [time.m, "MINUTES"],
+        [time.s, "SECONDS"],
+    ];
 
     return (
-        <div className="grid grid-cols-4 gap-3">
-            {[
-                [time.d, "Days"],
-                [time.h, "Hours"],
-                [time.m, "Minutes"],
-                [time.s, "Seconds"],
-            ].map(([value, label]) => (
-                <div
-                    key={label}
-                    className="relative rounded-2xl bg-gradient-to-b from-blue-600 to-blue-700 p-4 text-center overflow-hidden"
-                >
-                    <div className="absolute inset-0 bg-white/5 rounded-2xl" />
-                    <p className="relative text-3xl font-black text-white tabular-nums tracking-tight">
-                        {value}
-                    </p>
-                    <p className="relative text-[10px] uppercase tracking-[2px] text-blue-200 mt-1 font-semibold">
-                        {label}
-                    </p>
+        <div className="flex items-center gap-1">
+            {units.map(([value, label], i) => (
+                <div key={label} className="flex items-center gap-1">
+                    <div className="text-center">
+                        <p className="text-2xl font-black text-blue-600 tabular-nums leading-none">
+                            {value}
+                        </p>
+                        <p className="text-[9px] uppercase tracking-[1.5px] text-slate-400 font-semibold mt-0.5">
+                            {label}
+                        </p>
+                    </div>
+                    {i < units.length - 1 && (
+                        <span className="text-xl font-bold text-slate-300 pb-3 mx-0.5">:</span>
+                    )}
                 </div>
             ))}
         </div>
