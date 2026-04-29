@@ -21,6 +21,7 @@ import Notification from "../components/common/navbar/notification.jsx";
 import BidItem from "../components/common/navbar/BidItem";
 import UserSidebar from "../components/common/navbar/UserSidebar";
 import Watchlist from "../components/common/watchlist.jsx";
+import NotificationPage from "../components/common/notificationPage.jsx";
 import AllAuctions from "../components/common/explore.jsx";
 import CategoryPage from "../components/common/categories.jsx";
 import AuctionDetails from "../features/auction/pages/AuctionDetails.jsx";
@@ -42,7 +43,10 @@ const router = createBrowserRouter([
             { path: "contact", element: <Contact /> },
             {
                 element: <ProtectRoute />,
-                children: [{ path: "profile", element: <Profile /> }],
+                children: [
+                    { path: "profile", element: <Profile /> },
+                    { path: "notifications", element: <NotificationPage /> },
+                ],
             },
             { path: "explore", element: <AllAuctions /> },
             { path: "how-it-works", element: <GuidePage /> },
@@ -95,10 +99,11 @@ const router = createBrowserRouter([
             },
         ],
     },
-    {
-        path: "notifications",
-        element: <Notification />,
-    },
+    // {
+    //     path: "/notifications",
+    //     element: <ProtectRoute />,
+    //     children: [{ index: true, element: <Notification /> }],
+    // },
     {
         path: "/admin",
         element: <BroadcastNotificationPage />,

@@ -1,129 +1,190 @@
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth.js";
 import navlogo from "@/assets/logo.png";
-import { HiOutlineBell, HiOutlineMenu, HiOutlineX } from "react-icons/hi";
+import { HiOutlineMenu, HiOutlineX } from "react-icons/hi";
+
 import NavbarSkeleton from "./navbarSkeleton.jsx";
 import UserSidebar from "./UserSidebar.jsx";
-import defaultImg from "@/assets/default.png";
 import NotificationBell from "./notificationBell.jsx";
-import socket from "../../../shared/services/socket.js";
+import NotificationDrawer from "./notification.jsx";
+
+import { socket } from "@/shared/services/socket";
 
 export default function Navbar() {
     const { isAuthenticated, Loading, User } = useAuth();
+
+    const [refreshBell, setRefreshBell] = useState(0);
     const [isScrolled, setIsScrolled] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [notificationOpen, setNotificationOpen] = useState(false);
 
+    // socket connect
     useEffect(() => {
-        if (!User) return;
+        if (!User?._id) return;
+
         socket.connect();
 
         return () => {
             socket.disconnect();
         };
-    }, [User]);
+    }, [User?._id]);
 
+    // scroll navbar effect
     useEffect(() => {
         const handleScroll = () => {
             setIsScrolled(window.scrollY > 10);
         };
 
         window.addEventListener("scroll", handleScroll);
+
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    // useEffect(() => {
-    //     document.body.style.overflow = sidebarOpen ? "hidden" : "";
-    //     return () => {
-    //         document.body.style.overflow = "";
-    //     };
-    // }, [sidebarOpen]);
+    // lock body scroll when drawer/sidebar open
+    useEffect(() => {
+        document.body.style.overflow = sidebarOpen || notificationOpen ? "hidden" : "";
 
-    if (Loading) return <NavbarSkeleton isAuth={false} />;
+        return () => {
+            document.body.style.overflow = "";
+        };
+    }, [sidebarOpen, notificationOpen]);
+
+    // close sidebar if notification opens
+    useEffect(() => {
+        if (notificationOpen) {
+            setSidebarOpen(false);
+        }
+    }, [notificationOpen]);
+
+    if (Loading) {
+        return <NavbarSkeleton isAuth={false} />;
+    }
+
+    const navLinkStyle = ({ isActive }) =>
+        `relative text-sm font-medium transition-colors duration-200 ${
+            isActive ? "text-[#2563EB]" : "text-[#1F2937] hover:text-[#2563EB]"
+        }`;
+
+    const navUnderline = ({ isActive }) =>
+        isActive ? (
+            <span className="absolute left-0 -bottom-1 h-[2px] w-full rounded-full bg-[#2563EB]" />
+        ) : null;
 
     return (
         <>
+            {/* Navbar */}
             <nav
                 className={`sticky top-0 z-50 transition-all duration-300 ${
                     isScrolled
-                        ? "bg-[#F8F8FF]/95 backdrop-blur-md"
+                        ? "bg-[#F8F8FF]/90 backdrop-blur-xl shadow-sm shadow-slate-200/70"
                         : "bg-[#F8F8FF] border-b border-[#E5E7EB]"
                 }`}
             >
-                <div className="mx-auto flex max-w-full items-center justify-between px-4 py-3 sm:px-6 lg:px-10 md:py-2">
-                    <div className="flex items-center gap-3">
-                        <Link to="/" className="flex items-center">
-                            <img
-                                src={navlogo}
-                                alt="Auctify logo"
-                                className="h-14 w-auto object-contain"
-                            />
-                        </Link>
-                    </div>
+                <div className="mx-auto flex max-w-[1440px] items-center justify-between px-4 py-3 sm:px-6 lg:px-10">
+                    {/* Logo */}
+                    <Link to="/" className="flex items-center shrink-0">
+                        <img src={navlogo} alt="Auctify" className="h-14 w-auto object-contain" />
+                    </Link>
 
-                    <div className="hidden items-center gap-10 text-sm md:flex">
-                        <Link to="/explore" className="text-[#1F2937] hover:text-[#2563EB]">
-                            Explore
-                        </Link>
-                        <Link to="/category" className="text-[#1F2937] hover:text-[#2563EB]">
-                            Categories
-                        </Link>
+                    {/* Desktop Nav */}
+                    <div className="hidden md:flex items-center gap-10">
+                        <NavLink to="/explore" className={navLinkStyle}>
+                            {({ isActive }) => (
+                                <>
+                                    Explore
+                                    {navUnderline({
+                                        isActive,
+                                    })}
+                                </>
+                            )}
+                        </NavLink>
+
+                        <NavLink to="/category" className={navLinkStyle}>
+                            {({ isActive }) => (
+                                <>
+                                    Categories
+                                    {navUnderline({
+                                        isActive,
+                                    })}
+                                </>
+                            )}
+                        </NavLink>
                         {isAuthenticated && (
                             <Link
                                 to="/auction/sell"
-                                className="text-[#C2410C] font-semibold hover:text-[#9A3412]"
+                                className="rounded-xl px-4 py-2 text-sm font-semibold text-[#C2410C] hover:bg-orange-50 hover:text-[#9A3412] transition"
                             >
                                 Sell
                             </Link>
                         )}
-
-                        <Link to="/how-it-works" className="text-[#1F2937] hover:text-[#2563EB]">
-                            How it Works
-                        </Link>
+                        <NavLink to="/how-it-works" className={navLinkStyle}>
+                            {({ isActive }) => (
+                                <>
+                                    How it Works
+                                    {navUnderline({
+                                        isActive,
+                                    })}
+                                </>
+                            )}
+                        </NavLink>
                     </div>
 
-                    <div className="flex items-center gap-4 sm:gap-6">
+                    {/* Right Side */}
+                    <div className="flex items-center gap-3 sm:gap-4">
                         {!isAuthenticated ? (
                             <>
                                 <Link
                                     to="/auth/login"
-                                    className="text-[#1F2937] transition hover:text-[#2563EB]"
+                                    className="hidden sm:block text-sm font-medium text-[#1F2937] hover:text-[#2563EB] transition"
                                 >
                                     Login
                                 </Link>
 
                                 <Link
                                     to="/auth/register"
-                                    className="rounded-lg bg-[#2563EB] px-4 py-2 text-white transition hover:bg-[#1D4ED8]"
+                                    className="rounded-xl bg-[#2563EB] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#1D4ED8] transition"
                                 >
                                     Register
                                 </Link>
                             </>
                         ) : (
                             <>
-                                <NotificationBell />
+                                {/* Bell */}
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E5E7EB] bg-white hover:bg-slate-50 transition">
+                                    <NotificationBell
+                                        onClick={() => setNotificationOpen(true)}
+                                        refreshKey={refreshBell}
+                                    />
+                                </div>
 
-                                {isAuthenticated && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setSidebarOpen((prev) => !prev)}
-                                        className="rounded-xl border border-[#E5E7EB] bg-white p-2 text-[#1F2937] transition hover:bg-[#F8F8FF] hover:text-[#2563EB]"
-                                        aria-label="Toggle dashboard sidebar"
-                                    >
-                                        {sidebarOpen ? (
-                                            <HiOutlineX className="text-2xl" />
-                                        ) : (
-                                            <HiOutlineMenu className="text-2xl" />
-                                        )}
-                                    </button>
-                                )}
+                                {/* Menu */}
+                                <button
+                                    type="button"
+                                    onClick={() => setSidebarOpen((prev) => !prev)}
+                                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E5E7EB] bg-white text-[#1F2937] hover:bg-slate-50 hover:text-[#2563EB] transition"
+                                >
+                                    {sidebarOpen ? (
+                                        <HiOutlineX className="text-2xl" />
+                                    ) : (
+                                        <HiOutlineMenu className="text-2xl" />
+                                    )}
+                                </button>
                             </>
                         )}
                     </div>
                 </div>
             </nav>
 
+            {/* Sidebar */}
             <UserSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} user={User} />
+
+            {/* Notifications */}
+            <NotificationDrawer
+                open={notificationOpen}
+                onClose={() => setNotificationOpen(false)}
+                onMarkedAllRead={() => setRefreshBell((prev) => prev + 1)}
+            />
         </>
     );
 }
