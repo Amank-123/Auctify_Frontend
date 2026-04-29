@@ -7,11 +7,21 @@ import NavbarSkeleton from "./navbarSkeleton.jsx";
 import UserSidebar from "./UserSidebar.jsx";
 import defaultImg from "@/assets/default.png";
 import NotificationBell from "./notificationBell.jsx";
+import socket from "../../../shared/services/socket.js";
 
 export default function Navbar() {
     const { isAuthenticated, Loading, User } = useAuth();
     const [isScrolled, setIsScrolled] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    useEffect(() => {
+        if (!User) return;
+        socket.connect();
+
+        return () => {
+            socket.disconnect();
+        };
+    }, [User]);
 
     useEffect(() => {
         const handleScroll = () => {

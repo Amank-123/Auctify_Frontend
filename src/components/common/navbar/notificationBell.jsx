@@ -35,26 +35,6 @@ export default function NotificationBell() {
         }
     }, [User?._id]);
 
-    useEffect(() => {
-        if (!User?._id) {
-            setCount(0);
-            return;
-        }
-
-        fetchUnreadCount();
-        socket.emit("join_notification", User._id);
-
-        const handleNewNotification = (data) => {
-            console.log("🔥 Notification received:", data);
-            setCount((prev) => prev + 1);
-            playSound();
-            triggerNotify();
-        };
-
-        socket.on("newNotification", handleNewNotification);
-        return () => socket.off("newNotification", handleNewNotification);
-    }, [User?._id, fetchUnreadCount, playSound, triggerNotify]);
-
     const triggerNotify = useCallback(async () => {
         // Bell shake
         await bellControls.start({
@@ -79,6 +59,26 @@ export default function NotificationBell() {
             transition: { duration: 0.4, ease: "easeOut" },
         });
     }, [bellControls, glowControls, badgeControls]);
+
+    useEffect(() => {
+        if (!User?._id) {
+            setCount(0);
+            return;
+        }
+
+        fetchUnreadCount();
+        socket.emit("join_notification", User._id);
+
+        const handleNewNotification = (data) => {
+            console.log("🔥 Notification received:", data);
+            setCount((prev) => prev + 1);
+            playSound();
+            triggerNotify();
+        };
+
+        socket.on("newNotification", handleNewNotification);
+        return () => socket.off("newNotification", handleNewNotification);
+    }, [User?._id, fetchUnreadCount, playSound, triggerNotify]);
 
     return (
         <Link to="/notifications" className="relative inline-flex items-center justify-center">

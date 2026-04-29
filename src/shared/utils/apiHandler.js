@@ -1,11 +1,12 @@
-const apiHandler = async (promise) => {
+const apiHandler = async (fn, retries = 2, delay = 500) => {
     try {
-        const res = await promise;
-        return res.data; 
-    } catch (error) {
-        const message = error.customMessage || "Something went wrong";
-        showError(message);
-        throw error; 
+        return await fn();
+    } catch (err) {
+        if (retries === 0) throw err;
+        console.log("retried");
+
+        await new Promise((res) => setTimeout(res, delay));
+        return fetchWithRetry(fn, retries - 1, delay * 2);
     }
 };
 
