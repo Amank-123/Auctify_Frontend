@@ -12,6 +12,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Heart, Check, Info, Copy } from "
 import { useAuth } from "../../../hooks/useAuth";
 import AuctionCard from "../../../components/common/AuctionCard";
 import { apiHandler } from "../../../shared/utils/apiHandler";
+import socket from "../../../shared/services/socket";
 
 export default function AuctionDetails() {
     const { User } = useAuth();
@@ -75,6 +76,66 @@ export default function AuctionDetails() {
         };
         fetchBids();
     }, [id, auction]);
+
+    useEffect(() => {
+        if (!auction) return;
+        if (auction.status !== "active") return;
+
+        socket.connect();
+        socket.emit("join_auction", auction._id);
+
+        socket.on("event", (data) => {
+            if (data?.type !== "BID_CREATED" || !data?.payload) return;
+
+            const incoming = data.payload;
+
+            // Normalize the incoming bid so it always has a safe shape.
+            // Socket payloads are plain objects — userId may be just an ID string,
+            // not a populated object. Normalizing here prevents .slice / .username
+            // crashes that cause recursive re-render loops.
+            const normalizedBid = {
+                ...incoming.highestBidId,
+                _id: incoming.highestBidId._id ?? `temp-${Date.now()}`,
+                amount: incoming.highestBidId.amount ?? 0,
+                createdAt: incoming.createdAt ?? new Date().toISOString(),
+                userId:
+                    incoming.highestBidId.userId && typeof incoming.highestBidId.userId === "object"
+                        ? incoming.highestBidId.userId // already populated
+                        : {
+                              _id: String(incoming.highestBidId.userId ?? ""),
+                              username: null,
+                              profile: null,
+                          },
+            };
+
+            setAuction(incoming);
+
+            setBids((prev) => {
+                // Deduplicate — socket may fire more than once for the same bid
+                const exists = prev.some((b) => b._id === normalizedBid._id);
+                if (exists) return prev;
+                return [normalizedBid, ...prev].sort((a, b) => b.amount - a.amount);
+            });
+        });
+
+        return () => {
+            socket.emit("leave_auction", auction._id);
+            socket.off("event");
+            socket.disconnect();
+        };
+    }, [auction]);
+
+    useEffect(() => {
+        if (!auction) return;
+
+        socket.on("event", (data) => {
+            if (data?.type === "AUCTION_ENDED") {
+                setAuction(data.payload);
+            }
+        });
+
+        return () => socket.off("event");
+    }, [auction]);
 
     // Fetch related auctions — depend on category string only, NOT the whole auction object
     // (depending on the object causes infinite loops since every setState creates a new reference)
@@ -141,7 +202,7 @@ export default function AuctionDetails() {
             : status === "ended"
               ? "This auction has ended. Thank you for participating!"
               : "You will be able to place bids once the auction starts.";
-
+    console.log("Auction from Auction Details page: ", auction);
     return (
         // pb-14 so the fixed bottom bar never overlaps content
         <section className="bg-[#F8F8FF] min-h-screen pb-14">
@@ -305,13 +366,7 @@ export default function AuctionDetails() {
                     >
                         {/* BidHistory — bids & setBids come from parent, socket lives inside */}
                         <motion.div variants={itemVariant}>
-                            <BidHistory
-                                auctionId={id}
-                                bids={bids}
-                                setBids={setBids}
-                                loading={bidsLoading}
-                                status={status}
-                            />
+                            <BidHistory bids={bids} loading={bidsLoading} status={status} />
                         </motion.div>
 
                         {/* Auction Information */}
@@ -387,7 +442,9 @@ export default function AuctionDetails() {
                                             ? "Active"
                                             : status === "ended"
                                               ? "Completed"
-                                              : "Not Started",
+                                              : status === "expired"
+                                                ? "Expired"
+                                                : "Not Started",
                                     ],
                                 ].map(([label, value]) => {
                                     const isStatus = label === "Status";

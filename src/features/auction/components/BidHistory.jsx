@@ -4,49 +4,8 @@ import defaultImg from "@/assets/default.png";
 import socket from "../../../shared/services/socket";
 import { Gavel, Trophy, Activity } from "lucide-react";
 
-export function BidHistory({ auctionId, bids, setBids, loading, status }) {
+export function BidHistory({ bids, loading, status }) {
     const [showAll, setShowAll] = useState(false);
-
-    useEffect(() => {
-        if (status !== "active") return;
-
-        socket.connect();
-        socket.emit("join_auction", auctionId);
-
-        socket.on("event", (data) => {
-            if (data?.type !== "BID_CREATED" || !data?.payload) return;
-
-            const incoming = data.payload;
-
-            // Normalize the incoming bid so it always has a safe shape.
-            // Socket payloads are plain objects — userId may be just an ID string,
-            // not a populated object. Normalizing here prevents .slice / .username
-            // crashes that cause recursive re-render loops.
-            const normalizedBid = {
-                ...incoming,
-                _id: incoming._id ?? `temp-${Date.now()}`,
-                amount: incoming.amount ?? 0,
-                createdAt: incoming.createdAt ?? new Date().toISOString(),
-                userId:
-                    incoming.userId && typeof incoming.userId === "object"
-                        ? incoming.userId // already populated
-                        : { _id: String(incoming.userId ?? ""), username: null, profile: null },
-            };
-
-            setBids((prev) => {
-                // Deduplicate — socket may fire more than once for the same bid
-                const exists = prev.some((b) => b._id === normalizedBid._id);
-                if (exists) return prev;
-                return [normalizedBid, ...prev].sort((a, b) => b.amount - a.amount);
-            });
-        });
-
-        return () => {
-            socket.emit("leave_auction", auctionId);
-            socket.off("event");
-            socket.disconnect();
-        };
-    }, [auctionId, status, setBids]);
 
     const isLive = status === "active";
     const isEnded = status === "ended" || status === "expired";
@@ -88,7 +47,7 @@ export function BidHistory({ auctionId, bids, setBids, loading, status }) {
         // < 1 hour
         if (diffSec < 3600) {
             const mins = Math.floor(diffSec / 60);
-            return `${mins} min ago`;
+            return `${mins} min ago • Today`;
         }
 
         // < 24 hours

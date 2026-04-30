@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { bidAPI } from "../auctionAPI";
 import { Countdown } from "./Countdown";
-import { Calendar, Gavel, Lock, Heart } from "lucide-react";
+import { Calendar, Gavel, Lock, Heart, Trophy, Info } from "lucide-react";
 
 export function BidPanel({
     canBid,
@@ -15,7 +15,7 @@ export function BidPanel({
     highestBidder,
     navigate,
 }) {
-    const [bidAmount, setBidAmount] = useState(() => currentBid + 100000);
+    const [bidAmount, setBidAmount] = useState(() => currentBid + 1000);
     const [bidMsg, setBidMsg] = useState(null);
     const [bidSuccess, setBidSuccess] = useState(false);
     const [placing, setPlacing] = useState(false);
@@ -138,22 +138,38 @@ export function BidPanel({
         const winner = highestBidder;
         return (
             <div className="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
-                <div className="p-5 bg-green-50 border-b border-green-100 text-center">
-                    <p className="text-sm font-bold uppercase tracking-[2px] text-green-600 mb-1 flex items-center justify-center gap-2">
-                        <Trophy size={18} />
-                        Auction Ended
-                    </p>
-                    <p className="text-4xl font-black text-green-600">SOLD</p>
-                </div>
+                {winner ? (
+                    <div className="p-5 bg-green-50 border-b border-green-100 text-center">
+                        <p className="text-sm font-bold uppercase tracking-[2px] text-green-600 mb-1 flex items-center justify-center gap-2">
+                            <Trophy size={18} />
+                            Auction Ended
+                        </p>
+                        <p className="text-4xl font-black text-green-600">SOLD</p>
+                    </div>
+                ) : (
+                    <div className="p-5 bg-yellow-50 border-b border-yellow-200 text-center">
+                        <p className="text-sm font-bold uppercase tracking-[2px] text-yellow-600 mb-1 flex items-center justify-center gap-2">
+                            <Info size={18} />
+                            Auction Ended
+                        </p>
+                        <p className="text-4xl font-black text-yellow-600">NO BIDS</p>
+                    </div>
+                )}
 
-                {winner && (
+                {winner ? (
                     <div className="p-4 mx-4 my-3 rounded-xl bg-slate-50 border border-slate-200">
                         <p className="text-xs uppercase tracking-[2px] text-slate-600 font-bold mb-3">
                             Winner
                         </p>
                         <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                                {winner.userId?.username?.slice(0, 2).toUpperCase() || "?"}
+                            <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-700 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                                {(
+                                    <img
+                                        src={winner.userId?.profile}
+                                        alt="userProfile"
+                                        className="object-cover w-full h-full"
+                                    />
+                                ) || winner.userId?.username?.slice(0, 2).toUpperCase()}
                             </div>
                             <div>
                                 <p className="text-base  text-slate-900 font-semibold">
@@ -165,26 +181,40 @@ export function BidPanel({
                             </div>
                         </div>
                     </div>
+                ) : (
+                    <div className="px-4 pb-4">
+                        <div className="rounded-xl bg-slate-50 border border-slate-100 p-4 flex items-center gap-3">
+                            <div>
+                                <p className="text-sm text-slate-600 align-middle">
+                                    This auction did not receive any bids. You can relist with a
+                                    lower starting price or better timing.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-3 px-4 pb-3">
-                    <div className="rounded-xl bg-slate-50 border border-slate-100 p-3">
-                        <p className=" text-sm font-semibold text-slate-500 uppercase tracking-[1.5px] ">
-                            Final Bid (Winning)
-                        </p>
-                        <p className="text-sm  text-slate-900 font-semibold mt-1">
-                            Rs.{(winner?.amount || currentBid).toLocaleString("en-IN")}
-                        </p>
+                {winner && (
+                    <div className="grid grid-cols-2 gap-3 px-4 pb-3">
+                        <div className="rounded-xl bg-slate-50 border border-slate-100 p-3">
+                            <p className=" text-sm font-semibold text-slate-500 uppercase tracking-[1.5px] ">
+                                Final Bid (Winning)
+                            </p>
+                            <p className="text-sm  text-slate-900 font-semibold mt-1">
+                                Rs.{(winner?.amount || currentBid).toLocaleString("en-IN")}
+                            </p>
+                        </div>
+
+                        <div className="rounded-xl bg-slate-50 border border-slate-100 p-4">
+                            <p className="text-xs uppercase tracking-[1.5px] text-slate-600 font-semibold">
+                                Total Bids
+                            </p>
+                            <p className="text-base  text-slate-900 font-semibold mt-1">
+                                {bidCount || 0}
+                            </p>
+                        </div>
                     </div>
-                    <div className="rounded-xl bg-slate-50 border border-slate-100 p-4">
-                        <p className="text-xs uppercase tracking-[1.5px] text-slate-600 font-semibold">
-                            Total Bids
-                        </p>
-                        <p className="text-base  text-slate-900 font-semibold mt-1">
-                            {bidCount || 0}
-                        </p>
-                    </div>
-                </div>
+                )}
 
                 <div className="px-4 pb-4">
                     <div className="rounded-xl bg-slate-50 border border-slate-100 p-4 flex items-center gap-3">
@@ -208,11 +238,11 @@ export function BidPanel({
                     </div>
                 </div>
 
-                <div className="px-4 pb-4">
+                {/* <div className="px-4 pb-4">
                     <button className="w-full h-12 rounded-xl border-2 border-slate-200 text-[#1F2937] font-semibold text-[15px] hover:bg-slate-50 transition flex items-center justify-center gap-2">
                         <Heart size={18} /> Add to Watchlist
                     </button>
-                </div>
+                </div> */}
             </div>
         );
     }
