@@ -28,6 +28,7 @@ import AuctionDetails from "../features/auction/pages/AuctionDetails.jsx";
 import CategoriesPage from "../components/common/categoriesPage.jsx";
 import GuidePage from "../components/common/HowItWork.jsx";
 import BroadcastNotificationPage from "../shared/utils/BroadCastNotification.jsx";
+import ResetPasswordPage from "../features/Setting/resetPassword.jsx";
 
 const router = createBrowserRouter([
     {
@@ -53,6 +54,7 @@ const router = createBrowserRouter([
             { path: "category/:category", element: <CategoryPage /> },
             { path: "category", element: <CategoriesPage /> },
             { path: "watchlist", element: <Watchlist /> },
+            { path: "setting", element: <ResetPasswordPage /> },
         ],
     },
     {

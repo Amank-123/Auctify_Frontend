@@ -4,4 +4,10 @@ import "./index.css";
 
 import App from "./app/app.jsx";
 
-createRoot(document.getElementById("root")).render(<App />);
+import { ThemeProvider } from "../src/context/ThemeContext.jsx";
+
+createRoot(document.getElementById("root")).render(
+    <ThemeProvider>
+        <App />
+    </ThemeProvider>,
+);
