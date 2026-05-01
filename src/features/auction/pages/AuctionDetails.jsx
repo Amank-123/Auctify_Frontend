@@ -79,63 +79,58 @@ export default function AuctionDetails() {
 
     useEffect(() => {
         if (!auction) return;
-        if (auction.status !== "active") return;
 
         socket.connect();
         socket.emit("join_auction", auction._id);
 
-        socket.on("event", (data) => {
-            if (data?.type !== "BID_CREATED" || !data?.payload) return;
+        const handler = (data) => {
+            if (!data?.type || !data?.payload) return;
 
-            const incoming = data.payload;
+            if (data.type === "BID_CREATED") {
+                const incoming = data.payload;
 
-            // Normalize the incoming bid so it always has a safe shape.
-            // Socket payloads are plain objects — userId may be just an ID string,
-            // not a populated object. Normalizing here prevents .slice / .username
-            // crashes that cause recursive re-render loops.
-            const normalizedBid = {
-                ...incoming.highestBidId,
-                _id: incoming.highestBidId._id ?? `temp-${Date.now()}`,
-                amount: incoming.highestBidId.amount ?? 0,
-                createdAt: incoming.createdAt ?? new Date().toISOString(),
-                userId:
-                    incoming.highestBidId.userId && typeof incoming.highestBidId.userId === "object"
-                        ? incoming.highestBidId.userId // already populated
-                        : {
-                              _id: String(incoming.highestBidId.userId ?? ""),
-                              username: null,
-                              profile: null,
-                          },
-            };
+                const normalizedBid = {
+                    ...incoming.highestBidId,
+                    _id: incoming.highestBidId._id ?? `temp-${Date.now()}`,
+                    amount: incoming.highestBidId.amount ?? 0,
+                    createdAt: incoming.createdAt ?? new Date().toISOString(),
+                    userId:
+                        incoming.highestBidId.userId &&
+                        typeof incoming.highestBidId.userId === "object"
+                            ? incoming.highestBidId.userId
+                            : {
+                                  _id: String(incoming.highestBidId.userId ?? ""),
+                                  username: null,
+                                  profile: null,
+                              },
+                };
 
-            setAuction(incoming);
+                setAuction(incoming);
 
-            setBids((prev) => {
-                // Deduplicate — socket may fire more than once for the same bid
-                const exists = prev.some((b) => b._id === normalizedBid._id);
-                if (exists) return prev;
-                return [normalizedBid, ...prev].sort((a, b) => b.amount - a.amount);
-            });
-        });
+                setBids((prev) => {
+                    const exists = prev.some((b) => b._id === normalizedBid._id);
+                    if (exists) return prev;
+                    return [normalizedBid, ...prev].sort((a, b) => b.amount - a.amount);
+                });
+            }
+
+            if (data.type === "AUCTION_ENDED") {
+                setAuction(data.payload);
+            }
+
+            if (data.type === "AUCTION_STARTED") {
+                setAuction(data.payload);
+            }
+        };
+
+        socket.on("event", handler);
 
         return () => {
             socket.emit("leave_auction", auction._id);
-            socket.off("event");
+            socket.off("event", handler);
             socket.disconnect();
         };
-    }, [auction]);
-
-    useEffect(() => {
-        if (!auction) return;
-
-        socket.on("event", (data) => {
-            if (data?.type === "AUCTION_ENDED") {
-                setAuction(data.payload);
-            }
-        });
-
-        return () => socket.off("event");
-    }, [auction]);
+    }, [auction?._id]);
 
     // Fetch related auctions — depend on category string only, NOT the whole auction object
     // (depending on the object causes infinite loops since every setState creates a new reference)
