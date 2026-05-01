@@ -75,7 +75,7 @@ export default function AuctionDetails() {
             }
         };
         fetchBids();
-    }, [id, auction]);
+    }, [id]);
 
     useEffect(() => {
         if (!auction) return;
@@ -89,28 +89,10 @@ export default function AuctionDetails() {
             if (data.type === "BID_CREATED") {
                 const incoming = data.payload;
 
-                const normalizedBid = {
-                    ...incoming.highestBidId,
-                    _id: incoming.highestBidId._id ?? `temp-${Date.now()}`,
-                    amount: incoming.highestBidId.amount ?? 0,
-                    createdAt: incoming.createdAt ?? new Date().toISOString(),
-                    userId:
-                        incoming.highestBidId.userId &&
-                        typeof incoming.highestBidId.userId === "object"
-                            ? incoming.highestBidId.userId
-                            : {
-                                  _id: String(incoming.highestBidId.userId ?? ""),
-                                  username: null,
-                                  profile: null,
-                              },
-                };
-
                 setAuction(incoming);
 
                 setBids((prev) => {
-                    const exists = prev.some((b) => b._id === normalizedBid._id);
-                    if (exists) return prev;
-                    return [normalizedBid, ...prev].sort((a, b) => b.amount - a.amount);
+                    return [incoming.highestBidId, ...prev].sort((a, b) => b.amount - a.amount);
                 });
             }
 
