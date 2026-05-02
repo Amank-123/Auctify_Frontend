@@ -1,61 +1,58 @@
-import { X, Bell, ArrowRight, CheckCheck } from "lucide-react";
+import {
+    X,
+    Bell,
+    ArrowRight,
+    CheckCheck,
+    Search,
+    Filter,
+    Trash2,
+    Trophy,
+    Gavel,
+    AlertCircle,
+    Megaphone,
+    Clock3,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "@/shared/services/axios";
 import { API_ENDPOINTS } from "../../../shared/constants/apiEndpoints";
 
-// Generates a consistent avatar color
-const getAvatarColor = (str = "") => {
-    const colors = [
-        ["#EEF2FF", "#6366F1"],
-        ["#FFF7ED", "#F97316"],
-        ["#F0FDF4", "#22C55E"],
-        ["#FFF1F2", "#F43F5E"],
-        ["#EFF6FF", "#3B82F6"],
-        ["#FEFCE8", "#EAB308"],
-        ["#F5F3FF", "#8B5CF6"],
-        ["#ECFDF5", "#10B981"],
-    ];
-
-    const i = (str?.charCodeAt?.(0) || 0) % colors.length;
-
-    return colors[i];
+const iconMap = {
+    won: Trophy,
+    outbid: AlertCircle,
+    newBid: Gavel,
+    endingSoon: Clock3,
+    sponsored: Megaphone,
+    system: Bell,
 };
 
-const Avatar = ({ title = "", size = 38 }) => {
-    const [bg, text] = getAvatarColor(title);
-
-    const initials = title.slice(0, 2).toUpperCase();
-
-    return (
-        <div
-            style={{
-                width: size,
-                height: size,
-                background: bg,
-                color: text,
-                fontSize: size * 0.36,
-            }}
-            className="rounded-full flex items-center justify-center font-bold shrink-0 select-none"
-        >
-            {initials}
-        </div>
-    );
+const toneMap = {
+    won: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    outbid: "bg-red-50 text-red-600 border-red-100",
+    newBid: "bg-blue-50 text-blue-600 border-blue-100",
+    endingSoon: "bg-amber-50 text-amber-600 border-amber-100",
+    sponsored: "bg-violet-50 text-violet-600 border-violet-100",
+    system: "bg-slate-50 text-slate-600 border-slate-100",
 };
 
-const typeAction = {
-    won: "You won the auction",
-    outbid: "You've been outbid on",
-    newBid: "New bid placed on",
-    sponsored: "Sponsored",
-    general: "Update on",
-};
+function timeAgo(date) {
+    const diff = Math.floor((Date.now() - new Date(date)) / 1000);
+
+    if (diff < 60) return "Just now";
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+
+    return new Date(date).toLocaleDateString();
+}
 
 export default function NotificationDrawer({ open = false, onClose, onMarkedAllRead }) {
     const [notificationsDB, setNotificationsDB] = useState([]);
-
     const [loading, setLoading] = useState(false);
+
+    const [query, setQuery] = useState("");
+    const [filter, setFilter] = useState("all");
 
     const navigate = useNavigate();
 
@@ -85,17 +82,12 @@ export default function NotificationDrawer({ open = false, onClose, onMarkedAllR
 
     const markRead = async (item) => {
         try {
-            await api.post(`/api/notify/${item._id}`);
+            if (!item.isRead) {
+                await api.post(`/api/notify/${item._id}`);
+            }
 
             setNotificationsDB((prev) =>
-                prev.map((n) =>
-                    n._id === item._id
-                        ? {
-                              ...n,
-                              isRead: true,
-                          }
-                        : n,
-                ),
+                prev.map((n) => (n._id === item._id ? { ...n, isRead: true } : n)),
             );
 
             onMarkedAllRead?.();
@@ -105,7 +97,6 @@ export default function NotificationDrawer({ open = false, onClose, onMarkedAllR
                 item.auctionId
             ) {
                 navigate(`/auction/${item.auctionId}`);
-
                 onClose();
             }
         } catch (error) {
@@ -124,201 +115,247 @@ export default function NotificationDrawer({ open = false, onClose, onMarkedAllR
                 })),
             );
 
-            // refresh bell badge
             onMarkedAllRead?.();
         } catch (error) {
             console.log(error);
         }
     };
 
-    const formatTime = (date) => {
-        const diff = Math.floor((new Date() - new Date(date)) / 1000);
-
-        if (diff < 60) return "Just now";
-
-        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-
-        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-
-        if (diff < 172800) return "1 day ago";
-
-        return `${Math.floor(diff / 86400)} days ago`;
+    const removeItem = async (id) => {
+        try {
+            await api.post(`/api/notify/delete/${id}`);
+        } catch (error) {
+            console.log(error);
+        }
+        onMarkedAllRead?.();
+        setNotificationsDB((prev) => prev.filter((item) => item._id !== id));
     };
 
-    const items = [...notificationsDB]
-        .sort((a, b) => {
-            // unread first
-            if (a.isRead !== b.isRead) {
-                return a.isRead ? 1 : -1;
-            }
+    const items = useMemo(() => {
+        let list = [...notificationsDB];
 
-            // priority
-            const p = {
-                outbid: 1,
-                newBid: 1,
-                won: 2,
-                general: 3,
-                sponsored: 4,
-            };
+        if (filter === "unread") {
+            list = list.filter((n) => !n.isRead);
+        }
 
-            const pA = p[a.type] || 3;
+        if (filter !== "all" && filter !== "unread") {
+            list = list.filter((n) => n.type === filter);
+        }
 
-            const pB = p[b.type] || 3;
+        if (query.trim()) {
+            const q = query.toLowerCase();
 
-            if (pA !== pB) return pA - pB;
+            list = list.filter(
+                (n) => n.title?.toLowerCase().includes(q) || n.message?.toLowerCase().includes(q),
+            );
+        }
 
-            // latest first
-            return new Date(b.createdAt) - new Date(a.createdAt);
-        })
-        .slice(0, 10);
+        return list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 20);
+    }, [notificationsDB, query, filter]);
 
     return (
         <AnimatePresence>
             {open && (
                 <>
-                    {/* Backdrop */}
                     <motion.div
-                        initial={{
-                            opacity: 0,
-                        }}
-                        animate={{
-                            opacity: 1,
-                        }}
-                        exit={{
-                            opacity: 0,
-                        }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-black/10 backdrop-blur-sm z-40"
+                        className="fixed inset-0 z-40 bg-black/10 backdrop-blur-sm"
                     />
 
-                    {/* Drawer */}
                     <motion.div
-                        initial={{
-                            x: "100%",
-                        }}
-                        animate={{
-                            x: 0,
-                        }}
-                        exit={{
-                            x: "100%",
-                        }}
+                        initial={{ x: "100%" }}
+                        animate={{ x: 0 }}
+                        exit={{ x: "100%" }}
                         transition={{
                             type: "spring",
                             stiffness: 320,
                             damping: 32,
                         }}
-                        className="fixed top-0 right-0 h-screen w-full sm:w-[390px] bg-white z-50 flex flex-col shadow-2xl border-l border-slate-200"
+                        className="fixed right-0 top-0 z-50 flex h-screen w-full flex-col border-l border-slate-200 bg-white shadow-2xl sm:w-[430px]"
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-                            <div className="flex items-center gap-3">
-                                <button
-                                    onClick={onClose}
-                                    className="text-slate-400 hover:text-slate-700 transition"
-                                >
-                                    <X size={18} />
-                                </button>
+                        <div className="border-b border-slate-100 px-5 py-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={onClose}
+                                        className="text-slate-400 hover:text-slate-700"
+                                    >
+                                        <X size={18} />
+                                    </button>
 
-                                <div>
-                                    <h2 className="text-[17px] font-semibold tracking-tight text-slate-900">
-                                        Notifications
-                                    </h2>
+                                    <div>
+                                        <h2 className="text-[17px] font-semibold text-slate-900">
+                                            Notifications
+                                        </h2>
 
-                                    <p className="text-[12px] text-slate-500 mt-0.5">
-                                        {unreadCount} unread
-                                    </p>
+                                        <p className="text-xs text-slate-500">
+                                            {unreadCount} unread
+                                        </p>
+                                    </div>
                                 </div>
+
+                                {unreadCount > 0 && (
+                                    <button
+                                        onClick={markAllRead}
+                                        className="flex items-center gap-1 text-[13px] font-medium text-slate-500 hover:text-blue-600"
+                                    >
+                                        <CheckCheck size={14} />
+                                        Read all
+                                    </button>
+                                )}
                             </div>
 
-                            {unreadCount > 0 && (
-                                <button
-                                    onClick={markAllRead}
-                                    className="text-[13px] font-medium text-slate-500 hover:text-blue-600 transition flex items-center gap-1"
-                                >
-                                    <CheckCheck size={14} />
-                                    Read all
-                                </button>
-                            )}
+                            {/* Search + Filter */}
+                            <div className="mt-4 grid gap-2">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+
+                                    <input
+                                        value={query}
+                                        onChange={(e) => setQuery(e.target.value)}
+                                        placeholder="Search..."
+                                        className="h-11 w-full rounded-xl border border-slate-200 pl-10 pr-4 text-sm outline-none"
+                                    />
+                                </div>
+
+                                <div className="relative">
+                                    <Filter className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+
+                                    <select
+                                        value={filter}
+                                        onChange={(e) => setFilter(e.target.value)}
+                                        className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none"
+                                    >
+                                        <option value="all">All</option>
+                                        <option value="unread">Unread</option>
+                                        <option value="won">Won</option>
+                                        <option value="outbid">Outbid</option>
+                                        <option value="newBid">New Bid</option>
+                                        <option value="endingSoon">Ending Soon</option>
+                                        <option value="system">System</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Body */}
                         <div className="flex-1 overflow-y-auto">
                             {loading ? (
-                                <div className="p-5 text-sm text-slate-500">Loading...</div>
+                                <div className="space-y-3 p-5">
+                                    {Array.from({
+                                        length: 6,
+                                    }).map((_, i) => (
+                                        <div
+                                            key={i}
+                                            className="h-20 animate-pulse rounded-xl bg-slate-100"
+                                        />
+                                    ))}
+                                </div>
                             ) : items.length === 0 ? (
-                                <div className="h-full flex flex-col items-center justify-center px-10 text-center">
-                                    <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
-                                        <Bell size={20} className="text-slate-400" />
+                                <div className="flex h-full flex-col items-center justify-center px-8 text-center">
+                                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100">
+                                        <Bell className="h-6 w-6 text-slate-400" />
                                     </div>
 
-                                    <p className="text-[14px] font-semibold text-slate-700">
+                                    <h3 className="text-lg font-semibold text-slate-900">
                                         No notifications
-                                    </p>
+                                    </h3>
 
-                                    <p className="text-[12px] text-slate-400 mt-1">
-                                        We'll let you know when something happens.
+                                    <p className="mt-1 text-sm text-slate-500">
+                                        You're all caught up.
                                     </p>
                                 </div>
                             ) : (
                                 <div className="divide-y divide-slate-100">
-                                    {items.map((item, index) => (
-                                        <motion.button
-                                            key={item._id}
-                                            initial={{
-                                                opacity: 0,
-                                                y: 6,
-                                            }}
-                                            animate={{
-                                                opacity: 1,
-                                                y: 0,
-                                            }}
-                                            transition={{
-                                                delay: index * 0.03,
-                                            }}
-                                            whileTap={{
-                                                scale: 0.995,
-                                            }}
-                                            onClick={() => markRead(item)}
-                                            className="w-full text-left px-5 py-4 hover:bg-slate-50 transition relative"
-                                        >
-                                            {!item.isRead && (
-                                                <span className="absolute top-5 right-4 w-2 h-2 rounded-full bg-blue-500" />
-                                            )}
+                                    {items.map((item, index) => {
+                                        const Icon = iconMap[item.type] || Bell;
 
-                                            <div className="flex gap-3 pr-5">
-                                                <Avatar title={item.title} />
+                                        let image = "";
 
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-[14px] text-slate-600 leading-[1.45]">
-                                                        <span className="text-[13px] text-slate-500">
-                                                            {typeAction[item.type] ||
-                                                                "Update on"}{" "}
-                                                        </span>
+                                        if (Array.isArray(item.image)) {
+                                            image = item.image[0];
+                                        } else if (typeof item.image === "string") {
+                                            image = item.image;
+                                        }
 
-                                                        <span className="font-semibold text-slate-900">
-                                                            {item.title}
-                                                        </span>
-                                                    </p>
-
-                                                    <p className="text-[12px] text-slate-400 mt-1 tracking-tight">
-                                                        {formatTime(item.createdAt)}
-                                                    </p>
+                                        return (
+                                            <motion.div
+                                                key={item._id}
+                                                initial={{
+                                                    opacity: 0,
+                                                    y: 8,
+                                                }}
+                                                animate={{
+                                                    opacity: 1,
+                                                    y: 0,
+                                                }}
+                                                transition={{
+                                                    delay: index * 0.02,
+                                                }}
+                                                className={`group flex gap-3 px-5 py-4 hover:bg-slate-50 ${
+                                                    !item.isRead ? "bg-blue-50/30" : ""
+                                                }`}
+                                            >
+                                                <div
+                                                    className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border ${
+                                                        toneMap[item.type]
+                                                    }`}
+                                                >
+                                                    {image ? (
+                                                        <img
+                                                            src={image}
+                                                            alt=""
+                                                            className="h-full w-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <Icon className="h-4 w-4" />
+                                                    )}
                                                 </div>
-                                            </div>
-                                        </motion.button>
-                                    ))}
+
+                                                <button
+                                                    onClick={() => markRead(item)}
+                                                    className="flex-1 text-left"
+                                                >
+                                                    <h4 className="text-sm font-semibold text-slate-900">
+                                                        {item.title}
+                                                    </h4>
+
+                                                    <p className="mt-1 text-sm text-slate-600">
+                                                        {item.message}
+                                                    </p>
+
+                                                    <div className="mt-2 flex items-center gap-3 text-xs text-slate-400">
+                                                        <span>{timeAgo(item.createdAt)}</span>
+
+                                                        {!item.isRead && (
+                                                            <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-semibold text-white">
+                                                                New
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </button>
+
+                                                <button
+                                                    onClick={() => removeItem(item._id)}
+                                                    className="opacity-0 transition group-hover:opacity-100"
+                                                >
+                                                    <Trash2 className="h-4 w-4 text-slate-400 hover:text-red-500" />
+                                                </button>
+                                            </motion.div>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
 
                         {/* Footer */}
-                        <div className="px-5 py-4 border-t border-slate-100">
-                            <Link
-                                to="/notifications"
-                                onClick={onClose}
-                                className="w-full h-11 rounded-xl border border-slate-200 text-slate-700 text-[14px] font-semibold flex items-center justify-center gap-2 hover:bg-slate-50 hover:border-slate-300 transition"
-                            >
-                                View all notifications
+                        <div className="border-t border-slate-100 px-5 py-4">
+                            <Link className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                                get more
                                 <ArrowRight size={14} />
                             </Link>
                         </div>
