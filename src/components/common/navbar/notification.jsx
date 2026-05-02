@@ -81,6 +81,8 @@ export default function NotificationDrawer({ open = false, onClose, onMarkedAllR
     const unreadCount = notificationsDB.filter((n) => !n.isRead).length;
 
     const markRead = async (item) => {
+        console.log(item);
+
         try {
             if (!item.isRead) {
                 await api.post(`/api/notify/${item._id}`);
@@ -90,15 +92,10 @@ export default function NotificationDrawer({ open = false, onClose, onMarkedAllR
                 prev.map((n) => (n._id === item._id ? { ...n, isRead: true } : n)),
             );
 
-            onMarkedAllRead?.();
+            const auctionId = item.auction?._id || item.auctionId;
 
-            if (
-                (item.type === "won" || item.type === "outbid" || item.type === "newBid") &&
-                item.auctionId
-            ) {
-                navigate(`/auction/${item.auctionId}`);
-                onClose();
-            }
+            navigate(`${item.ctaLink}`);
+            onClose();
         } catch (error) {
             console.log(error);
         }
@@ -274,13 +271,7 @@ export default function NotificationDrawer({ open = false, onClose, onMarkedAllR
                                     {items.map((item, index) => {
                                         const Icon = iconMap[item.type] || Bell;
 
-                                        let image = "";
-
-                                        if (Array.isArray(item.image)) {
-                                            image = item.image[0];
-                                        } else if (typeof item.image === "string") {
-                                            image = item.image;
-                                        }
+                                        let image = item.image;
 
                                         return (
                                             <motion.div
