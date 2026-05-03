@@ -21,7 +21,7 @@ import Notification from "../components/common/navbar/notification.jsx";
 import BidItem from "../components/common/navbar/BidItem";
 import UserSidebar from "../components/common/navbar/UserSidebar";
 import Watchlist from "../components/common/watchlist.jsx";
-
+import ChatRoomPage from "../components/common/chatRoom.jsx";
 import AllAuctions from "../components/common/explore.jsx";
 import CategoryPage from "../components/common/categories.jsx";
 import AuctionDetails from "../features/auction/pages/AuctionDetails.jsx";
@@ -29,6 +29,7 @@ import CategoriesPage from "../components/common/categoriesPage.jsx";
 import GuidePage from "../components/common/HowItWork.jsx";
 import BroadcastNotificationPage from "../shared/utils/BroadCastNotification.jsx";
 import ResetPasswordPage from "../features/Setting/resetPassword.jsx";
+import RoomPage from "../components/common/room.jsx";
 
 const router = createBrowserRouter([
     {
@@ -68,9 +69,10 @@ const router = createBrowserRouter([
     {
         path: "/auction",
         element: <RootLayout />,
-        // errorElement: <NotFound />,
         children: [
-            { path: ":id", element: <AuctionDetails /> },
+            { path: "room", element: <RoomPage /> },
+            { path: "room/:roomId", element: <ChatRoomPage /> },
+
             {
                 element: <ProtectRoute />,
                 children: [
@@ -78,6 +80,8 @@ const router = createBrowserRouter([
                     { path: "sell", element: <SellerDashboard /> },
                 ],
             },
+
+            { path: ":id", element: <AuctionDetails /> },
         ],
     },
     {
