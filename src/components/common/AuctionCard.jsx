@@ -114,7 +114,7 @@ function StatusBadge({ status, isActive }) {
             cls: "bg-emerald-50 text-emerald-700 border-emerald-200",
             dot: "bg-emerald-500 animate-pulse",
         },
-        upcoming: {
+        draft: {
             label: "Upcoming",
             cls: "bg-blue-50 text-[#1a3db5] border-blue-200",
             dot: "bg-[#1a3db5]",
@@ -124,10 +124,10 @@ function StatusBadge({ status, isActive }) {
             cls: "bg-gray-100 text-gray-500 border-gray-200",
             dot: "bg-gray-400",
         },
-        draft: {
-            label: "Draft",
-            cls: "bg-yellow-50 text-yellow-700 border-yellow-200",
-            dot: "bg-yellow-500",
+        expired: {
+            label: "Expired",
+            cls: "bg-orange-50 text-orange-700 border-orange-200",
+            dot: "bg-orange-500",
         },
     };
     const c = map[isActive ? "active" : status] ?? map.draft;
@@ -166,90 +166,81 @@ export default function AuctionCard({ auction }) {
         <motion.div
             onHoverStart={() => setHovered(true)}
             onHoverEnd={() => setHovered(false)}
-            whileHover={{ y: -7, boxShadow: "0 24px 56px rgba(232,124,30,0.18)" }}
-            transition={{ type: "spring", stiffness: 280, damping: 22 }}
+            whileHover={{ y: -6 }}
+            transition={{ type: "spring", stiffness: 260, damping: 20 }}
             onClick={() => navigate(`/auction/${auction._id}`)}
-            className="relative w-[300px] bg-white rounded-2xl overflow-hidden border border-gray-100 cursor-pointer select-none"
-            style={{ boxShadow: "0 4px 18px rgba(26,61,181,0.08)" }}
+            className="
+        relative w-full max-w-sm 
+        bg-white rounded-2xl overflow-hidden 
+        border border-gray-100 
+        cursor-pointer select-none
+        transition-shadow duration-300
+        hover:shadow-xl
+    "
         >
-            {/* Image */}
-            <div className="relative h-48 overflow-hidden bg-slate-100">
+            {/* MEDIA */}
+            <div className="relative aspect-[16/9] overflow-hidden bg-slate-100">
                 {image ? (
                     image.map((img, index) => (
                         <img
-                            src={img}
                             key={index}
+                            src={img}
                             alt={title}
-                            style={{
-                                width: "100%",
-                                height: "100%",
-                                objectFit: "cover",
-                                display: "block",
-                            }}
+                            className="w-full h-full object-cover"
                         />
                     ))
                 ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-orange-50">
-                        <Gavel size={44} strokeWidth={1.2} className="text-[#e87c1e] opacity-60" />
+                        <Gavel size={40} className="text-[#e87c1e] opacity-60" />
                     </div>
                 )}
 
-                {/* bottom image gradient */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
-                {/* Status — top left */}
-                <div className="absolute top-2.5 left-2.5">
+                {/* TOP BADGES */}
+                <div className="absolute top-3 left-3">
                     <StatusBadge status={status} isActive={isActive} />
                 </div>
 
-                {/* Watchlist — top right */}
-                <div className="absolute top-2.5 right-2.5">
+                <div className="absolute top-3 right-3">
                     <FavBtn auctionId={auction._id} sellerId={auction.sellerId} />
                 </div>
 
-                {/* Category chip — bottom left */}
-                {category && (
-                    <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/90 backdrop-blur-sm text-[11px] font-600 text-[#1a3db5]">
-                        <Tag size={9} className="text-[#e87c1e]" />
-                        {category.charAt(0).toUpperCase() + category.slice(1).replace("_", " ")}
-                    </div>
-                )}
+                {/* BOTTOM META */}
+                <div className="absolute bottom-3 left-3">
+                    {category && (
+                        <div className="px-2 py-1 rounded-md bg-white/90 text-[11px] font-semibold text-[#1a3db5]">
+                            {category}
+                        </div>
+                    )}
+                </div>
 
-                {/* Bid count chip — bottom right */}
                 {hasBids && (
-                    <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/90 backdrop-blur-sm text-[11px] font-bold text-emerald-600">
-                        <TrendingUp size={10} />
+                    <div className="absolute bottom-3 right-3 px-2 py-1 rounded-md bg-white/90 text-[11px] font-semibold text-emerald-600">
                         {auction.totalBids ?? ""} bids
                     </div>
                 )}
             </div>
 
-            {/* ── BODY ── */}
-            <div className="px-4 pt-3.5 pb-4 space-y-3">
-                {/* Countdown */}
+            {/* BODY */}
+            <div className="p-4 space-y-3">
                 {isActive && <Countdown endsAt={endsAt} />}
 
-                {/* Title */}
-                <h3
-                    className="text-[15px] font-bold text-gray-900 leading-snug line-clamp-2"
-                    style={{ fontFamily: "'DM Serif Display', serif" }}
-                >
-                    {title}
-                </h3>
+                <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">{title}</h3>
 
-                {/* Price box */}
-                <div className="rounded-xl px-3.5 py-2.5 border bg-[#fff4eb] border-orange-100 flex items-center justify-between">
+                {/* PRICE */}
+                <div className="rounded-xl p-3 border bg-orange-50 border-orange-100 flex items-center justify-between">
                     <div>
-                        <p className="text-[10px] font-extrabold tracking-widest text-[#e87c1e] uppercase mb-0.5">
+                        <p className="text-[10px] font-semibold uppercase text-orange-500">
                             {hasBids ? "Current Bid" : "Starting Bid"}
                         </p>
-                        <p className="text-[22px] font-black text-gray-900 leading-none">
+                        <p className="text-lg font-bold text-gray-900">
                             ₹{price.toLocaleString("en-IN")}
                         </p>
                     </div>
-                    {/* Orange accent glyph */}
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#e87c1e] to-[#f5a652] flex items-center justify-center shadow-md shadow-orange-200">
-                        <Gavel size={18} className="text-white" strokeWidth={2} />
+
+                    <div className="w-9 h-9 rounded-lg bg-orange-500 flex items-center justify-center">
+                        <Gavel size={16} className="text-white" />
                     </div>
                 </div>
 
@@ -260,20 +251,17 @@ export default function AuctionCard({ auction }) {
                         e.stopPropagation();
                         navigate(`/auction/${auction._id}`);
                     }}
-                    className={`w-full py-3 rounded-xl text-sm font-bold tracking-wide transition-all duration-200 flex items-center justify-center gap-2
-                        ${
-                            isActive
-                                ? "bg-gradient-to-r from-[#e87c1e] to-[#f5a652] text-white shadow-lg shadow-orange-200 hover:shadow-orange-300 hover:brightness-105"
-                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                        }`}
+                    className={`
+                w-full py-2.5 rounded-lg text-sm font-semibold 
+                transition-all flex items-center justify-center gap-2
+                ${
+                    isActive
+                        ? "bg-orange-500 text-white hover:bg-orange-600"
+                        : "bg-gray-100 text-gray-600"
+                }
+            `}
                 >
-                    {isActive ? (
-                        <>
-                            <Gavel size={14} /> Place Bid
-                        </>
-                    ) : (
-                        "View Details"
-                    )}
+                    {isActive ? "Place Bid" : "View Details"}
                 </motion.button>
             </div>
         </motion.div>

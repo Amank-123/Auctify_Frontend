@@ -33,10 +33,9 @@ export default function Homepage() {
                     <CategoryRow />
 
                     <AuctionsGrid
-                        initialLimit={8}
-                        showAll={false}
-                        title="Trending Auctions"
-                        subtitle="Discover premium live auctions on Auctify."
+                        heading="Explore Auctions"
+                        subheading="Discover live auctions in real-time"
+                        limit={12}
                     />
                     <HowAppWorks />
                 </div>

@@ -1,15 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { HiOutlineX, HiOutlineLogout } from "react-icons/hi";
 import { useAuth } from "@/hooks/useAuth.js";
 import { api } from "@/shared/services/axios.js";
 import { API_ENDPOINTS } from "@/shared/constants/apiEndpoints.js";
 import { showSuccess } from "@/shared/utils/toast.js";
+
 import SidebarSection from "./SidebarSection.jsx";
 import SidebarNavItem from "./SidebarNavItem.jsx";
 import AuctionItem from "./AuctionItem.jsx";
 import BidItem from "./BidItem.jsx";
+
 import defaultUp from "@/assets/default.png";
+
+const ITEMS_PER_PAGE = 5;
 
 export default function UserSidebar({ open, onClose, user }) {
     const { logout } = useAuth();
@@ -18,15 +22,20 @@ export default function UserSidebar({ open, onClose, user }) {
     const [profile, setProfile] = useState(user || null);
     const [auctions, setAuctions] = useState([]);
     const [bids, setBids] = useState([]);
+
+    const [auctionPage, setAuctionPage] = useState(1);
+    const [bidPage, setBidPage] = useState(1);
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
+    /* ---------------- FETCH ---------------- */
     useEffect(() => {
         if (!open) return;
 
         let alive = true;
 
-        const loadSidebarData = async () => {
+        const loadData = async () => {
             try {
                 setLoading(true);
                 setError("");
@@ -39,48 +48,59 @@ export default function UserSidebar({ open, onClose, user }) {
 
                 if (!alive) return;
 
-                const nextProfile = userRes?.data?.data || null;
-
-                const nextAuctions = auctionRes?.data?.data || [];
-
-                const nextBids = bidRes?.data?.data || [];
-
-                setProfile(nextProfile);
-                setAuctions(Array.isArray(nextAuctions) ? nextAuctions : []);
-                setBids(nextBids || []);
+                setProfile(userRes?.data?.data || null);
+                setAuctions(auctionRes?.data?.data || []);
+                setBids(bidRes?.data?.data || []);
             } catch (err) {
                 if (!alive) return;
-                setError(
-                    err?.response?.data?.message ||
-                        err?.message ||
-                        "Failed to load dashboard data.",
-                );
+                setError(err?.response?.data?.message || "Failed to load.");
             } finally {
                 if (alive) setLoading(false);
             }
         };
 
-        loadSidebarData();
+        loadData();
 
         return () => {
             alive = false;
         };
-    }, [open, user]);
+    }, [open]);
 
+    /* ---------------- RESET PAGINATION ---------------- */
+    useEffect(() => {
+        if (open) {
+            setAuctionPage(1);
+            setBidPage(1);
+        }
+    }, [open]);
+
+    /* ---------------- ESC CLOSE ---------------- */
     useEffect(() => {
         if (!open) return;
 
-        const onKeyDown = (e) => {
+        const handler = (e) => {
             if (e.key === "Escape") onClose();
         };
 
-        window.addEventListener("keydown", onKeyDown);
-        return () => window.removeEventListener("keydown", onKeyDown);
-    }, [open, onClose]);
+        window.addEventListener("keydown", handler);
+        return () => window.removeEventListener("keydown", handler);
+    }, [open]);
 
-    const handleLogout = async () => {
+    /* ---------------- PAGINATION ---------------- */
+    const paginatedAuctions = useMemo(
+        () => auctions.slice(0, auctionPage * ITEMS_PER_PAGE),
+        [auctions, auctionPage],
+    );
+
+    const paginatedBids = useMemo(() => bids.slice(0, bidPage * ITEMS_PER_PAGE), [bids, bidPage]);
+
+    const hasMoreAuctions = paginatedAuctions.length < auctions.length;
+    const hasMoreBids = paginatedBids.length < bids.length;
+
+    /* ---------------- LOGOUT ---------------- */
+    const handleLogout = () => {
         logout();
-        showSuccess("User logged out successfully");
+        showSuccess("Logged out");
         onClose();
         navigate("/auth/login");
     };
@@ -88,65 +108,67 @@ export default function UserSidebar({ open, onClose, user }) {
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 z-[60] pointer-events-none">
-            <aside className="pointer-events-auto absolute right-0 top-0 flex h-full w-[360px] max-w-[88vw] flex-col border-l border-[#E5E7EB] bg-[#FFFFFF] shadow-2xl">
-                <div className="flex items-center justify-between border-b border-[#E5E7EB] px-5 py-4">
-                    <div className="flex min-w-0 items-center gap-3">
+        <div className="fixed inset-0 z-[60]">
+            {/* BACKDROP */}
+            <div onClick={onClose} className="absolute inset-0 " />
+
+            {/* SIDEBAR */}
+            <aside
+                className="
+                absolute right-0 top-0 h-full
+                w-full sm:w-[380px]
+                max-w-full
+                bg-white shadow-2xl
+                flex flex-col
+                animate-slideIn
+            "
+            >
+                {/* HEADER */}
+                <div className="flex items-center justify-between border-b px-4 sm:px-5 py-3 sm:py-4">
+                    <div className="flex items-center gap-3 min-w-0">
                         <button
-                            type="button"
                             onClick={() => {
                                 onClose();
                                 navigate("/profile");
                             }}
-                            className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-[#E5E7EB] text-lg text-[#1F2937]"
-                            aria-label="Open profile"
+                            className="h-10 w-10 sm:h-11 sm:w-11 rounded-full overflow-hidden bg-gray-200 shrink-0"
                         >
-                            {profile?.profile ? (
-                                <img
-                                    src={profile.profile}
-                                    alt="User profile"
-                                    className="h-full w-full object-cover"
-                                />
-                            ) : (
-                                <img
-                                    src={defaultUp}
-                                    alt="User profile"
-                                    className="h-full w-full object-cover"
-                                />
-                            )}
+                            <img
+                                src={profile?.profile || defaultUp}
+                                alt="profile"
+                                className="h-full w-full object-cover"
+                            />
                         </button>
 
                         <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-[#1F2937]">
+                            <p className="truncate text-sm font-semibold">
                                 {profile?.firstName || "User"} {profile?.lastName || ""}
                             </p>
-                            <p className="truncate text-xs text-[#6B7280]">
+                            <p className="truncate text-xs text-gray-500">
                                 @{profile?.username || "username"}
                             </p>
                         </div>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="rounded-lg p-2 text-[#6B7280] transition hover:bg-[#F8F8FF] hover:text-[#1F2937]"
-                        aria-label="Close sidebar"
-                    >
+                    <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100">
                         <HiOutlineX className="text-xl" />
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-4 py-4">
+                {/* CONTENT */}
+                <div
+                    className="
+                    flex-1 overflow-y-auto
+                    px-3 sm:px-4
+                    py-4
+                    space-y-5
+                "
+                >
                     <SidebarSection title="Account">
-                        <div className="rounded-2xl border border-[#E5E7EB] bg-[#F8F8FF] p-4">
-                            <p className="text-xs font-medium uppercase tracking-wide text-[#6B7280]">
-                                Email
-                            </p>
-                            <p className="mt-2 break-words text-sm font-semibold text-[#1F2937]">
+                        <div className="rounded-xl border p-3 bg-gray-50">
+                            <p className="text-xs text-gray-500">Email</p>
+                            <p className="text-sm font-semibold break-words">
                                 {profile?.email || "No email"}
-                            </p>
-                            <p className="mt-2 text-xs text-[#6B7280]">
-                                Status: {profile?.status || "neutral"}
                             </p>
                         </div>
                     </SidebarSection>
@@ -166,63 +188,67 @@ export default function UserSidebar({ open, onClose, user }) {
                         </SidebarNavItem>
                     </SidebarSection>
 
+                    {/* AUCTIONS */}
                     <SidebarSection title={`My Auctions (${auctions.length})`}>
-                        <div className="space-y-2">
-                            {loading ? (
-                                <SidebarPlaceholder text="Loading auctions..." />
-                            ) : auctions.length > 0 ? (
-                                auctions
-                                    .slice(0, 6)
-                                    .map((auction) => (
-                                        <AuctionItem
-                                            key={auction._id || auction.id}
-                                            auction={auction}
-                                            onClick={onClose}
-                                        />
-                                    ))
-                            ) : (
-                                <SidebarPlaceholder text="No auctions yet." />
-                            )}
-                        </div>
+                        {loading ? (
+                            <SidebarPlaceholder text="Loading..." />
+                        ) : paginatedAuctions.length ? (
+                            <>
+                                {paginatedAuctions.map((a) => (
+                                    <AuctionItem key={a._id} auction={a} onClick={onClose} />
+                                ))}
+
+                                {hasMoreAuctions && (
+                                    <LoadMore onClick={() => setAuctionPage((p) => p + 1)} />
+                                )}
+                            </>
+                        ) : (
+                            <SidebarPlaceholder text="No auctions yet." />
+                        )}
                     </SidebarSection>
 
+                    {/* BIDS */}
                     <SidebarSection title={`My Bids (${bids.length})`}>
-                        <div className="space-y-2">
-                            {loading ? (
-                                <SidebarPlaceholder text="Loading bids..." />
-                            ) : bids.length > 0 ? (
-                                bids.map((bid) => (
-                                    <BidItem key={bid._id || bid.id} bid={bid} onClick={onClose} />
-                                ))
-                            ) : (
-                                <SidebarPlaceholder text="No bids yet." />
-                            )}
-                        </div>
+                        {loading ? (
+                            <SidebarPlaceholder text="Loading..." />
+                        ) : paginatedBids.length ? (
+                            <>
+                                {paginatedBids.map((b) => (
+                                    <BidItem key={b._id} bid={b} onClick={onClose} />
+                                ))}
+
+                                {hasMoreBids && (
+                                    <LoadMore onClick={() => setBidPage((p) => p + 1)} />
+                                )}
+                            </>
+                        ) : (
+                            <SidebarPlaceholder text="No bids yet." />
+                        )}
                     </SidebarSection>
+
+                    {error && <div className="text-sm text-red-500">{error}</div>}
 
                     <SidebarSection title="Quick stats">
                         <div className="grid grid-cols-2 gap-3">
-                            <StatCard
-                                label="Auctions"
-                                value={profile?.auctionCount ?? auctions.length}
-                            />
-                            <StatCard label="Bids" value={profile?.bidCount ?? bids.length} />
+                            <StatCard label="Auctions" value={auctions.length} />
+                            <StatCard label="Bids" value={bids.length} />
                         </div>
                     </SidebarSection>
-
-                    {/* {error && (
-                        <div className="mt-4 rounded-2xl border border-[#C2410C]/20 bg-[#C2410C]/5 px-4 py-3 text-sm text-[#C2410C]">
-                            {error}
-                        </div>
-                    )} */}
                 </div>
 
-                <div className="border-t border-[#E5E7EB] p-4">
+                {/* FOOTER */}
+                <div className=" px-3 pb-3 sm:p-4">
                     <button
                         onClick={handleLogout}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#C2410C] px-4 py-3 text-sm font-medium text-white transition hover:bg-[#9A3412]"
+                        className="
+                            w-full flex items-center justify-center gap-2
+                            bg-red-600 text-white
+                            py-2.5 sm:py-3
+                            rounded-xl
+                            text-sm sm:text-base
+                        "
                     >
-                        <HiOutlineLogout className="text-lg" />
+                        <HiOutlineLogout />
                         Logout
                     </button>
                 </div>
@@ -231,19 +257,25 @@ export default function UserSidebar({ open, onClose, user }) {
     );
 }
 
+/* ---------- SMALL COMPONENTS ---------- */
+
 function SidebarPlaceholder({ text }) {
+    return <div className="text-sm text-gray-500 border border-dashed rounded-xl p-3">{text}</div>;
+}
+
+function LoadMore({ onClick }) {
     return (
-        <div className="rounded-xl border border-dashed border-[#E5E7EB] bg-[#F8F8FF] px-3 py-4 text-sm text-[#6B7280]">
-            {text}
-        </div>
+        <button onClick={onClick} className="w-full text-sm text-blue-600 hover:underline mt-2">
+            Load more
+        </button>
     );
 }
 
 function StatCard({ label, value }) {
     return (
-        <div className="rounded-xl border border-[#E5E7EB] bg-[#F8F8FF] p-3">
-            <div className="text-xs text-[#6B7280]">{label}</div>
-            <div className="mt-1 text-lg font-semibold text-[#1F2937]">{value}</div>
+        <div className="border rounded-xl p-3 bg-gray-50">
+            <div className="text-xs text-gray-500">{label}</div>
+            <div className="text-lg font-semibold">{value}</div>
         </div>
     );
 }

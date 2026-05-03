@@ -19,42 +19,46 @@ export default function Navbar() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [notificationOpen, setNotificationOpen] = useState(false);
 
-    // socket connect
+    /* ---------------- SOCKET FIX ---------------- */
     useEffect(() => {
         if (!User?._id) return;
 
-        socket.connect();
+        if (!socket.connected) {
+            socket.connect();
+        }
 
         return () => {
-            socket.disconnect();
+            socket.off(); // prevent duplicate listeners
         };
     }, [User?._id]);
 
-    // scroll navbar effect
+    /* ---------------- SCROLL EFFECT ---------------- */
     useEffect(() => {
         const handleScroll = () => {
             setIsScrolled(window.scrollY > 10);
         };
 
         window.addEventListener("scroll", handleScroll);
-
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    // lock body scroll when drawer/sidebar open
+    /* ---------------- BODY LOCK FIX ---------------- */
     useEffect(() => {
-        document.body.style.overflow = sidebarOpen || notificationOpen ? "hidden" : "";
+        const shouldLock = sidebarOpen || notificationOpen;
+        document.body.style.overflow = shouldLock ? "hidden" : "auto";
 
         return () => {
-            document.body.style.overflow = "";
+            document.body.style.overflow = "auto";
         };
     }, [sidebarOpen, notificationOpen]);
 
-    // close sidebar if notification opens
+    /* ---------------- CLOSE CONFLICTS ---------------- */
     useEffect(() => {
-        if (notificationOpen) {
-            setSidebarOpen(false);
-        }
+        if (sidebarOpen) setNotificationOpen(false);
+    }, [sidebarOpen]);
+
+    useEffect(() => {
+        if (notificationOpen) setSidebarOpen(false);
     }, [notificationOpen]);
 
     if (Loading) {
@@ -62,112 +66,87 @@ export default function Navbar() {
     }
 
     const navLinkStyle = ({ isActive }) =>
-        `relative text-sm font-medium transition-colors duration-200 ${
+        `relative text-sm lg:text-[15px] font-medium transition ${
             isActive ? "text-[#2563EB]" : "text-[#1F2937] hover:text-[#2563EB]"
         }`;
 
-    const navUnderline = ({ isActive }) =>
-        isActive ? (
-            <span className="absolute left-0 -bottom-1 h-[2px] w-full rounded-full bg-[#2563EB]" />
-        ) : null;
-
     return (
         <>
-            {/* Navbar */}
+            {/* NAVBAR */}
             <nav
-                className={`sticky top-0 z-50 transition-all duration-300 ${
+                className={`sticky top-0 z-50 transition ${
                     isScrolled
-                        ? "bg-[#F8F8FF]/90 backdrop-blur-xl shadow-sm shadow-slate-200/70"
-                        : "bg-[#F8F8FF] border-b border-[#E5E7EB]"
+                        ? "bg-[#F8F8FF]/90 backdrop-blur-xl shadow-sm"
+                        : "bg-[#F8F8FF] border-b"
                 }`}
             >
-                <div className="mx-auto flex max-w-[1440px] items-center justify-between px-4 py-3 sm:px-6 lg:px-10">
-                    {/* Logo */}
+                <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-1 sm:px-6 lg:px-10">
+                    {/* LOGO */}
                     <Link to="/" className="flex items-center shrink-0">
-                        <img src={navlogo} alt="Auctify" className="h-14 w-auto object-contain" />
+                        <img src={navlogo} alt="Auctify" className="h-10 sm:h-12 lg:h-13 w-auto" />
                     </Link>
 
-                    {/* Desktop Nav */}
-                    <div className="hidden md:flex items-center gap-10">
+                    {/* DESKTOP NAV */}
+                    <div className="hidden md:flex items-center gap-6 lg:gap-10">
                         <NavLink to="/explore" className={navLinkStyle}>
-                            {({ isActive }) => (
-                                <>
-                                    Explore
-                                    {navUnderline({
-                                        isActive,
-                                    })}
-                                </>
-                            )}
+                            Explore
                         </NavLink>
 
                         <NavLink to="/category" className={navLinkStyle}>
-                            {({ isActive }) => (
-                                <>
-                                    Categories
-                                    {navUnderline({
-                                        isActive,
-                                    })}
-                                </>
-                            )}
+                            Categories
                         </NavLink>
+
                         {isAuthenticated && (
                             <Link
                                 to="/auction/sell"
-                                className="rounded-xl px-4 py-2 text-sm font-semibold text-[#C2410C] hover:bg-orange-50 hover:text-[#9A3412] transition"
+                                className="rounded-xl px-3 py-2 text-sm font-semibold text-[#C2410C] hover:bg-orange-50"
                             >
                                 Sell
                             </Link>
                         )}
+
                         <NavLink to="/how-it-works" className={navLinkStyle}>
-                            {({ isActive }) => (
-                                <>
-                                    How it Works
-                                    {navUnderline({
-                                        isActive,
-                                    })}
-                                </>
-                            )}
+                            How it Works
                         </NavLink>
                     </div>
 
-                    {/* Right Side */}
-                    <div className="flex items-center gap-3 sm:gap-4">
+                    {/* RIGHT SIDE */}
+                    <div className="flex items-center gap-2 sm:gap-3">
                         {!isAuthenticated ? (
                             <>
                                 <Link
                                     to="/auth/login"
-                                    className="hidden sm:block text-sm font-medium text-[#1F2937] hover:text-[#2563EB] transition"
+                                    className="hidden sm:block text-sm font-medium"
                                 >
                                     Login
                                 </Link>
 
                                 <Link
                                     to="/auth/register"
-                                    className="rounded-xl bg-[#2563EB] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#1D4ED8] transition"
+                                    className="rounded-lg bg-[#2563EB] px-3 py-2 text-sm font-semibold text-white"
                                 >
                                     Register
                                 </Link>
                             </>
                         ) : (
                             <>
-                                {/* Bell */}
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E5E7EB] bg-white hover:bg-slate-50 transition">
-                                    <NotificationBell
-                                        onClick={() => setNotificationOpen(true)}
-                                        refreshKey={refreshBell}
-                                    />
-                                </div>
-
-                                {/* Menu */}
+                                {/* NOTIFICATION */}
                                 <button
-                                    type="button"
+                                    onClick={() => setNotificationOpen(true)}
+                                    className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg  bg-white"
+                                >
+                                    <NotificationBell refreshKey={refreshBell} />
+                                </button>
+
+                                {/* MENU */}
+                                <button
                                     onClick={() => setSidebarOpen((prev) => !prev)}
-                                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E5E7EB] bg-white text-[#1F2937] hover:bg-slate-50 hover:text-[#2563EB] transition"
+                                    className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg  bg-white"
                                 >
                                     {sidebarOpen ? (
-                                        <HiOutlineX className="text-2xl" />
+                                        <HiOutlineX className="text-xl" />
                                     ) : (
-                                        <HiOutlineMenu className="text-2xl" />
+                                        <HiOutlineMenu className="text-xl" />
                                     )}
                                 </button>
                             </>
@@ -176,10 +155,10 @@ export default function Navbar() {
                 </div>
             </nav>
 
-            {/* Sidebar */}
+            {/* SIDEBAR */}
             <UserSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} user={User} />
 
-            {/* Notifications */}
+            {/* NOTIFICATIONS */}
             <NotificationDrawer
                 open={notificationOpen}
                 onClose={() => setNotificationOpen(false)}
