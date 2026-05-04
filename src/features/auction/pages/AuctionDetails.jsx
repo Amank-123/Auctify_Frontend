@@ -89,10 +89,10 @@ export default function AuctionDetails() {
             if (data.type === "BID_CREATED") {
                 const incoming = data.payload;
 
-                setAuction(incoming);
+                setAuction(incoming.auctionId);
 
                 setBids((prev) => {
-                    return [incoming.highestBidId, ...prev].sort((a, b) => b.amount - a.amount);
+                    return [incoming, ...prev].sort((a, b) => b.amount - a.amount);
                 });
             }
 

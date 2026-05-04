@@ -118,7 +118,7 @@ export default function AuctionsGrid({ heading, subheading, limit }) {
     };
 
     return (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+        <section className="max-w-[1600px] mx-auto px-4 sm:px-6 py-12">
             {/* HEADER */}
             {(heading || subheading) && (
                 <div className="flex items-center justify-between mb-6">
@@ -181,7 +181,7 @@ export default function AuctionsGrid({ heading, subheading, limit }) {
             {/* GRID */}
             {auctions.length > 0 ? (
                 <>
-                    <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ">
+                    <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 ">
                         {auctions.map((a) => (
                             <AuctionCard key={a._id} auction={a} />
                         ))}

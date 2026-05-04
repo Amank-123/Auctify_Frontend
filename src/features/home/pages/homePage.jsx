@@ -35,7 +35,7 @@ export default function Homepage() {
                     <AuctionsGrid
                         heading="Explore Auctions"
                         subheading="Discover live auctions in real-time"
-                        limit={12}
+                        limit={15}
                     />
                     <HowAppWorks />
                 </div>

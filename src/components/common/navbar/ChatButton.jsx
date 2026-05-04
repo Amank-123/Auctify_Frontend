@@ -1,12 +1,13 @@
 import { useEffect, useState, useCallback } from "react";
-import { HiOutlineBell } from "react-icons/hi";
+import { HiChatAlt } from "react-icons/hi";
 import { motion, useAnimation, AnimatePresence } from "framer-motion";
 import { api } from "@/shared/services/axios";
 import { API_ENDPOINTS } from "@/shared/constants/apiEndpoints";
 import { socket } from "@/shared/services/socket";
 import { useAuth } from "@/hooks/useAuth.js";
+import { MessageCircleMore } from "lucide-react";
 
-export default function NotificationBell({ onClick, refreshKey }) {
+export default function ChatButton({ onClick, refreshKey }) {
     const { User } = useAuth();
     const [count, setCount] = useState(0);
 
@@ -113,7 +114,6 @@ export default function NotificationBell({ onClick, refreshKey }) {
                 className="absolute inset-0 rounded-xl pointer-events-none"
             />
 
-            {/* Bell */}
             <motion.div
                 animate={bellControls}
                 style={{
@@ -121,7 +121,7 @@ export default function NotificationBell({ onClick, refreshKey }) {
                 }}
                 className="relative text-2xl text-slate-800 hover:text-blue-600 transition-colors"
             >
-                <HiOutlineBell size={26} />
+                <MessageCircleMore size={25} />
 
                 {/* Badge */}
                 <AnimatePresence>
