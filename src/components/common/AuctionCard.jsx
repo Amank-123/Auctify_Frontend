@@ -1,6 +1,18 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, Clock, Gavel, Flame, TrendingUp, Tag, Users, Play, Zap } from "lucide-react";
+import {
+    Heart,
+    Clock,
+    Gavel,
+    Flame,
+    TrendingUp,
+    Tag,
+    Users,
+    Play,
+    Zap,
+    Timer,
+    FlameIcon,
+} from "lucide-react";
 
 import { api } from "@/shared/services/axios";
 import { API_ENDPOINTS } from "@/shared/constants/apiEndpoints";
@@ -133,33 +145,76 @@ function MediaRenderer({ media, title }) {
    STATUS BADGE
 ───────────────────────────────────────────── */
 const STATUS_MAP = {
-    active: { label: "Live", bg: "bg-emerald-500", pulse: true },
-    draft: { label: "Upcoming", bg: "bg-slate-900/60 backdrop-blur-sm", pulse: false },
-    ended: { label: "Ended", bg: "bg-slate-900/60 backdrop-blur-sm", pulse: false },
-    payment_pending: { label: "Pending", bg: "bg-amber-500", pulse: false },
-    completed: { label: "Completed", bg: "bg-emerald-600", pulse: false },
-    cancelled: { label: "Cancelled", bg: "bg-red-500", pulse: false },
-    expired: { label: "Expired", bg: "bg-slate-900/60 backdrop-blur-sm", pulse: false },
-    failed: { label: "Failed", bg: "bg-red-600", pulse: false },
+    active: {
+        label: "Live",
+        style: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+        pulse: true,
+    },
+    draft: {
+        label: "Upcoming",
+        style: "bg-slate-100 text-slate-700 border border-slate-200",
+        pulse: false,
+    },
+    ended: {
+        label: "Ended",
+        style: "bg-slate-100 text-slate-600 border border-slate-200",
+        pulse: false,
+    },
+    payment_pending: {
+        label: "Pending",
+        style: "bg-amber-50 text-amber-700 border border-amber-200",
+        pulse: false,
+    },
+    completed: {
+        label: "Completed",
+        style: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+        pulse: false,
+    },
+    cancelled: {
+        label: "Cancelled",
+        style: "bg-red-50 text-red-700 border border-red-200",
+        pulse: false,
+    },
+    expired: {
+        label: "Expired",
+        style: "bg-slate-100 text-slate-600 border border-slate-200",
+        pulse: false,
+    },
+    failed: {
+        label: "Failed",
+        style: "bg-red-50 text-red-700 border border-red-200",
+        pulse: false,
+    },
 };
 
-function StatusBadge({ status }) {
-    const c = STATUS_MAP[status] ?? STATUS_MAP.draft;
+function StatusBadge({ status, auctionType }) {
+    const isShort = auctionType === "short";
+
+    const base =
+        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold uppercase tracking-wide border";
+
+    const styles = {
+        active: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        draft: "bg-slate-100 text-slate-600 border-slate-200",
+        ended: "bg-slate-100 text-slate-500 border-slate-200",
+    };
+
     return (
-        <div
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-white text-[11px] font-bold tracking-widest uppercase ${c.bg}`}
-        >
-            {c.pulse && (
-                <span className="relative flex h-1.5 w-1.5 flex-shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" />
+        <div className={`${base} ${styles[status] || styles.draft}`}>
+            {status === "active" && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+
+            {status === "ended" && "Ended"}
+            {status === "active" && "Live"}
+            {status === "draft" && "Upcoming"}
+
+            {isShort && (
+                <span className="ml-1 text-[10px] font-medium text-amber-600 normal-case">
+                    • fast
                 </span>
             )}
-            {c.label}
         </div>
     );
 }
-
 /* ─────────────────────────────────────────────
    WATCHLIST BUTTON
 ───────────────────────────────────────────── */
@@ -250,113 +305,118 @@ export default function AuctionCard({ auction }) {
         <article
             onClick={() => navigate(`/auction/${_id}`)}
             className="
-                group relative w-full bg-white
-                rounded-2xl overflow-hidden border border-slate-100
-                cursor-pointer select-none shadow-sm
-                transition-all duration-300 ease-out
-                hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-200/80
-            "
+            group relative w-full bg-white
+            rounded-xl overflow-hidden border border-slate-200
+            cursor-pointer select-none
+            transition-all duration-300 ease-out
+            hover:-translate-y-1 hover:shadow-md
+        "
         >
             {/* ── MEDIA ── */}
             <div className="relative aspect-video overflow-hidden bg-slate-100">
                 <MediaRenderer media={media} title={title} />
 
-                {/* Gradient — stronger at bottom for chip legibility */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-black/10 pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent pointer-events-none" />
 
                 {/* TOP ROW */}
                 <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
+                        {/* STATUS */}
                         <StatusBadge status={status} />
-                        {/* Flash icon only for short auctions, no text */}
+
+                        {/* FAST */}
                         {auctionType === "short" && (
-                            <div className="w-7 h-7 rounded-lg bg-orange-500 flex items-center justify-center shadow-md">
-                                <Zap size={13} className="fill-white text-white" />
+                            <div
+                                className="h-6 px-2 flex items-center gap-1 rounded-md
+                            border border-amber-300 bg-amber-50"
+                            >
+                                <Flame size={12} className="text-amber-600" />
+                                <span className="text-[10px] font-medium text-amber-700">fast</span>
                             </div>
                         )}
                     </div>
+
                     <FavBtn auctionId={_id} sellerId={sellerId} />
                 </div>
 
-                {/* BOTTOM ROW — timer right, category right */}
-                <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between z-10">
-                    {/* left: intentionally empty — keeps image open */}
-                    <div />
-
-                    {/* right: timer stacked above category */}
-                    <div className="flex flex-col items-end gap-1.5">
-                        {isLive && (
-                            <TimerChip
-                                endTime={endTime}
-                                countdownEnd={countdownEnd}
-                                auctionType={auctionType}
-                            />
-                        )}
-                    </div>
+                {/* TIMER */}
+                <div className="absolute bottom-3 right-3 z-10">
+                    {isLive && (
+                        <TimerChip
+                            endTime={endTime}
+                            countdownEnd={countdownEnd}
+                            auctionType={auctionType}
+                        />
+                    )}
                 </div>
             </div>
 
             {/* ── BODY ── */}
             <div className="px-4 pt-3 pb-4 flex flex-col gap-2">
-                {/* Title — full width */}
-                <h3 className="text-[15px] font-bold text-slate-900 leading-snug line-clamp-1 tracking-tight">
+                {/* TITLE */}
+                <h3 className="text-[15px] font-semibold text-slate-900 leading-snug line-clamp-1">
                     {title}
                 </h3>
 
-                {/* Description — full width */}
+                {/* DESCRIPTION */}
                 {description && (
                     <p className="text-[13px] text-slate-500 leading-relaxed line-clamp-2">
                         {description}
                     </p>
                 )}
 
-                <div className="h-px w-full bg-slate-100 " />
+                <div className="h-px w-full bg-slate-200" />
 
-                {/* Price row — label, price, bid count on same line */}
-                <div className="flex items-center justify-between gap-3 ">
-                    {/* Left: label + price + active bidding */}
+                {/* PRICE + META */}
+                <div className="flex items-center justify-between gap-3">
+                    {/* LEFT */}
                     <div className="flex flex-col min-w-0">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                             {hasBids ? "Current Bid" : "Starting Bid"}
                         </span>
-                        <div className="flex items-baseline gap-0.5 mt-0.5">
-                            <span className="text-[13px] font-extrabold text-orange-500 leading-none">
-                                ₹
-                            </span>
-                            <span className="text-[22px] font-black text-slate-900 tracking-tight leading-none">
+
+                        <div className="flex items-baseline gap-1 mt-0.5">
+                            <span className="text-[13px] font-semibold text-slate-500">₹</span>
+                            <span className="text-[22px] font-bold text-slate-900 tracking-tight">
                                 {price.toLocaleString("en-IN")}
                             </span>
                         </div>
-                        {/* Only show when live + has bids */}
+
                         {showActiveBidding && (
                             <div className="flex items-center gap-1 mt-1">
-                                <TrendingUp size={11} className="text-emerald-500 flex-shrink-0" />
-                                <span className="text-[11px] text-emerald-600 font-semibold">
+                                <TrendingUp size={11} className="text-emerald-500" />
+                                <span className="text-[11px] text-emerald-600 font-medium">
                                     Active bidding
                                 </span>
                             </div>
                         )}
                     </div>
 
-                    {/* Right: bid count + category */}
+                    {/* RIGHT */}
                     {bidCount > 0 && (
                         <div className="flex flex-col items-end gap-1.5">
-                            {/* Bid Count */}
-                            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50 border border-blue-100">
-                                <Users size={16} strokeWidth={2} className="text-blue-600" />
-                                <span className="text-[12px] font-extrabold text-blue-700">
+                            {/* BID COUNT (PRIMARY COLOR) */}
+                            <div
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg
+                            bg-blue-50 border border-blue-200"
+                            >
+                                <Users size={14} className="text-blue-600" />
+                                <span className="text-[12px] font-bold text-blue-700">
                                     {bidCount}
                                 </span>
-                                <span className="text-[12px] text-blue-500 font-semibold">
+                                <span className="text-[12px] text-blue-600 font-medium">
                                     {bidCount === 1 ? "bid" : "bids"}
                                 </span>
                             </div>
 
-                            {/* Category BELOW bid count */}
+                            {/* CATEGORY (NEUTRAL BUT SLIGHTLY ELEVATED) */}
                             {category && (
-                                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-50 border border-purple-100">
-                                    <Tag size={12} strokeWidth={2.5} className="text-purple-600" />
-                                    <span className="text-[12px] font-semibold text-purple-700 capitalize">
+                                <div
+                                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-md
+                                bg-slate-100 border border-slate-200"
+                                >
+                                    <Tag size={12} className="text-orange-500" />
+                                    <span className="text-[12px] font-medium text-orange-500 capitalize">
                                         {category.replace(/_/g, " ")}
                                     </span>
                                 </div>

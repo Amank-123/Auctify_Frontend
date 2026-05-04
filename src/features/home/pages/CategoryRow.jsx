@@ -1,3 +1,4 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRef, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -114,7 +115,7 @@ export default function CategoryRow() {
                         showLeft ? "opacity-100" : "opacity-0 pointer-events-none"
                     }`}
                 >
-                    ‹
+                    <ChevronLeft />
                 </button>
 
                 {/* RIGHT */}
@@ -124,7 +125,7 @@ export default function CategoryRow() {
                         showRight ? "opacity-100" : "opacity-0 pointer-events-none"
                     }`}
                 >
-                    ›
+                    <ChevronRight />
                 </button>
 
                 {/* Track */}

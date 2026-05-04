@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft, ChevronRight, ChevronsLeft } from "lucide-react";
 
 export default function HeroBannerSlider() {
     const banners = [
@@ -143,14 +144,18 @@ export default function HeroBannerSlider() {
                         onClick={prevSlide}
                         className="absolute left-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/15 border border-white/20 backdrop-blur-md text-white hover:bg-white hover:text-slate-900 transition-all duration-300 flex items-center justify-center"
                     >
-                        <span className="text-lg">‹</span>
+                        <span className="text-lg">
+                            <ChevronLeft />
+                        </span>
                     </button>
 
                     <button
                         onClick={nextSlide}
                         className="absolute right-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/15 border border-white/20 backdrop-blur-md text-white hover:bg-white hover:text-slate-900 transition-all duration-300 flex items-center justify-center"
                     >
-                        <span className="text-lg">›</span>
+                        <span className="text-lg">
+                            <ChevronRight />
+                        </span>
                     </button>
                 </div>
 

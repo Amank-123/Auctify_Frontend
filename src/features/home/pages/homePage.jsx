@@ -9,6 +9,7 @@ import AnnouncementBar from "./AnnouncementBar.jsx";
 import CategoryRow from "./CategoryRow.jsx";
 import HowAppWorks from "./HowAppWorks.jsx";
 import AuctionsGrid from "./AuctionsGrid.jsx";
+import { usePageTitle } from "../../../shared/utils/usePageTitle.js";
 
 const GLOBAL_STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Outfit:wght@300;400;500;600;700&display=swap');
@@ -23,6 +24,7 @@ const GLOBAL_STYLE = `
 `;
 
 export default function Homepage() {
+    usePageTitle("Auctify | Explore Auctions");
     return (
         <>
             <style>{GLOBAL_STYLE}</style>
