@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { bidAPI } from "../auctionAPI";
 import { Countdown } from "./Countdown";
 import { Calendar, Gavel, Lock, Heart, Trophy, Info } from "lucide-react";
+import defaultDP from "@/assets/default.png";
 
 export function BidPanel({
     canBid,
@@ -19,6 +20,8 @@ export function BidPanel({
     const [bidMsg, setBidMsg] = useState(null);
     const [bidSuccess, setBidSuccess] = useState(false);
     const [placing, setPlacing] = useState(false);
+
+    console.log("End Time is ", endTime);
 
     // Sync bidAmount when currentBid changes from parent — guarded by ref to avoid loops
     const prevCurrentBid = useRef(currentBid);
@@ -165,7 +168,7 @@ export function BidPanel({
                             <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-700 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                                 {(
                                     <img
-                                        src={winner.userId?.profile}
+                                        src={winner.userId?.profile || defaultDP}
                                         alt="userProfile"
                                         className="object-cover w-full h-full"
                                     />
@@ -254,7 +257,13 @@ export function BidPanel({
                 <p className="text-sm font-bold uppercase tracking-[2px] text-sm text-slate-600 mb-3">
                     Auction Ends In
                 </p>
-                <Countdown endTime={endTime} />
+                {endTime ? (
+                    <Countdown endTime={endTime} />
+                ) : (
+                    <p className="text-xs uppercase tracking-[2px] text-green-600 font-bold mb-1">
+                        Countdown will start after first bid
+                    </p>
+                )}
             </div>
 
             <div className="p-5 space-y-2">

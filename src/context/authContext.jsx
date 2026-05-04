@@ -62,6 +62,7 @@ const AuthProvider = ({ children }) => {
                 logout,
                 verifyOtp,
                 isAuthenticated: !!User,
+                isAdmin: User?.role === "admin",
             }}
         >
             {children}
