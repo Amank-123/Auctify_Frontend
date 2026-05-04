@@ -186,6 +186,9 @@ export default function UserSidebar({ open, onClose, user }) {
                         <SidebarNavItem to="/setting" onClick={onClose}>
                             Settings
                         </SidebarNavItem>
+                        <SidebarNavItem to="/auction/room" onClick={onClose}>
+                            Chat Rooms
+                        </SidebarNavItem>
                     </SidebarSection>
 
                     {/* AUCTIONS */}
