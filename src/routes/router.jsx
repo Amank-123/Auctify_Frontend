@@ -14,7 +14,7 @@ import OtpPage from "@/features/auth/pages/otpPage.jsx";
 import AuthSuccess from "@/features/auth/pages/AuthSuccess.jsx";
 import CreateAuction from "@/features/auction/pages/CreateAuction.jsx";
 import SellerDashboard from "../features/auction/pages/SellerDashboard.jsx";
-import ProtectRoute from "../components/auth/ProtectRoute";
+
 import Profile from "../features/user/pages/userProfile";
 import AuctionItem from "../components/common/navbar/AuctionItem";
 import Notification from "../components/common/navbar/notification.jsx";
@@ -27,10 +27,14 @@ import CategoryPage from "../components/common/categories.jsx";
 import AuctionDetails from "../features/auction/pages/AuctionDetails.jsx";
 import CategoriesPage from "../components/common/categoriesPage.jsx";
 import GuidePage from "../components/common/HowItWork.jsx";
-import BroadcastNotificationPage from "../shared/utils/BroadCastNotification.jsx";
-import ResetPasswordPage from "../features/Setting/resetPassword.jsx";
+import BroadcastNotificationPage from "../features/admin/pages/BroadCastNotification.jsx";
+import CategoryFormPage from "../features/admin/pages/CategoryFormPage.jsx";
+import UserPage from "../features/admin/pages/UsersPage.jsx";
+import BannerPage from "../features/admin/pages/banner.jsx";
+import ResetPasswordPage from "@/features/setting/resetPassword.jsx";
 import RoomPage from "../components/common/room.jsx";
-
+import AdminDashboard from "@/features/admin/pages/AdminDashboard.jsx";
+import ProtectRoute from "../components/auth/ProtectRoute.jsx";
 const router = createBrowserRouter([
     {
         path: "/",
@@ -74,7 +78,7 @@ const router = createBrowserRouter([
             { path: "room/:roomId", element: <ChatRoomPage /> },
 
             {
-                element: <ProtectRoute />,
+                element: <ProtectRoute  />,
                 children: [
                     { path: "create", element: <CreateAuction /> },
                     { path: "sell", element: <SellerDashboard /> },
@@ -86,7 +90,7 @@ const router = createBrowserRouter([
     },
     {
         path: "/user",
-        element: <ProtectRoute />,
+        element: <ProtectRoute  />,
         errorElement: <NotFound />,
         children: [
             {
@@ -107,10 +111,22 @@ const router = createBrowserRouter([
     //     element: <ProtectRoute />,
     //     children: [{ index: true, element: <Notification /> }],
     // },
-    {
-        path: "/admin",
-        element: <BroadcastNotificationPage />,
-    },
+  {
+    path: "/admin",
+    element: <RootLayout />,   // 👈 layout first
+    children: [
+        {
+            element: <ProtectRoute allowedRoles="admin" />, // 👈 protect inside
+            children: [
+                { index: true, element: <AdminDashboard /> },
+                { path: "broadcast", element: <BroadcastNotificationPage /> },
+                { path: "categories", element: <CategoryFormPage /> },
+                { path: "users", element: <UserPage /> },
+                { path: "banners", element: <BannerPage /> },
+            ],
+        },
+    ],
+}
 ]);
 
 export default router;
