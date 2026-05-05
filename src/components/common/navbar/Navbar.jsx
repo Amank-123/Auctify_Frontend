@@ -108,14 +108,7 @@ export default function Navbar() {
                                 Sell
                             </Link>
                         )}
-                      {User?.role === "admin" && (
-                            <Link
-                                to="/admin"
-                                className="rounded-xl px-3 py-2 text-sm font-semibold text-[#C2410C] hover:bg-orange-50"
-                            >
-                                Admin Dash Board
-                            </Link>
-                        )}
+                      
 
                         <NavLink to="/how-it-works" className={navLinkStyle}>
                             How it Works
