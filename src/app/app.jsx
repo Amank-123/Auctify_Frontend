@@ -4,6 +4,7 @@ import { AuthProvider } from "../context/authContext.jsx";
 import { Toaster } from "react-hot-toast";
 import { Analytics } from "@vercel/analytics/react";
 import { useEffect } from "react";
+import { syncServerTime } from "../shared/utils/timeSync.js";
 
 export const App = () => {
     useEffect(() => {
