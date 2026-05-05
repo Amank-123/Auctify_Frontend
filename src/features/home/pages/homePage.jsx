@@ -10,6 +10,7 @@ import CategoryRow from "./CategoryRow.jsx";
 import HowAppWorks from "./HowAppWorks.jsx";
 import AuctionsGrid from "./AuctionsGrid.jsx";
 import { usePageTitle } from "../../../shared/utils/usePageTitle.js";
+import watchlist from "@/components/common/watchlist.jsx";
 
 const GLOBAL_STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Outfit:wght@300;400;500;600;700&display=swap');
@@ -33,7 +34,7 @@ export default function Homepage() {
                 <HeroBannerSlider />
                 <div style={{ paddingTop: 5 }}>
                     <CategoryRow />
-
+<watchlist/>
                     <AuctionsGrid
                         heading="Explore Auctions"
                         subheading="Discover live auctions in real-time"
