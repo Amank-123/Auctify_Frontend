@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, ArrowRight, Search } from "lucide-react";
-
+import { motion } from "framer-motion";
 import AuctionCard from "@/components/common/AuctionCard.jsx";
 import { api } from "@/shared/services/axios";
 import { API_ENDPOINTS } from "@/shared/constants/apiEndpoints";
@@ -245,7 +245,7 @@ export default function AuctionsGrid({
                         ))}
                     </div>
 
-                    {hasMore ? (
+                    {hasMore && (
                         <div className="flex justify-center mt-8">
                             <button
                                 onClick={loadMore}
@@ -255,17 +255,25 @@ export default function AuctionsGrid({
                                 <ChevronDown size={16} />
                             </button>
                         </div>
-                    ) : (
-                        <div className="flex justify-center mt-8">
-                            <div
-                                onClick={loadMore}
-                                className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900"
-                            >
-                                No more auctions
-                            </div>
-                        </div>
                     )}
                 </>
+            ) : loading ? (
+                <div className="text-center py-12 bg-white rounded-2xl shadow-sm">
+                    <div className="flex justify-center mb-6">
+                        <motion.div
+                            className="w-12 h-12 border-4 border-[#E5E7EB] border-t-[#2563EB] rounded-full"
+                            animate={{ rotate: 360 }}
+                            transition={{
+                                repeat: Infinity,
+                                duration: 0.9,
+                                ease: "linear",
+                            }}
+                        />
+                    </div>
+
+                    {/* Title */}
+                    <h2 className="text-xl font-semibold text-[#1F2937]">Loading...</h2>
+                </div>
             ) : (
                 <div className="text-center py-12 bg-white rounded-2xl shadow-sm">
                     <p className="text-slate-500">No auctions found</p>
