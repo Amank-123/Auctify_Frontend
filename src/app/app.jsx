@@ -3,8 +3,12 @@ import router from "../routes/router.jsx";
 import { AuthProvider } from "../context/authContext.jsx";
 import { Toaster } from "react-hot-toast";
 import { Analytics } from "@vercel/analytics/react";
+import { useEffect } from "react";
 
 export const App = () => {
+    useEffect(() => {
+        setInterval(syncServerTime, 60000 * 5); // resync every minute
+    }, []);
     return (
         <>
             <Toaster
@@ -31,8 +35,7 @@ export const App = () => {
             <AuthProvider>
                 <RouterProvider router={router} />
             </AuthProvider>
-                  <Analytics />
-
+            <Analytics />
         </>
     );
 };

@@ -108,7 +108,6 @@ export default function Navbar() {
                                 Sell
                             </Link>
                         )}
-                      
 
                         <NavLink to="/how-it-works" className={navLinkStyle}>
                             How it Works
