@@ -2,6 +2,7 @@ import { RouterProvider } from "react-router-dom";
 import router from "../routes/router.jsx";
 import { AuthProvider } from "../context/authContext.jsx";
 import { Toaster } from "react-hot-toast";
+import { Analytics } from "@vercel/analytics/react";
 
 export const App = () => {
     return (
@@ -30,6 +31,8 @@ export const App = () => {
             <AuthProvider>
                 <RouterProvider router={router} />
             </AuthProvider>
+                  <Analytics />
+
         </>
     );
 };
