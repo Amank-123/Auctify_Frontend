@@ -34,11 +34,25 @@ export default function Homepage() {
                 <HeroBannerSlider />
                 <div style={{ paddingTop: 5 }}>
                     <CategoryRow />
-<watchlist/>
+                    <watchlist />
                     <AuctionsGrid
-                        heading="Explore Auctions"
+                        heading="Explore All Auctions"
                         subheading="Discover live auctions in real-time"
-                        limit={15}
+                        limit={10}
+                    />
+                    <AuctionsGrid
+                        heading="Explore All Instant Auctions"
+                        subheading="Bid fast to win the auctions"
+                        limit={10}
+                        filtering={false}
+                        auctionType="short"
+                    />
+                    <AuctionsGrid
+                        heading="Explore All Long Auctions"
+                        subheading="Bid freely until the auction end"
+                        limit={10}
+                        filtering={false}
+                        auctionType="short"
                     />
                     <HowAppWorks />
                 </div>

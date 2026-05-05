@@ -1,21 +1,19 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { getCurrentTime } from "../../../shared/utils/timeSync";
 
 export function Countdown({ endTime }) {
     const getTime = () => {
-        const diff = Math.max(0, Math.floor((new Date(endTime) - new Date()) / 1000));
+        const now = getCurrentTime();
 
-        const days = Math.floor(diff / 86400);
-        const hours = Math.floor((diff % 86400) / 3600);
-        const minutes = Math.floor((diff % 3600) / 60);
-        const seconds = diff % 60;
+        const diff = Math.max(0, Math.floor((new Date(endTime).getTime() - now) / 1000));
 
         return {
             total: diff,
-            d: days,
-            h: hours,
-            m: minutes,
-            s: seconds,
+            d: Math.floor(diff / 86400),
+            h: Math.floor((diff % 86400) / 3600),
+            m: Math.floor((diff % 3600) / 60),
+            s: diff % 60,
         };
     };
 

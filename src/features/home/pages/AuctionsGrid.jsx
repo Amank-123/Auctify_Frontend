@@ -68,6 +68,7 @@ export default function AuctionsGrid({
     category,
     explorePath,
     filtering = true,
+    auctionType,
 }) {
     const navigate = useNavigate();
 
@@ -94,9 +95,8 @@ export default function AuctionsGrid({
                         status: status !== "all" ? status : undefined,
                         category: category || undefined,
                         page: nextPage,
-                        limit: limit || 12,
-                        sortBy,
-                        order,
+                        auctionType: auctionType,
+                        limit: limit || 10,
                     },
                 });
 
@@ -126,10 +126,10 @@ export default function AuctionsGrid({
     };
 
     return (
-        <section className="max-w-[1600px] mx-auto px-4 sm:px-6 py-12">
+        <section className="max-w-[1400px] mx-auto px-4 sm:px-6 py-12">
             {/* HEADER */}
             {(heading || subheading) && (
-                <div className="border-b border-blue-200 pb-6 mb-4">
+                <div className="border-b border-blue-200 pb-6 mb-4 ">
                     <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
                         {/* LEFT SIDE */}
                         <div className="max-w-2xl">
@@ -182,7 +182,7 @@ export default function AuctionsGrid({
             {/* FILTERS */}
             {filtering && (
                 <div className="mb-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 px-10">
                         {/* SEARCH */}
                         <div className="flex-1 relative">
                             <input

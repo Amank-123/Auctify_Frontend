@@ -18,6 +18,7 @@ import { api } from "@/shared/services/axios";
 import { API_ENDPOINTS } from "@/shared/constants/apiEndpoints";
 import { showError } from "@/shared/utils/toast";
 import { useAuth } from "@/hooks/useAuth.js";
+import { getCurrentTime } from "../../shared/utils/timeSync";
 
 /* ─────────────────────────────────────────────
    COUNTDOWN HOOK
@@ -25,8 +26,13 @@ import { useAuth } from "@/hooks/useAuth.js";
 function useCountdown(target) {
     const calc = () => {
         if (!target) return null;
-        const diff = Math.max(0, Math.floor((new Date(target) - Date.now()) / 1000));
+
+        const now = getCurrentTime();
+
+        const diff = Math.max(0, Math.floor((new Date(target).getTime() - now) / 1000));
+
         if (diff === 0) return null;
+
         return {
             d: Math.floor(diff / 86400),
             h: Math.floor((diff % 86400) / 3600),
@@ -36,13 +42,18 @@ function useCountdown(target) {
             critical: diff < 60,
         };
     };
+
     const [t, setT] = useState(calc);
+
     useEffect(() => {
         if (!target) return;
+
         setT(calc());
+
         const id = setInterval(() => setT(calc()), 1000);
         return () => clearInterval(id);
     }, [target]);
+
     return t;
 }
 

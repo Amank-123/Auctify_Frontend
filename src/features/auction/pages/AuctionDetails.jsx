@@ -124,7 +124,7 @@ export default function AuctionDetails() {
                 const data = await auctionAPI.getAll({
                     category: auctionCategory,
                     page: 1,
-                    limit: 4,
+                    limit: 5,
                     sortBy: "createdAt",
                 });
                 setRelatedAuctions(data);
@@ -460,7 +460,7 @@ export default function AuctionDetails() {
                 </div>
 
                 {/* Related Auctions */}
-                {relatedAuctions.length > 0 && (
+                {relatedAuctions.length > 1 && (
                     <div className="mt-16">
                         <div className="flex items-center justify-between mb-6">
                             <div>
@@ -478,17 +478,17 @@ export default function AuctionDetails() {
                                 View All
                             </button>
                         </div>
-                        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {relatedAuctions.map((a) => (
-                                <AuctionCard key={a._id} auction={a} />
-                            ))}
+                        <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 ">
+                            {relatedAuctions.map((a) => {
+                                if (a._id !== id) return <AuctionCard key={a._id} auction={a} />;
+                            })}
                         </div>
                     </div>
                 )}
             </div>
 
             {/* Fixed bottom info bar */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E5E7EB] px-6 py-4 flex items-center justify-between z-10">
+            {/* <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E5E7EB] px-6 py-4 flex items-center justify-between z-10">
                 <div className="flex items-center gap-2 text-[15px] text-[#4B5563]">
                     <span className="w-5 h-5 rounded-full bg-[#EFF6FF] text-[#2563EB] flex items-center justify-center text-[15px] font-bold flex-shrink-0">
                         <Info size={14} />
@@ -500,7 +500,7 @@ export default function AuctionDetails() {
                         View Terms & Conditions
                     </button>
                 )}
-            </div>
+            </div> */}
         </section>
     );
 }
