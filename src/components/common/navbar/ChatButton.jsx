@@ -1,102 +1,193 @@
 import { useEffect, useState, useCallback } from "react";
-import { HiChatAlt } from "react-icons/hi";
 import { motion, useAnimation, AnimatePresence } from "framer-motion";
+import { MessageCircleMore } from "lucide-react";
+
 import { api } from "@/shared/services/axios";
-import { API_ENDPOINTS } from "@/shared/constants/apiEndpoints";
 import { socket } from "@/shared/services/socket";
 import { useAuth } from "@/hooks/useAuth.js";
-import { MessageCircleMore } from "lucide-react";
 
 export default function ChatButton({ onClick, refreshKey }) {
     const { User } = useAuth();
+
     const [count, setCount] = useState(0);
 
     const bellControls = useAnimation();
+
     const glowControls = useAnimation();
+
     const badgeControls = useAnimation();
+
+    /* ================= SOUND ================= */
 
     const playSound = useCallback(() => {
         const sound = new Audio("/notify.mp3");
+
         sound.volume = 0.6;
 
         sound.play().catch((err) => {
-            console.warn("🔇 Play blocked:", err);
+            console.warn("🔇 Audio blocked:", err);
         });
     }, []);
+
+    /* ================= ANIMATION ================= */
 
     const triggerNotify = useCallback(async () => {
         await bellControls.start({
             rotate: [0, 18, -16, 14, -10, 7, -4, 2, -1, 0],
+
             transition: {
                 duration: 0.7,
+
                 ease: "easeOut",
             },
         });
 
         glowControls.start({
             boxShadow: [
-                "0 0 0px 0px rgba(239,68,68,0)",
-                "0 0 0px 8px rgba(239,68,68,0.25), 0 0 20px 4px rgba(239,68,68,0.15)",
-                "0 0 0px 14px rgba(239,68,68,0.05)",
-                "0 0 0px 0px rgba(239,68,68,0)",
+                "0 0 0px 0px rgba(59,130,246,0)",
+
+                "0 0 0px 8px rgba(59,130,246,0.25), 0 0 20px 4px rgba(59,130,246,0.15)",
+
+                "0 0 0px 14px rgba(59,130,246,0.05)",
+
+                "0 0 0px 0px rgba(59,130,246,0)",
             ],
+
             transition: {
                 duration: 0.9,
+
                 ease: "easeOut",
             },
         });
 
         badgeControls.start({
             scale: [0.8, 1.45, 0.9, 1],
+
             transition: {
                 duration: 0.4,
+
                 ease: "easeOut",
             },
         });
     }, [bellControls, glowControls, badgeControls]);
 
+    /* ================= FETCH UNREAD ================= */
+
     const fetchUnreadCount = useCallback(async () => {
         if (!User?._id) {
             setCount(0);
+
             return;
         }
 
         try {
-            const res = await api.get(API_ENDPOINTS.Notification.GET_NOTIFICATION);
+            console.log("📦 FETCHING ROOMS...");
 
-            const unread = (res.data?.data || []).filter((item) => !item.isRead).length;
+            const res = await api.get("/api/Room/getRooms");
 
-            setCount(unread);
-        } catch {
+            console.log("📦 ROOM RESPONSE:", res.data);
+
+            const rooms = res.data?.data || [];
+
+            console.log("📦 ROOMS:", rooms);
+
+            let totalUnread = 0;
+
+            rooms.forEach((room) => {
+                console.log("📦 ROOM unreadCount:", room.unreadCount);
+
+                totalUnread += room.unreadCount || 0;
+            });
+
+            console.log("🔴 TOTAL UNREAD:", totalUnread);
+
+            setCount(totalUnread);
+        } catch (error) {
+            console.log("❌ FETCH UNREAD ERROR:", error);
+
             setCount(0);
         }
     }, [User?._id]);
 
+    /* ================= SOCKET ================= */
+
     useEffect(() => {
         if (!User?._id) {
             setCount(0);
+
             return;
         }
 
+        console.log("🟢 JOINING USER SOCKET:", User._id);
+
+        /* ================= REGISTER USER ================= */
+
+        socket.emit("join_user", User._id);
+
+        /* ================= INITIAL FETCH ================= */
+
         fetchUnreadCount();
 
-        socket.emit("join_notification", User._id);
+        /* ================= NEW CHAT ================= */
 
-        const handleNewNotification = (data) => {
-            console.log("🔥 Notification received:", data);
+        const handleRoomUpdate = async (data) => {
+            console.log("🔥 ROOM UPDATED EVENT:", data);
 
-            setCount((prev) => prev + 1);
+            /* ================= IGNORE OWN MESSAGE ================= */
+
+            if (String(data.senderId) === String(User?._id)) {
+                console.log("⚠️ Ignoring own message");
+
+                return;
+            }
+
+            /* ================= INCREMENT ================= */
+
+            setCount((prev) => {
+                console.log("🔴 PREV COUNT:", prev);
+
+                return prev + 1;
+            });
+
+            /* ================= SOUND ================= */
 
             playSound();
+
+            /* ================= ANIMATION ================= */
+
             triggerNotify();
+
+            /* ================= BROWSER NOTIFICATION ================= */
+
+            if ("Notification" in window) {
+                if (Notification.permission === "default") {
+                    await Notification.requestPermission();
+                }
+
+                if (Notification.permission === "granted") {
+                    new Notification("New Chat Message", {
+                        body: data.message || "You received a new message",
+
+                        icon: "/logo.png",
+                    });
+                }
+            }
         };
 
-        socket.on("newNotification", handleNewNotification);
+        /* ================= LISTENER ================= */
+
+        socket.on("room_updated", handleRoomUpdate);
+
+        console.log("👂 Listening for room_updated");
 
         return () => {
-            socket.off("newNotification", handleNewNotification);
+            console.log("❌ Removing room_updated listener");
+
+            socket.off("room_updated", handleRoomUpdate);
         };
     }, [User?._id, fetchUnreadCount, playSound, triggerNotify]);
+
+    /* ================= MANUAL REFRESH ================= */
 
     useEffect(() => {
         fetchUnreadCount();
@@ -106,13 +197,16 @@ export default function ChatButton({ onClick, refreshKey }) {
         <button
             type="button"
             onClick={onClick}
-            className="relative inline-flex items-center cursor-pointer justify-center"
+            className="relative inline-flex items-center justify-center cursor-pointer"
         >
-            {/* Glow Ring */}
+            {/* ================= GLOW ================= */}
+
             <motion.div
                 animate={glowControls}
                 className="absolute inset-0 rounded-xl pointer-events-none"
             />
+
+            {/* ================= ICON ================= */}
 
             <motion.div
                 animate={bellControls}
@@ -123,13 +217,16 @@ export default function ChatButton({ onClick, refreshKey }) {
             >
                 <MessageCircleMore size={25} />
 
-                {/* Badge */}
+                {/* ================= BADGE ================= */}
+
                 <AnimatePresence>
                     {count > 0 && (
                         <motion.span
                             key={count}
                             animate={badgeControls}
-                            initial={false}
+                            initial={{
+                                scale: 0,
+                            }}
                             exit={{
                                 scale: 0,
                                 opacity: 0,

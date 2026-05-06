@@ -1,14 +1,83 @@
 import { useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import defaultUp from "@/assets/default.png";
 import { getMyAuctions, getMyBids, updateUserProfile } from "../userAPI";
 import { useNavigate } from "react-router-dom";
 
+const NAV_ITEMS = [
+    { key: "info", label: "My Profile" },
+    { key: "overview", label: "Overview" },
+    { key: "orders", label: "My Orders" },
+    { key: "bids", label: "My Bids" },
+    { key: "auctions", label: "My Auctions" },
+    { key: "settings", label: "Security" },
+];
+
+const fadeUp = {
+    hidden: { opacity: 0, y: 14 },
+    show: (i = 0) => ({
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.3, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] },
+    }),
+};
+
+/* ── Edit pencil icon (inline SVG, no emoji) ── */
+const PencilIcon = () => (
+    <svg
+        width="13"
+        height="13"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+    >
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+);
+
+const XIcon = () => (
+    <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+    >
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+);
+
+const UploadIcon = () => (
+    <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+    >
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="17 8 12 3 7 8" />
+        <line x1="12" y1="3" x2="12" y2="15" />
+    </svg>
+);
+
 export default function Profile() {
     const { Loading, User, setUser } = useAuth();
+    const navigate = useNavigate();
 
     const [activeTab, setActiveTab] = useState("info");
-    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [editSection, setEditSection] = useState(null); // "profile" | "personal" | "address"
     const [form, setForm] = useState({});
     const [profileFile, setProfileFile] = useState(null);
     const [preview, setPreview] = useState("");
@@ -16,23 +85,18 @@ export default function Profile() {
     const [auctions, setAuctions] = useState([]);
     const [loadingData, setLoadingData] = useState(true);
 
-    const navigate = useNavigate();
-
     useEffect(() => {
-        const fetchData = async () => {
+        (async () => {
             try {
                 const [bidsRes, auctionsRes] = await Promise.all([getMyBids(), getMyAuctions()]);
-
                 setBids(bidsRes?.data || []);
                 setAuctions(auctionsRes?.data || []);
             } catch (err) {
-                console.error("Error fetching profile data:", err);
+                console.error(err);
             } finally {
                 setLoadingData(false);
             }
-        };
-
-        fetchData();
+        })();
     }, []);
 
     useEffect(() => {
@@ -46,445 +110,743 @@ export default function Profile() {
         return () => URL.revokeObjectURL(url);
     }, [profileFile]);
 
-    const displayName = useMemo(() => {
-        return `${User?.firstName || ""} ${User?.lastName || ""}`.trim() || User?.username;
-    }, [User]);
+    const displayName = useMemo(
+        () => `${User?.firstName || ""} ${User?.lastName || ""}`.trim() || User?.username,
+        [User],
+    );
 
-    const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
-    };
+    const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
-    const buildFormData = (form, profileFile) => {
+    const handleAddressChange = (e) =>
+        setForm((p) => ({ ...p, address: { ...p.address, [e.target.name]: e.target.value } }));
+
+    const buildFormData = (form, file) => {
         const fd = new FormData();
-
-        // whitelist fields (no garbage)
-        const allowedFields = ["username", "email", "firstName", "lastName"];
-
-        allowedFields.forEach((key) => {
-            const value = form[key];
-            if (value !== undefined && value !== null && value !== "") {
-                fd.append(key, value);
-            }
+        ["username", "email", "firstName", "lastName", "phone", "bio"].forEach((k) => {
+            if (form[k] !== undefined && form[k] !== null) fd.append(k, form[k]);
         });
-
-        // handle nested address properly
         if (form.address) {
-            Object.entries(form.address).forEach(([key, value]) => {
-                if (value) {
-                    fd.append(`address[${key}]`, value);
-                }
+            Object.entries(form.address).forEach(([k, v]) => {
+                if (v) fd.append(`address[${k}]`, v);
             });
         }
-
-        // file
-        if (profileFile) {
-            fd.append("profile", profileFile);
-        }
-
+        if (file) fd.append("profile", file);
         return fd;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         try {
-            const fd = buildFormData(form, profileFile);
-
-            // debug (now actually useful)
-            for (let pair of fd.entries()) {
-                console.log(pair[0], pair[1]);
-            }
-
-            console.log("Log reached update", fd);
-
-            const res = await updateUserProfile(fd);
-
-            // exactly as you wanted
+            const res = await updateUserProfile(buildFormData(form, profileFile));
             setUser(res.data);
-
-            setIsEditOpen(false);
+            setEditSection(null);
         } catch (err) {
-            console.error("Update failed:", err);
+            console.error(err);
         }
     };
 
     if (Loading) {
         return (
-            <div className="h-screen flex items-center justify-center bg-[#F8F8FF]">
-                <div className="px-6 py-3 bg-white border border-[#E5E7EB] rounded-xl shadow-sm text-[#1F2937]">
-                    Loading profile...
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="bg-white rounded-2xl border border-gray-200 px-8 py-5 shadow flex items-center gap-3">
+                    <div className="h-4 w-4 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
+                    <span className="text-sm font-medium text-gray-600">Loading profile…</span>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#F8F8FF] p-6">
-            <div className="max-w-7xl mx-auto grid lg:grid-cols-[280px_1fr] gap-6">
-                {/* SIDEBAR */}
-                <aside className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-5">
-                    <div className="text-center">
-                        <img
-                            src={User?.profile || defaultUp}
-                            className="h-24 w-24 rounded-full mx-auto object-cover border-4 border-white shadow"
-                        />
-                        <h2 className="mt-3 font-semibold text-lg text-[#1F2937]">{displayName}</h2>
-                        <p className="text-sm text-[#6B7280]">@{User?.username}</p>
-                    </div>
+        <div className="min-h-screen bg-gray-50 px-4 py-8 md:px-10">
+            {/* Page title */}
+            <h1 className="text-xl font-semibold text-gray-900 mb-6 max-w-6xl mx-auto">
+                Account Settings
+            </h1>
 
-                    {/* NAV */}
-                    <div className="mt-6 space-y-2">
-                        {[
-                            ["info", "My Info"],
-                            ["overview", "Overview"],
-                            ["orders", "My Orders"],
-                            ["bids", "My Bids"],
-                            ["auctions", "My Auctions"],
-                            ["settings", "Settings"],
-                        ].map(([key, label]) => (
-                            <button
-                                key={key}
-                                onClick={() => setActiveTab(key)}
-                                className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition
-                                ${
-                                    activeTab === key
-                                        ? "bg-[#2563EB] text-white shadow"
-                                        : "text-[#1F2937] hover:bg-[#F1F5F9]"
-                                }`}
-                            >
-                                {label}
+            <div className="max-w-6xl mx-auto flex gap-8 items-start">
+                {/* ── Sidebar ───────────────────────────────── */}
+                <motion.aside
+                    initial={{ opacity: 0, x: -16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                    className="w-48 flex-shrink-0"
+                >
+                    <nav className="flex flex-col gap-0.5">
+                        {NAV_ITEMS.map(({ key, label }) => {
+                            const isActive = activeTab === key;
+                            return (
+                                <button
+                                    key={key}
+                                    onClick={() => setActiveTab(key)}
+                                    className={`relative text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
+                                        ${
+                                            isActive
+                                                ? "text-blue-600 bg-blue-50"
+                                                : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+                                        }`}
+                                >
+                                    {isActive && (
+                                        <motion.span
+                                            layoutId="nav-pill"
+                                            className="absolute inset-0 bg-blue-50 rounded-xl -z-10"
+                                            transition={{
+                                                type: "spring",
+                                                stiffness: 400,
+                                                damping: 32,
+                                            }}
+                                        />
+                                    )}
+                                    {label}
+                                </button>
+                            );
+                        })}
+
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                            <button className="text-left px-4 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 w-full transition-colors">
+                                Delete Account
                             </button>
-                        ))}
-                    </div>
-                </aside>
+                        </div>
+                    </nav>
+                </motion.aside>
 
-                {/* MAIN */}
-                <main className="space-y-6">
-                    {activeTab === "info" && (
-                        <section className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6 space-y-6">
-                            {/* HEADER */}
-                            <div className="flex items-center gap-4">
-                                <img
-                                    src={User?.profile || defaultUp}
-                                    className="h-16 w-16 rounded-full object-cover"
-                                />
-                                <div>
-                                    <h3 className="text-lg font-semibold text-[#1F2937]">
-                                        {User?.firstName} {User?.lastName}
-                                    </h3>
-                                    <p className="text-sm text-[#6B7280]">@{User?.username}</p>
-                                    <p className="text-sm text-[#6B7280]">{User?.email}</p>
-                                </div>
-                            </div>
-
-                            {/* STATS */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                <StatCard label="Auctions" value={User?.auctionCount || 0} />
-                                <StatCard label="Bids" value={User?.bidCount || 0} />
-                                <StatCard label="Status" value={User?.status || "Active"} />
-                            </div>
-
-                            {/* ADDRESS */}
-                            <div>
-                                <h4 className="text-sm font-semibold text-[#1F2937] mb-2">
-                                    Address
-                                </h4>
-
-                                <div className="border border-[#E5E7EB] rounded-xl p-4 text-sm text-[#6B7280] leading-6">
-                                    {User?.address?.street || "—"} <br />
-                                    {User?.address?.city || ""} {User?.address?.state || ""} <br />
-                                    {User?.address?.country || ""} {User?.address?.pin || ""}
-                                </div>
-                            </div>
-
-                            {/* META */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <InfoMini
-                                    label="Joined"
-                                    value={
-                                        User?.createdAt
-                                            ? new Date(User.createdAt).toLocaleDateString()
-                                            : "-"
-                                    }
-                                />
-                                <InfoMini
-                                    label="Verified"
-                                    value={User?.isVerified ? "Yes" : "No"}
-                                />
-                            </div>
-                        </section>
-                    )}
-                    {/* OVERVIEW */}
-                    {activeTab === "overview" && (
-                        <section className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6">
-                            <h3 className="font-semibold text-lg text-[#1F2937]">
-                                Recent Activity
-                            </h3>
-
-                            <div className="mt-5 space-y-4">
-                                {loadingData ? (
-                                    <p>Loading activity...</p>
-                                ) : bids.length === 0 ? (
-                                    <p>No recent activity</p>
-                                ) : (
-                                    bids.slice(0, 3).map((bid) => (
-                                        <div
-                                            key={bid._id}
-                                            className="flex justify-between border p-3 rounded"
-                                        >
-                                            <span>{bid.auction?.title}</span>
-                                            <span>₹{bid.amount}</span>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        </section>
-                    )}
-
-                    {/* ORDERS */}
-                    {activeTab === "orders" && (
-                        <section className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6">
-                            <h3 className="font-semibold text-lg text-[#1F2937]">My Orders</h3>
-
-                            <div className="mt-5 grid sm:grid-cols-2 gap-5">
-                                {[1, 2].map((_, i) => (
-                                    <div
-                                        key={i}
-                                        className="border border-[#E5E7EB] rounded-xl p-4 hover:shadow-lg transition"
-                                    >
-                                        <div className="h-32 bg-gray-200 rounded-lg" />
-
-                                        <div className="mt-3">
-                                            <p className="text-sm font-medium text-[#1F2937]">
-                                                Item Name
-                                            </p>
-                                            <p className="text-xs text-[#6B7280]">Delivered</p>
-
-                                            <button className="mt-3 text-sm font-medium text-[#2563EB] hover:underline">
-                                                View Details
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-                    )}
-
-                    {/* BIDS */}
-                    {activeTab === "bids" && (
-                        <section className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6">
-                            <h3 className="font-semibold text-lg text-[#1F2937]">My Bids</h3>
-
-                            <div className="mt-5 space-y-4">
-                                {loadingData ? (
-                                    <p>Loading bids...</p>
-                                ) : bids.length === 0 ? (
-                                    <p className="text-sm text-[#6B7280]">No bids yet</p>
-                                ) : (
-                                    bids.map((bid) => (
-                                        <div
-                                            key={bid._id}
-                                            className="flex justify-between items-center border border-[#E5E7EB] rounded-xl p-4 hover:shadow transition"
-                                        >
-                                            <span className="text-sm text-[#1F2937]">
-                                                {bid.auction?.title || "Auction Item"}
-                                            </span>
-
-                                            <span className="text-sm font-semibold text-[#C2410C]">
-                                                ₹{bid.amount}
-                                            </span>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        </section>
-                    )}
-
-                    {/* AUCTIONS */}
-                    {activeTab === "auctions" && (
-                        <section className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6">
-                            <h3 className="font-semibold text-lg text-[#1F2937]">My Auctions</h3>
-
-                            <div className="mt-5 space-y-4">
-                                {loadingData ? (
-                                    <p>Loading auctions...</p>
-                                ) : auctions.length === 0 ? (
-                                    <p className="text-sm text-[#6B7280]">
-                                        No auctions created yet
+                {/* ── Main content ──────────────────────────── */}
+                <div className="flex-1 min-w-0">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={activeTab}
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                            className="space-y-4"
+                        >
+                            {/* ── MY PROFILE TAB ── */}
+                            {activeTab === "info" && (
+                                <>
+                                    <p className="text-base font-semibold text-gray-900 mb-4">
+                                        My Profile
                                     </p>
-                                ) : (
-                                    auctions.map((auction) => {
-                                        const image = auction?.media?.[0]?.[0];
 
-                                        return (
-                                            <div
-                                                key={auction._id}
-                                                onClick={() => navigate(`/auction/${auction._id}`)}
-                                                className="flex items-center justify-between gap-4 border border-[#E5E7EB] rounded-xl p-4 hover:shadow transition cursor-pointer hover:bg-[#F9FAFB]"
-                                            >
-                                                {/* LEFT */}
-                                                <div className="flex items-center gap-4">
-                                                    {image ? (
-                                                        <img
-                                                            src={image}
-                                                            className="h-14 w-14 rounded-lg object-cover"
-                                                        />
-                                                    ) : (
-                                                        <div className="h-14 w-14 bg-gray-200 rounded-lg" />
-                                                    )}
-
-                                                    <div>
-                                                        <p className="text-sm font-medium text-[#1F2937]">
-                                                            {auction.name}
-                                                        </p>
-
-                                                        <p className="text-xs text-[#6B7280]">
-                                                            {auction.description}
-                                                        </p>
-
-                                                        <p
-                                                            className={`text-xs mt-1 ${
-                                                                auction.status === "live"
-                                                                    ? "text-green-600"
-                                                                    : auction.status === "draft"
-                                                                      ? "text-gray-400"
-                                                                      : "text-red-500"
-                                                            }`}
-                                                        >
-                                                            {auction.status}
-                                                        </p>
-                                                    </div>
-                                                </div>
-
-                                                {/* RIGHT */}
-                                                <div className="text-right">
-                                                    <p className="text-sm font-semibold text-[#2563EB]">
-                                                        ₹
-                                                        {auction.currentHighestBid > 0
-                                                            ? auction.currentHighestBid
-                                                            : auction.startPrice}
+                                    {/* Profile card */}
+                                    <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                <img
+                                                    src={User?.profile || defaultUp}
+                                                    className="h-14 w-14 rounded-full object-cover ring-2 ring-gray-100"
+                                                />
+                                                <div>
+                                                    <p className="text-base font-semibold text-gray-900">
+                                                        {displayName}
                                                     </p>
-
-                                                    <p className="text-xs text-[#6B7280]">
-                                                        {auction.bidCount} bids
+                                                    <p className="text-sm text-gray-500 mt-0.5">
+                                                        {User?.bio || "No bio added"}
+                                                    </p>
+                                                    <p className="text-sm text-gray-400 mt-0.5">
+                                                        {[
+                                                            User?.address?.city,
+                                                            User?.address?.country,
+                                                        ]
+                                                            .filter(Boolean)
+                                                            .join(", ") || "No location set"}
                                                     </p>
                                                 </div>
                                             </div>
-                                        );
-                                    })
-                                )}
-                            </div>
-                        </section>
-                    )}
+                                            <EditBtn onClick={() => setEditSection("profile")} />
+                                        </div>
+                                    </div>
 
-                    {/* SETTINGS */}
-                    {activeTab === "settings" && (
-                        <section className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6">
-                            <h3 className="font-semibold text-lg text-[#1F2937]">Account Info</h3>
+                                    {/* Personal Information card */}
+                                    <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                                        <div className="flex items-center justify-between mb-5">
+                                            <p className="text-sm font-semibold text-gray-800">
+                                                Personal Information
+                                            </p>
+                                            <EditBtn onClick={() => setEditSection("personal")} />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+                                            <InfoField label="First Name" value={User?.firstName} />
+                                            <InfoField label="Last Name" value={User?.lastName} />
+                                            <InfoField label="Email Address" value={User?.email} />
+                                            <InfoField label="Phone" value={User?.phone} />
+                                            <InfoField
+                                                label="Username"
+                                                value={`@${User?.username}`}
+                                            />
+                                            <InfoField
+                                                label="Account Status"
+                                                value={User?.status || "Active"}
+                                                valueClass="text-emerald-600 font-semibold"
+                                            />
+                                            <div className="col-span-2">
+                                                <InfoField label="Bio" value={User?.bio} />
+                                            </div>
+                                        </div>
+                                    </div>
 
-                            <div className="grid sm:grid-cols-2 gap-4 mt-5">
-                                <Input
-                                    label="Username"
-                                    name="username"
-                                    value={form.username || ""}
-                                    onChange={handleChange}
-                                />
-                                <Input
-                                    label="Email"
-                                    name="email"
-                                    value={form.email || ""}
-                                    onChange={handleChange}
-                                />
-                                <Input
-                                    label="First Name"
-                                    name="firstName"
-                                    value={form.firstName || ""}
-                                    onChange={handleChange}
-                                />
-                                <Input
-                                    label="Last Name"
-                                    name="lastName"
-                                    value={form.lastName || ""}
-                                    onChange={handleChange}
-                                />
-                            </div>
+                                    {/* Address card */}
+                                    <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                                        <div className="flex items-center justify-between mb-5">
+                                            <p className="text-sm font-semibold text-gray-800">
+                                                Address
+                                            </p>
+                                            <EditBtn onClick={() => setEditSection("address")} />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+                                            <InfoField
+                                                label="Country"
+                                                value={User?.address?.country}
+                                            />
+                                            <InfoField
+                                                label="City / State"
+                                                value={[User?.address?.city, User?.address?.state]
+                                                    .filter(Boolean)
+                                                    .join(", ")}
+                                            />
+                                            <InfoField
+                                                label="Street"
+                                                value={User?.address?.street}
+                                            />
+                                            <InfoField
+                                                label="Postal Code"
+                                                value={User?.address?.pin}
+                                            />
+                                        </div>
+                                    </div>
 
-                            <button
-                                onClick={() => setIsEditOpen(true)}
-                                className="mt-5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-5 py-2 rounded-xl text-sm font-medium transition"
-                            >
-                                Edit Profile
-                            </button>
-                        </section>
-                    )}
-                </main>
+                                    {/* Meta */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-white rounded-2xl border border-gray-200 p-5">
+                                            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">
+                                                Member Since
+                                            </p>
+                                            <p className="text-sm font-semibold text-gray-800">
+                                                {User?.createdAt
+                                                    ? new Date(User.createdAt).toLocaleDateString(
+                                                          "en-GB",
+                                                          {
+                                                              day: "numeric",
+                                                              month: "long",
+                                                              year: "numeric",
+                                                          },
+                                                      )
+                                                    : "—"}
+                                            </p>
+                                        </div>
+                                        <div className="bg-white rounded-2xl border border-gray-200 p-5">
+                                            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">
+                                                Verified
+                                            </p>
+                                            <p
+                                                className={`text-sm font-semibold ${User?.isVerified ? "text-emerald-600" : "text-red-500"}`}
+                                            >
+                                                {User?.isVerified
+                                                    ? "Verified Account"
+                                                    : "Not Verified"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            {/* ── OVERVIEW TAB ── */}
+                            {activeTab === "overview" && (
+                                <>
+                                    <p className="text-base font-semibold text-gray-900 mb-4">
+                                        Overview
+                                    </p>
+                                    <div className="grid grid-cols-3 gap-4 mb-4">
+                                        {[
+                                            {
+                                                label: "Total Auctions",
+                                                val: User?.auctionCount || 0,
+                                            },
+                                            { label: "Total Bids", val: User?.bidCount || 0 },
+                                            {
+                                                label: "Account Status",
+                                                val: User?.status || "Active",
+                                            },
+                                        ].map((s, i) => (
+                                            <motion.div
+                                                key={s.label}
+                                                variants={fadeUp}
+                                                custom={i}
+                                                initial="hidden"
+                                                animate="show"
+                                                className="bg-white rounded-2xl border border-gray-200 p-5"
+                                            >
+                                                <p className="text-2xl font-bold text-blue-600">
+                                                    {s.val}
+                                                </p>
+                                                <p className="text-xs text-gray-400 font-medium mt-1 uppercase tracking-wider">
+                                                    {s.label}
+                                                </p>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                    <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                                        <p className="text-sm font-semibold text-gray-800 mb-4">
+                                            Recent Bids
+                                        </p>
+                                        {loadingData ? (
+                                            <Skeleton />
+                                        ) : bids.length === 0 ? (
+                                            <Empty msg="No recent activity" />
+                                        ) : (
+                                            bids.slice(0, 3).map((bid, i) => (
+                                                <motion.div
+                                                    key={bid._id}
+                                                    variants={fadeUp}
+                                                    custom={i}
+                                                    initial="hidden"
+                                                    animate="show"
+                                                    className="flex items-center justify-between py-3.5 border-b border-gray-100 last:border-0"
+                                                >
+                                                    <div>
+                                                        <p className="text-sm font-medium text-gray-800">
+                                                            {bid.auction?.title}
+                                                        </p>
+                                                        <p className="text-xs text-gray-400 mt-0.5">
+                                                            Recent bid
+                                                        </p>
+                                                    </div>
+                                                    <span className="text-sm font-bold text-blue-600">
+                                                        ₹{bid.amount}
+                                                    </span>
+                                                </motion.div>
+                                            ))
+                                        )}
+                                    </div>
+                                </>
+                            )}
+
+                            {/* ── ORDERS TAB ── */}
+                            {activeTab === "orders" && (
+                                <>
+                                    <p className="text-base font-semibold text-gray-900 mb-4">
+                                        My Orders
+                                    </p>
+                                    <div className="grid sm:grid-cols-2 gap-4">
+                                        {[1, 2].map((_, i) => (
+                                            <motion.div
+                                                key={i}
+                                                variants={fadeUp}
+                                                custom={i}
+                                                initial="hidden"
+                                                animate="show"
+                                                whileHover={{ y: -2 }}
+                                                className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200"
+                                            >
+                                                <div className="h-36 bg-gradient-to-br from-blue-50 to-indigo-100" />
+                                                <div className="p-4">
+                                                    <p className="font-semibold text-gray-800 text-sm">
+                                                        Item Name
+                                                    </p>
+                                                    <p className="text-xs text-emerald-600 mt-1 font-semibold">
+                                                        Delivered
+                                                    </p>
+                                                    <button className="mt-3 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+                                                        View Details
+                                                    </button>
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+
+                            {/* ── BIDS TAB ── */}
+                            {activeTab === "bids" && (
+                                <>
+                                    <p className="text-base font-semibold text-gray-900 mb-4">
+                                        My Bids
+                                    </p>
+                                    <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100">
+                                        {loadingData ? (
+                                            <div className="p-6">
+                                                <Skeleton />
+                                            </div>
+                                        ) : bids.length === 0 ? (
+                                            <div className="p-6">
+                                                <Empty msg="No bids placed yet" />
+                                            </div>
+                                        ) : (
+                                            bids.map((bid, i) => (
+                                                <motion.div
+                                                    key={bid._id}
+                                                    variants={fadeUp}
+                                                    custom={i}
+                                                    initial="hidden"
+                                                    animate="show"
+                                                    className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
+                                                >
+                                                    <div>
+                                                        <p className="text-sm font-medium text-gray-800">
+                                                            {bid.auction?.title || "Auction Item"}
+                                                        </p>
+                                                        <span className="inline-block mt-1 text-[10px] font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                                                            Active
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-sm font-bold text-orange-500">
+                                                        ₹{bid.amount}
+                                                    </span>
+                                                </motion.div>
+                                            ))
+                                        )}
+                                    </div>
+                                </>
+                            )}
+
+                            {/* ── AUCTIONS TAB ── */}
+                            {activeTab === "auctions" && (
+                                <>
+                                    <p className="text-base font-semibold text-gray-900 mb-4">
+                                        My Auctions
+                                    </p>
+                                    <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100">
+                                        {loadingData ? (
+                                            <div className="p-6">
+                                                <Skeleton />
+                                            </div>
+                                        ) : auctions.length === 0 ? (
+                                            <div className="p-6">
+                                                <Empty msg="No auctions created yet" />
+                                            </div>
+                                        ) : (
+                                            auctions.map((auction, i) => {
+                                                const image = auction?.media?.[0]?.[0];
+                                                return (
+                                                    <motion.div
+                                                        key={auction._id}
+                                                        variants={fadeUp}
+                                                        custom={i}
+                                                        initial="hidden"
+                                                        animate="show"
+                                                        whileHover={{ backgroundColor: "#F9FAFB" }}
+                                                        onClick={() =>
+                                                            navigate(`/auction/${auction._id}`)
+                                                        }
+                                                        className="flex items-center justify-between gap-4 px-6 py-4 cursor-pointer transition-colors"
+                                                    >
+                                                        <div className="flex items-center gap-4">
+                                                            {image ? (
+                                                                <img
+                                                                    src={image}
+                                                                    className="h-12 w-12 rounded-xl object-cover"
+                                                                />
+                                                            ) : (
+                                                                <div className="h-12 w-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center">
+                                                                    <svg
+                                                                        width="18"
+                                                                        height="18"
+                                                                        viewBox="0 0 24 24"
+                                                                        fill="none"
+                                                                        stroke="#93C5FD"
+                                                                        strokeWidth="1.5"
+                                                                    >
+                                                                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                                                                    </svg>
+                                                                </div>
+                                                            )}
+                                                            <div>
+                                                                <p className="text-sm font-semibold text-gray-800">
+                                                                    {auction.name}
+                                                                </p>
+                                                                <p className="text-xs text-gray-400 mt-0.5 line-clamp-1 max-w-xs">
+                                                                    {auction.description}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-5 flex-shrink-0">
+                                                            <span
+                                                                className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border
+                                                            ${
+                                                                auction.status === "live"
+                                                                    ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                                                                    : auction.status === "draft"
+                                                                      ? "text-gray-500 bg-gray-100 border-gray-200"
+                                                                      : "text-red-600 bg-red-50 border-red-200"
+                                                            }`}
+                                                            >
+                                                                {auction.status}
+                                                            </span>
+                                                            <div className="text-right">
+                                                                <p className="text-sm font-bold text-blue-600">
+                                                                    ₹
+                                                                    {auction.currentHighestBid > 0
+                                                                        ? auction.currentHighestBid
+                                                                        : auction.startPrice}
+                                                                </p>
+                                                                <p className="text-xs text-gray-400 mt-0.5">
+                                                                    {auction.bidCount} bids
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </motion.div>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+                                </>
+                            )}
+
+                            {/* ── SECURITY TAB ── */}
+                            {activeTab === "settings" && (
+                                <>
+                                    <p className="text-base font-semibold text-gray-900 mb-4">
+                                        Security
+                                    </p>
+                                    <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                                        <div className="flex items-center justify-between mb-5">
+                                            <p className="text-sm font-semibold text-gray-800">
+                                                Account Credentials
+                                            </p>
+                                            <EditBtn onClick={() => setEditSection("personal")} />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+                                            <InfoField label="Username" value={User?.username} />
+                                            <InfoField label="Email" value={User?.email} />
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </motion.div>
+                    </AnimatePresence>
+                </div>
             </div>
 
-            {/* MODAL */}
-            {isEditOpen && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-                    <form className="bg-white p-6 rounded-2xl w-full max-w-lg space-y-4 shadow-xl">
-                        <h3 className="font-semibold text-lg text-[#1F2937]">Edit Profile</h3>
+            {/* ── Edit Modal ───────────────────────────────── */}
+            <AnimatePresence>
+                {editSection && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.18 }}
+                        className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[2px] flex items-center justify-center px-4"
+                        onClick={(e) => e.target === e.currentTarget && setEditSection(null)}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.97, y: 16 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.97, y: 16 }}
+                            transition={{ type: "spring", stiffness: 360, damping: 30 }}
+                            className="w-full max-w-lg bg-white rounded-2xl border border-gray-200 shadow-2xl"
+                        >
+                            {/* Modal header */}
+                            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+                                <div>
+                                    <h3 className="text-base font-semibold text-gray-900">
+                                        {editSection === "profile" && "Edit Profile"}
+                                        {editSection === "personal" && "Edit Personal Information"}
+                                        {editSection === "address" && "Edit Address"}
+                                    </h3>
+                                    <p className="text-xs text-gray-400 mt-0.5">
+                                        Update your information below
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => setEditSection(null)}
+                                    className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors"
+                                >
+                                    <XIcon />
+                                </button>
+                            </div>
 
-                        <Input
-                            label="Username"
-                            name="username"
-                            value={form.username || ""}
-                            onChange={handleChange}
-                        />
-                        <Input
-                            label="Email"
-                            name="email"
-                            value={form.email || ""}
-                            onChange={handleChange}
-                        />
+                            <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+                                {/* Profile section */}
+                                {editSection === "profile" && (
+                                    <>
+                                        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                            <img
+                                                src={preview || User?.profile || defaultUp}
+                                                className="h-14 w-14 rounded-full object-cover ring-2 ring-white shadow"
+                                            />
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-700 mb-1">
+                                                    Profile photo
+                                                </p>
+                                                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                                                    <UploadIcon /> Upload Photo
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        className="hidden"
+                                                        onChange={(e) =>
+                                                            setProfileFile(e.target.files[0])
+                                                        }
+                                                    />
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <FieldInput
+                                            label="Bio"
+                                            name="bio"
+                                            value={form.bio || ""}
+                                            onChange={handleChange}
+                                        />
+                                    </>
+                                )}
 
-                        <input type="file" onChange={(e) => setProfileFile(e.target.files[0])} />
+                                {/* Personal section */}
+                                {editSection === "personal" && (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <FieldInput
+                                            label="First Name"
+                                            name="firstName"
+                                            value={form.firstName || ""}
+                                            onChange={handleChange}
+                                        />
+                                        <FieldInput
+                                            label="Last Name"
+                                            name="lastName"
+                                            value={form.lastName || ""}
+                                            onChange={handleChange}
+                                        />
+                                        <FieldInput
+                                            label="Email"
+                                            name="email"
+                                            value={form.email || ""}
+                                            onChange={handleChange}
+                                            type="email"
+                                        />
+                                        <FieldInput
+                                            label="Phone"
+                                            name="phone"
+                                            value={form.phone || ""}
+                                            onChange={handleChange}
+                                            type="tel"
+                                        />
+                                        <div className="col-span-2">
+                                            <FieldInput
+                                                label="Username"
+                                                name="username"
+                                                value={form.username || ""}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
 
-                        <div className="flex justify-end gap-2 pt-4">
-                            <button type="button" onClick={() => setIsEditOpen(false)}>
-                                Cancel
-                            </button>
-                            <button
-                                className="bg-[#2563EB] text-white px-4 py-2 rounded-lg"
-                                onClick={handleSubmit}
-                            >
-                                Save
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            )}
+                                {/* Address section */}
+                                {editSection === "address" && (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <FieldInput
+                                            label="Country"
+                                            name="country"
+                                            value={form.address?.country || ""}
+                                            onChange={handleAddressChange}
+                                        />
+                                        <FieldInput
+                                            label="City"
+                                            name="city"
+                                            value={form.address?.city || ""}
+                                            onChange={handleAddressChange}
+                                        />
+                                        <FieldInput
+                                            label="State"
+                                            name="state"
+                                            value={form.address?.state || ""}
+                                            onChange={handleAddressChange}
+                                        />
+                                        <FieldInput
+                                            label="Postal Code"
+                                            name="pin"
+                                            value={form.address?.pin || ""}
+                                            onChange={handleAddressChange}
+                                        />
+                                        <div className="col-span-2">
+                                            <FieldInput
+                                                label="Street Address"
+                                                name="street"
+                                                value={form.address?.street || ""}
+                                                onChange={handleAddressChange}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="flex justify-end gap-3 pt-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditSection(null)}
+                                        className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <motion.button
+                                        type="submit"
+                                        whileHover={{ y: -1 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        className="px-5 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium shadow-sm hover:bg-blue-700 transition-colors"
+                                    >
+                                        Save Changes
+                                    </motion.button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
 
-function Input({ label, ...props }) {
+/* ── Sub-components ─────────────────────────────────────────────────────────── */
+
+function EditBtn({ onClick }) {
+    return (
+        <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={onClick}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-medium text-gray-600 hover:border-gray-300 hover:text-gray-900 hover:shadow-sm transition-all"
+        >
+            Edit <PencilIcon />
+        </motion.button>
+    );
+}
+
+function InfoField({ label, value, valueClass = "" }) {
     return (
         <div>
-            <label className="text-sm text-[#6B7280]">{label}</label>
+            <p className="text-xs text-gray-400 font-medium mb-0.5">{label}</p>
+            <p className={`text-sm font-medium text-gray-800 ${valueClass}`}>{value || "—"}</p>
+        </div>
+    );
+}
+
+function FieldInput({ label, name, value, onChange, type = "text" }) {
+    return (
+        <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-gray-500">{label}</label>
             <input
-                {...props}
-                className="w-full mt-1 border border-[#E5E7EB] px-3 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB]"
+                type={type}
+                name={name}
+                value={value}
+                onChange={onChange}
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-800 outline-none
+                    focus:border-blue-400 focus:ring-4 focus:ring-blue-50 focus:bg-white transition-all duration-150 placeholder:text-gray-300"
             />
         </div>
     );
 }
 
-function StatCard({ label, value }) {
+function Skeleton() {
     return (
-        <div className="border border-[#E5E7EB] rounded-xl p-4 text-center">
-            <div className="text-lg font-semibold text-[#2563EB]">{value}</div>
-            <div className="text-xs text-[#6B7280] mt-1">{label}</div>
+        <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+                <div key={i} className="h-12 rounded-xl bg-gray-100 animate-pulse" />
+            ))}
         </div>
     );
 }
 
-function InfoMini({ label, value }) {
+function Empty({ msg }) {
     return (
-        <div className="border border-[#E5E7EB] rounded-xl p-3">
-            <div className="text-xs text-[#6B7280]">{label}</div>
-            <div className="text-sm font-medium text-[#1F2937] mt-1">{value}</div>
+        <div className="rounded-xl border border-dashed border-gray-200 py-12 text-center">
+            <p className="text-sm text-gray-400 font-medium">{msg}</p>
         </div>
     );
 }
