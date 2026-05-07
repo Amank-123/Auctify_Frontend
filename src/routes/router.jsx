@@ -35,6 +35,9 @@ import ResetPasswordPage from "@/features/setting/resetPassword.jsx";
 import RoomPage from "../components/common/room.jsx";
 import AdminDashboard from "@/features/admin/pages/AdminDashboard.jsx";
 import ProtectRoute from "../components/auth/ProtectRoute.jsx";
+import ForgotPasswordPage from "../features/auth/pages/ForgotPasswordPage.jsx";
+import ForgotOtpPage from "../features/auth/pages/ForgotOtpPage.jsx";
+import ResetForgotPasswordPage from "../features/auth/pages/ResetPasswordPage.jsx";
 const router = createBrowserRouter([
     {
         path: "/",
@@ -68,6 +71,9 @@ const router = createBrowserRouter([
             { path: "register", element: <SignUpPage /> },
             { path: "otp", element: <OtpPage /> },
             { path: "success", element: <AuthSuccess /> },
+            { path: "forgot-password", element: <ForgotPasswordPage /> },
+            { path: "forgot-password/otp", element: <ForgotOtpPage /> },
+            { path: "reset-password", element: <ResetForgotPasswordPage /> },
         ],
     },
     {
@@ -78,7 +84,7 @@ const router = createBrowserRouter([
             { path: "room/:roomId", element: <ChatRoomPage /> },
 
             {
-                element: <ProtectRoute  />,
+                element: <ProtectRoute />,
                 children: [
                     { path: "create", element: <CreateAuction /> },
                     { path: "sell", element: <SellerDashboard /> },
@@ -90,7 +96,7 @@ const router = createBrowserRouter([
     },
     {
         path: "/user",
-        element: <ProtectRoute  />,
+        element: <ProtectRoute />,
         errorElement: <NotFound />,
         children: [
             {
@@ -111,22 +117,22 @@ const router = createBrowserRouter([
     //     element: <ProtectRoute />,
     //     children: [{ index: true, element: <Notification /> }],
     // },
-  {
-    path: "/admin",
-    element: <RootLayout />,   // 👈 layout first
-    children: [
-        {
-            element: <ProtectRoute allowedRoles="admin" />, // 👈 protect inside
-            children: [
-                { index: true, element: <AdminDashboard /> },
-                { path: "broadcast", element: <BroadcastNotificationPage /> },
-                { path: "categories", element: <CategoryFormPage /> },
-                { path: "users", element: <UserPage /> },
-                { path: "banners", element: <BannerPage /> },
-            ],
-        },
-    ],
-}
+    {
+        path: "/admin",
+        element: <RootLayout />, // 👈 layout first
+        children: [
+            {
+                element: <ProtectRoute allowedRoles="admin" />, // 👈 protect inside
+                children: [
+                    { index: true, element: <AdminDashboard /> },
+                    { path: "broadcast", element: <BroadcastNotificationPage /> },
+                    { path: "categories", element: <CategoryFormPage /> },
+                    { path: "users", element: <UserPage /> },
+                    { path: "banners", element: <BannerPage /> },
+                ],
+            },
+        ],
+    },
 ]);
 
 export default router;
