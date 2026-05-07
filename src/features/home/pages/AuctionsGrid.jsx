@@ -85,6 +85,7 @@ export default function AuctionsGrid({
     const fetchAuctions = useCallback(
         async (nextPage = 1, reset = false) => {
             try {
+                console.log(auctionType);
                 setLoading(true);
 
                 const { sortBy, order } = getSortParams(sort);
@@ -95,8 +96,11 @@ export default function AuctionsGrid({
                         status: status !== "all" ? status : undefined,
                         category: category || undefined,
                         page: nextPage,
-                        auctionType: auctionType,
+                        auctionType: auctionType || undefined,
                         limit: limit || 10,
+
+                        sortBy,
+                        order,
                     },
                 });
 
@@ -112,13 +116,13 @@ export default function AuctionsGrid({
                 setLoading(false);
             }
         },
-        [search, status, sort],
+        [search, status, sort, category, auctionType, limit],
     );
 
     /* ---------- REFETCH ---------- */
     useEffect(() => {
         fetchAuctions(1, true);
-    }, [search, status, sort]);
+    }, [fetchAuctions]);
 
     const loadMore = () => {
         if (!hasMore || loading) return;

@@ -8,8 +8,15 @@ import { syncServerTime } from "../shared/utils/timeSync.js";
 
 export const App = () => {
     useEffect(() => {
-        setInterval(syncServerTime, 60000 * 5); // resync every minute
+        syncServerTime();
+
+        const interval = setInterval(() => {
+            syncServerTime();
+        }, 60000 * 5);
+
+        return () => clearInterval(interval);
     }, []);
+
     return (
         <>
             <Toaster
