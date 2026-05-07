@@ -7,47 +7,80 @@ import { SellerCard } from "../components/SellerCard";
 import { BidPanel } from "../components/BidPanel";
 import { BidHistory } from "../components/BidHistory";
 import { auctionAPI, bidAPI } from "../auctionAPI";
-import { ArrowLeft, ChevronLeft, ChevronRight, Heart, Check, Info, Copy } from "lucide-react";
+
+import {
+    ChevronLeft,
+    ChevronRight,
+    Check,
+    Copy,
+    ShoppingBag,
+    MessageCircle,
+    CheckCircle2,
+    Trophy,
+} from "lucide-react";
 
 import { useAuth } from "../../../hooks/useAuth";
 import AuctionCard from "../../../components/common/AuctionCard";
 import { apiHandler } from "../../../shared/utils/apiHandler";
 import socket from "../../../shared/services/socket";
+import { api } from "../../../shared/services/axios";
 
 export default function AuctionDetails() {
     const { User } = useAuth();
+
     const { id } = useParams();
+
     const navigate = useNavigate();
 
     const [activeThumb, setActiveThumb] = useState(0);
-    const [watched, setWatched] = useState(false);
+
     const [auction, setAuction] = useState(null);
+
     const [relatedAuctions, setRelatedAuctions] = useState([]);
+
     const [bids, setBids] = useState([]);
+
     const [canBid, setCanBid] = useState(true);
+
     const [loading, setLoading] = useState(true);
+
     const [bidsLoading, setBidsLoading] = useState(true);
 
     const [copied, setCopied] = useState(false);
 
+    const [winnerOrder, setWinnerOrder] = useState(null);
+
+    const userId = User?._id;
+
+    /* ─────────────────────────────────────────────
+       COPY LINK
+    ───────────────────────────────────────────── */
+
     const handleCopy = async () => {
         const url = `${window.location.origin}/auction/${auction._id}`;
+
         await navigator.clipboard.writeText(url);
+
         setCopied(true);
+
         setTimeout(() => setCopied(false), 1500);
     };
 
-    // Use stable primitive (string) as dep — avoids refetch on every User object re-creation
-    const userId = User?._id;
+    /* ─────────────────────────────────────────────
+       FETCH AUCTION
+    ───────────────────────────────────────────── */
 
-    // Fetch main auction
     useEffect(() => {
         if (!id) return;
+
         const fetchAuction = async () => {
             try {
                 setLoading(true);
+
                 const data = await apiHandler(() => auctionAPI.getById(id));
+
                 setAuction(data);
+
                 setCanBid(!(userId && data?.sellerId?._id === userId));
             } catch (error) {
                 setAuction(null);
@@ -55,18 +88,27 @@ export default function AuctionDetails() {
                 setLoading(false);
             }
         };
+
         fetchAuction();
     }, [id, userId]);
 
-    // Fetch bids — centralized here, passed down to BidHistory and BidPanel
+    /* ─────────────────────────────────────────────
+       FETCH BIDS
+    ───────────────────────────────────────────── */
+
     useEffect(() => {
         if (!id) return;
+
         if (auction?.status === "draft") return setBids([]);
+
         const fetchBids = async () => {
             try {
                 setBidsLoading(true);
+
                 const data = await bidAPI.getByAuction(id);
+
                 const sorted = [...data].sort((a, b) => b.amount - a.amount);
+
                 setBids(sorted);
             } catch (err) {
                 setBids([]);
@@ -74,13 +116,19 @@ export default function AuctionDetails() {
                 setBidsLoading(false);
             }
         };
+
         fetchBids();
-    }, [id]);
+    }, [id, auction?.status]);
+
+    /* ─────────────────────────────────────────────
+       SOCKET
+    ───────────────────────────────────────────── */
 
     useEffect(() => {
         if (!auction) return;
 
         socket.connect();
+
         socket.emit("join_auction", auction._id);
 
         const handler = (data) => {
@@ -109,45 +157,89 @@ export default function AuctionDetails() {
 
         return () => {
             socket.emit("leave_auction", auction._id);
+
             socket.off("event", handler);
+
             socket.disconnect();
         };
     }, [auction?._id]);
 
-    // Fetch related auctions — depend on category string only, NOT the whole auction object
-    // (depending on the object causes infinite loops since every setState creates a new reference)
-    const auctionCategory = auction?.category;
+    /* ─────────────────────────────────────────────
+       RELATED AUCTIONS
+    ───────────────────────────────────────────── */
+
     useEffect(() => {
-        if (!auctionCategory) return;
+        if (!auction?.category) return;
+
         const fetchRelated = async () => {
             try {
                 const data = await auctionAPI.getAll({
-                    category: auctionCategory,
+                    category: auction.category,
                     page: 1,
                     limit: 5,
                     sortBy: "createdAt",
                 });
+
                 setRelatedAuctions(data);
             } catch (error) {
                 setRelatedAuctions([]);
             }
         };
-        fetchRelated();
-    }, [auctionCategory]);
 
-    /* ── Loading ── */
+        fetchRelated();
+    }, [auction?.category]);
+
+    /* ─────────────────────────────────────────────
+       CHECK WINNER
+    ───────────────────────────────────────────── */
+
+    const isWinner =
+        User?._id && auction?.winnerId && auction?.winnerId?.toString() === User?._id?.toString();
+
+    /* ─────────────────────────────────────────────
+       FETCH ORDER IF WINNER
+    ───────────────────────────────────────────── */
+
+    useEffect(() => {
+        if (!auction?._id || !isWinner) return;
+
+        const fetchWinnerOrder = async () => {
+            try {
+                const { data } = await api.get("/api/order/my");
+
+                const order = data?.data?.find((o) => o.auctionId?._id === auction?._id);
+
+                if (order) {
+                    setWinnerOrder(order);
+                }
+            } catch (err) {
+                console.log(err);
+            }
+        };
+
+        fetchWinnerOrder();
+    }, [auction?._id, isWinner]);
+
+    /* ─────────────────────────────────────────────
+       LOADING
+    ───────────────────────────────────────────── */
+
     if (loading) {
         return (
             <section className="bg-[#F8F8FF] min-h-screen py-24">
                 <div className="max-w-7xl mx-auto px-6 text-center">
                     <h2 className="text-4xl font-bold text-[#1F2937]">Loading Auction...</h2>
+
                     <p className="mt-4 text-[#4B5563]">Please wait while we fetch the listing.</p>
                 </div>
             </section>
         );
     }
 
-    /* ── Not found ── */
+    /* ─────────────────────────────────────────────
+       NOT FOUND
+    ───────────────────────────────────────────── */
+
     if (!auction) {
         return (
             <section className="min-h-screen flex items-center justify-center">
@@ -156,46 +248,65 @@ export default function AuctionDetails() {
         );
     }
 
-    /* ── Derived data ── */
     const images = auction?.media?.[0]?.length > 0 ? auction.media[0] : ["/placeholder.jpg"];
+
     const currentImage = images[activeThumb] || images[0];
+
     const currentBid =
         auction?.currentHighestBid > 0 ? auction.currentHighestBid : auction?.startPrice || 0;
+
     const status = auction?.status || "draft";
+
     const endTime = auction?.endTime || auction?.countdownEnd;
+
     const startTime = auction?.startTime;
 
     const statusConfig = {
-        active: { label: "Live Auction", bg: "bg-[#C2410C]", dot: true },
-        ended: { label: "Auction Ended", bg: "bg-[#16A34A]", dot: false },
-        expired: { label: "Expired", bg: "bg-[#DC2626]", dot: false },
-        draft: { label: "Not Started", bg: "bg-[#F59E0B]", dot: false },
+        active: {
+            label: "Live Auction",
+            bg: "bg-[#C2410C]",
+            dot: true,
+        },
+
+        ended: {
+            label: "Auction Ended",
+            bg: "bg-[#16A34A]",
+            dot: false,
+        },
+
+        expired: {
+            label: "Expired",
+            bg: "bg-[#DC2626]",
+            dot: false,
+        },
+
+        draft: {
+            label: "Not Started",
+            bg: "bg-[#F59E0B]",
+            dot: false,
+        },
     };
+
     const config = statusConfig[status] || statusConfig.draft;
 
-    const bottomBarMsg =
-        status === "active"
-            ? "You are participating in a live auction. Please read the terms and conditions before placing a bid."
-            : status === "ended"
-              ? "This auction has ended. Thank you for participating!"
-              : "You will be able to place bids once the auction starts.";
-    console.log("Auction from Auction Details page: ", auction);
     return (
-        // pb-14 so the fixed bottom bar never overlaps content
         <section className="bg-[#F8F8FF] min-h-screen pb-14">
             <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-8">
                 <div className="grid lg:grid-cols-[1fr_1fr_360px] gap-6 items-start">
-                    {/* ── LEFT: Image gallery + About ── */}
+                    {/* LEFT */}
                     <motion.div
                         variants={stagger}
                         initial="hidden"
                         animate="show"
                         className="space-y-4"
                     >
-                        {/* Hero image */}
                         <motion.div
                             variants={itemVariant}
-                            className="relative rounded-2xl overflow-hidden bg-white border border-[#E5E7EB] shadow-sm"
+                            className="
+                                relative rounded-2xl overflow-hidden
+                                bg-white border border-[#E5E7EB]
+                                shadow-sm
+                            "
                         >
                             <AnimatePresence mode="wait">
                                 <motion.img
@@ -210,42 +321,35 @@ export default function AuctionDetails() {
                                 />
                             </AnimatePresence>
 
-                            {/* Status badge */}
                             <div className="absolute top-4 left-4">
                                 <span
-                                    className={`inline-flex items-center gap-1.5 text-xs px-3.5 py-1.5 rounded-full  tracking-wider font-bold text-white ${config.bg}`}
+                                    className={`
+                                        inline-flex items-center gap-1.5
+                                        text-xs px-3.5 py-1.5 rounded-full
+                                        tracking-wider font-bold text-white
+                                        ${config.bg}
+                                    `}
                                 >
                                     {config.dot && (
                                         <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                                     )}
+
                                     {status === "ended" && <Check size={14} />}
+
                                     {config.label.toUpperCase()}
                                 </span>
                             </div>
-
-                            {/* Watchlist heart */}
-                            {/* <button
-                                onClick={() => setWatched((w) => !w)}
-                                className="absolute top-4 right-4 w-9 h-9 rounded-full transition-transform bg-white border border-[#E5E7EB] flex items-center justify-center shadow-sm hover:scale-105 transition"
-                            >
-                                <span
-                                    className={`text-[15px] ${watched ? "text-red-500" : "text-[#4B5563]"}`}
-                                >
-                                    <Heart
-                                        size={18}
-                                        className={
-                                            watched ? "text-red-500 fill-red-500" : "text-[#4B5563]"
-                                        }
-                                    />
-                                </span>
-                            </button> */}
                         </motion.div>
 
-                        {/* Thumbnails */}
+                        {/* THUMBNAILS */}
                         <motion.div variants={itemVariant} className="flex gap-2">
                             <button
                                 onClick={() => setActiveThumb((t) => Math.max(0, t - 1))}
-                                className="w-9 h-20 flex items-center justify-center rounded-lg border border-[#E5E7EB] bg-white text-[#4B5563] hover:text-slate-700 transition flex-shrink-0"
+                                className="
+                                    w-9 h-20 flex items-center justify-center
+                                    rounded-lg border border-[#E5E7EB]
+                                    bg-white
+                                "
                             >
                                 <ChevronLeft size={18} />
                             </button>
@@ -255,11 +359,14 @@ export default function AuctionDetails() {
                                     <button
                                         key={index}
                                         onClick={() => setActiveThumb(index)}
-                                        className={`rounded-xl overflow-hidden h-20 flex-1 border-2 transition ${
-                                            activeThumb === index
-                                                ? "border-[#2563EB]"
-                                                : "border-transparent"
-                                        }`}
+                                        className={`
+                                            rounded-xl overflow-hidden h-20 flex-1 border-2
+                                            ${
+                                                activeThumb === index
+                                                    ? "border-[#2563EB]"
+                                                    : "border-transparent"
+                                            }
+                                        `}
                                     >
                                         <img
                                             src={img}
@@ -274,46 +381,30 @@ export default function AuctionDetails() {
                                 onClick={() =>
                                     setActiveThumb((t) => Math.min(images.length - 1, t + 1))
                                 }
-                                className="w-9 h-20 flex items-center justify-center rounded-lg border border-[#E5E7EB] bg-white text-[#4B5563] hover:text-slate-700 transition flex-shrink-0"
+                                className="
+                                    w-9 h-20 flex items-center justify-center
+                                    rounded-lg border border-[#E5E7EB]
+                                    bg-white
+                                "
                             >
                                 <ChevronRight size={18} />
                             </button>
                         </motion.div>
-
-                        {/* About */}
-                        <motion.div
-                            variants={itemVariant}
-                            className="rounded-2xl bg-white border border-[#E5E7EB] p-6 shadow-sm"
-                        >
-                            <h3 className="text-lg font-bold text-[#1F2937] mb-3">
-                                About this listing
-                            </h3>
-                            <p className="text-[15px] leading-7 text-[#4B5563]">
-                                {auction.description ||
-                                    "Premium verified auction listing on Auctify marketplace."}
-                            </p>
-                        </motion.div>
                     </motion.div>
 
-                    {/* ── MIDDLE: Title + BidPanel + Seller ── */}
+                    {/* MIDDLE */}
                     <motion.div
                         variants={stagger}
                         initial="hidden"
                         animate="show"
                         className="space-y-4"
                     >
-                        {/* Category + Title */}
                         <motion.div variants={itemVariant} className="px-4">
-                            <span className="inline-block px-2.5 py-1 rounded-full bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]  text-[15px] font-semibold border ">
-                                {auction.category || "General"}
-                            </span>
-                            <h1 className="mt-3 text-4xl font-extrabold text-[#1F2937] leading-snug">
+                            <h1 className="text-4xl font-extrabold text-[#1F2937]">
                                 {auction?.name}
                             </h1>
-                            {/* <p className="mt-1 text-sm text-[#9CA3AF] font-medium">Live Auction</p> */}
                         </motion.div>
-
-                        {/* BidPanel — handles not-started / active / ended states internally */}
+                        {/* BID PANEL */}
                         <motion.div variants={itemVariant}>
                             <BidPanel
                                 canBid={canBid}
@@ -327,31 +418,93 @@ export default function AuctionDetails() {
                                 navigate={navigate}
                             />
                         </motion.div>
+                        {/* WINNER CARD */}
+                        {status === "ended" && isWinner && winnerOrder && (
+                            <motion.div
+                                variants={itemVariant}
+                                className="rounded-xl border border-emerald-200 bg-emerald-50 p-5"
+                            >
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <CheckCircle2
+                                                size={16}
+                                                className="text-emerald-600 shrink-0"
+                                            />
+                                            <p className="text-sm font-semibold text-emerald-700 tracking-tight">
+                                                Auction Won
+                                            </p>
+                                        </div>
 
-                        {/* Seller */}
+                                        <p className="mt-1.5 text-sm text-emerald-600/80 leading-relaxed">
+                                            You placed the winning bid. Your order has been created
+                                            and is ready to view.
+                                        </p>
+
+                                        <div className="mt-4 flex items-center gap-2">
+                                            <button
+                                                onClick={() =>
+                                                    navigate(`/orders/${winnerOrder._id}`)
+                                                }
+                                                className="
+                            h-9 px-4 rounded-lg
+                            bg-emerald-600 hover:bg-emerald-700
+                            text-white text-sm font-medium
+                            transition-colors flex items-center gap-1.5
+                        "
+                                            >
+                                                <ShoppingBag size={14} />
+                                                View Order
+                                            </button>
+
+                                            <button
+                                                onClick={() => navigate(`/auction/room`)}
+                                                className="
+                            h-9 px-4 rounded-lg
+                            border border-emerald-200 bg-white
+                            text-emerald-700 text-sm font-medium
+                            hover:bg-emerald-50
+                            transition-colors flex items-center gap-1.5
+                        "
+                                            >
+                                                <MessageCircle size={14} />
+                                                Contact Seller
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="shrink-0 w-10 h-10 rounded-lg bg-emerald-100 border border-emerald-200 flex items-center justify-center">
+                                        <Trophy size={18} className="text-emerald-600" />
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}{" "}
+                        {/* SELLER */}
                         <motion.div variants={itemVariant}>
                             <SellerCard seller={auction.sellerId} />
                         </motion.div>
                     </motion.div>
 
-                    {/* ── RIGHT: Live Bids + Auction Info ── */}
+                    {/* RIGHT */}
                     <motion.div
                         variants={stagger}
                         initial="hidden"
                         animate="show"
                         className="space-y-4"
                     >
-                        {/* BidHistory — bids & setBids come from parent, socket lives inside */}
                         <motion.div variants={itemVariant}>
                             <BidHistory bids={bids} loading={bidsLoading} status={status} />
                         </motion.div>
 
-                        {/* Auction Information */}
+                        {/* AUCTION INFO */}
                         <motion.div
                             variants={itemVariant}
-                            className="rounded-2xl bg-white border border-[#E5E7EB] p-6 shadow-sm"
+                            className="
+                                rounded-2xl bg-white
+                                border border-[#E5E7EB]
+                                p-6 shadow-sm
+                            "
                         >
-                            {/* Header */}
                             <div className="flex items-center justify-between mb-5">
                                 <h3 className="text-base font-semibold text-[#111827]">
                                     Auction Information
@@ -359,148 +512,56 @@ export default function AuctionDetails() {
 
                                 <button
                                     onClick={handleCopy}
-                                    className="flex items-center gap-1.5 text-xs font-semibold text-[#2563EB] hover:underline"
+                                    className="
+                                        flex items-center gap-1.5
+                                        text-xs font-semibold
+                                        text-[#2563EB]
+                                    "
                                 >
                                     {copied ? <Check size={14} /> : <Copy size={14} />}
+
                                     {copied ? "Copied" : "Copy Link"}
                                 </button>
                             </div>
 
-                            {/* Content */}
                             <div className="space-y-3">
-                                {[
-                                    ["Auction ID", `#${auction._id}`],
+                                <div className="flex justify-between">
+                                    <span className="text-sm text-[#6B7280]">Auction ID</span>
 
-                                    [
-                                        "Auction Type",
-                                        auction.auctionType !== "long"
-                                            ? "Instant Auction"
-                                            : "Long Auction",
-                                    ],
+                                    <span className="text-sm font-semibold">#{auction._id}</span>
+                                </div>
 
-                                    [
-                                        "Start Time",
-                                        startTime
-                                            ? new Date(startTime).toLocaleString("en-IN", {
-                                                  day: "numeric",
-                                                  month: "short",
-                                                  year: "numeric",
-                                                  hour: "2-digit",
-                                                  minute: "2-digit",
-                                              })
-                                            : "—",
-                                    ],
+                                <div className="flex justify-between">
+                                    <span className="text-sm text-[#6B7280]">Status</span>
 
-                                    ...(status === "ended" || status === "expired"
-                                        ? [
-                                              [
-                                                  "Ended On",
-                                                  endTime
-                                                      ? new Date(endTime).toLocaleString("en-IN", {
-                                                            day: "numeric",
-                                                            month: "short",
-                                                            year: "numeric",
-                                                            hour: "2-digit",
-                                                            minute: "2-digit",
-                                                        })
-                                                      : "—",
-                                              ],
-                                          ]
-                                        : [
-                                              [
-                                                  "Starting Price",
-                                                  `Rs.${(auction.startPrice || 0).toLocaleString("en-IN")}`,
-                                              ],
-                                          ]),
+                                    <span className="text-sm font-semibold">{status}</span>
+                                </div>
 
-                                    [
-                                        "Status",
-                                        status === "active"
-                                            ? "Active"
-                                            : status === "ended"
-                                              ? "Completed"
-                                              : status === "expired"
-                                                ? "Expired"
-                                                : "Not Started",
-                                    ],
-                                ].map(([label, value]) => {
-                                    const isStatus = label === "Status";
-                                    const isType = label === "Auction Type";
+                                <div className="flex justify-between">
+                                    <span className="text-sm text-[#6B7280]">Current Bid</span>
 
-                                    return (
-                                        <div
-                                            key={label}
-                                            className="flex items-center justify-between"
-                                        >
-                                            <span className="text-sm text-[#6B7280]">{label}</span>
-
-                                            <span
-                                                className={`text-sm font-semibold ${
-                                                    isStatus
-                                                        ? status === "active"
-                                                            ? "text-[#C2410C] bg-[#FFF7ED] px-2.5 py-0.5 rounded-full"
-                                                            : status === "ended"
-                                                              ? "text-[#16A34A] bg-[#DCFCE7] px-2.5 py-0.5 rounded-full"
-                                                              : "text-[#F59E0B] bg-[#FFFBEB] px-2.5 py-0.5 rounded-full"
-                                                        : isType
-                                                          ? auction.auctionType === "instant"
-                                                              ? "text-purple-600 bg-purple-50 px-2.5 py-0.5 rounded-full"
-                                                              : "text-[#2563EB] bg-[#EFF6FF] px-2.5 py-0.5 rounded-full"
-                                                          : "text-[#111827]"
-                                                }`}
-                                            >
-                                                {value}
-                                            </span>
-                                        </div>
-                                    );
-                                })}
+                                    <span className="text-sm font-semibold">
+                                        ₹{currentBid.toLocaleString("en-IN")}
+                                    </span>
+                                </div>
                             </div>
                         </motion.div>
                     </motion.div>
                 </div>
 
-                {/* Related Auctions */}
+                {/* RELATED */}
                 {relatedAuctions.length > 1 && (
                     <div className="mt-16">
-                        <div className="flex items-center justify-between mb-6">
-                            <div>
-                                <p className="text-sm font-semibold uppercase tracking-[2px] text-blue-500 mb-1">
-                                    More Listings
-                                </p>
-                                <h3 className="text-xl font-extrabold text-[#1F2937]">
-                                    Similar Auctions
-                                </h3>
-                            </div>
-                            <button
-                                onClick={() => navigate(`/category/${auction.category}`)}
-                                className="px-5 py-2.5 text-[15px] rounded-xl border-2  font-bold border-[#2563EB] text-[#2563EB] hover:bg-[#EFF6FF] transition"
-                            >
-                                View All
-                            </button>
-                        </div>
-                        <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 ">
+                        <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                             {relatedAuctions.map((a) => {
-                                if (a._id !== id) return <AuctionCard key={a._id} auction={a} />;
+                                if (a._id !== id) {
+                                    return <AuctionCard key={a._id} auction={a} />;
+                                }
                             })}
                         </div>
                     </div>
                 )}
             </div>
-
-            {/* Fixed bottom info bar */}
-            {/* <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E5E7EB] px-6 py-4 flex items-center justify-between z-10">
-                <div className="flex items-center gap-2 text-[15px] text-[#4B5563]">
-                    <span className="w-5 h-5 rounded-full bg-[#EFF6FF] text-[#2563EB] flex items-center justify-center text-[15px] font-bold flex-shrink-0">
-                        <Info size={14} />
-                    </span>
-                    {bottomBarMsg}
-                </div>
-                {status === "active" && (
-                    <button className="text-sm font-semibold text-blue-600 hover:underline flex items-center gap-1 flex-shrink-0">
-                        View Terms & Conditions
-                    </button>
-                )}
-            </div> */}
         </section>
     );
 }

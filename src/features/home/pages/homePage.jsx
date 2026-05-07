@@ -34,7 +34,7 @@ export default function Homepage() {
                 <HeroBannerSlider />
                 <div style={{ paddingTop: 5 }}>
                     <CategoryRow />
-                    <Watchlist />
+                    {/* <Watchlist /> */}
                     <AuctionsGrid
                         heading="Explore All Auctions"
                         subheading="Discover live auctions in real-time"

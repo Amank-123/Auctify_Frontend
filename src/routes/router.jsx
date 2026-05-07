@@ -38,6 +38,8 @@ import ProtectRoute from "../components/auth/ProtectRoute.jsx";
 import ForgotPasswordPage from "../features/auth/pages/ForgotPasswordPage.jsx";
 import ForgotOtpPage from "../features/auth/pages/ForgotOtpPage.jsx";
 import ResetForgotPasswordPage from "../features/auth/pages/ResetPasswordPage.jsx";
+import OrderDetailsPage from "../features/order/pages/orderPage.jsx";
+import MyOrdersPage from "../features/order/pages/myOrderPage.jsx";
 const router = createBrowserRouter([
     {
         path: "/",
@@ -129,6 +131,25 @@ const router = createBrowserRouter([
                     { path: "categories", element: <CategoryFormPage /> },
                     { path: "users", element: <UserPage /> },
                     { path: "banners", element: <BannerPage /> },
+                ],
+            },
+        ],
+    },
+    {
+        path: "/orders",
+        element: <RootLayout />,
+        children: [
+            {
+                element: <ProtectRoute />,
+                children: [
+                    {
+                        index: true,
+                        element: <MyOrdersPage />,
+                    },
+                    {
+                        path: ":id",
+                        element: <OrderDetailsPage />,
+                    },
                 ],
             },
         ],
