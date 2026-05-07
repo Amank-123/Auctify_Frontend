@@ -8,3 +8,13 @@ export const verifyOtp = async (email, otp) => {
     });
     setUser(res.data.data);
 };
+
+export const forgotPassword = async (email) => {
+    const res = await api.post(API_ENDPOINTS.Auth.FORGOT_PASSWORD, { email });
+    return res.data;
+};
+
+export const restPassword = async (email, password) => {
+    const res = await api.post(API_ENDPOINTS.Auth.Reset_PASSWORD, { email, password });
+    return res.data;
+};

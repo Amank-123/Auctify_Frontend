@@ -3,6 +3,8 @@ const API_ENDPOINTS = {
         LOGIN: "/api/auth/login",
         REGISTER: "/api/auth/register",
         LOGOUT: "/api/auth/logout",
+        FORGOT_PASSWORD: "/api/auth/forgot-password",
+        Reset_PASSWORD: "/api/auth/reset-password",
         REFRESH: "/api/auth/refresh",
         GOOGLE_OAUTH: "/api/auth/google",
         GITHUB_OAUTH: "/api/auth/github",
