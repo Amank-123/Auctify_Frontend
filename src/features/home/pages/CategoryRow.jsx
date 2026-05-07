@@ -120,18 +120,40 @@ export default function CategoryRow() {
     };
 
     return (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <section className="max-w-[1400px] mx-auto px-4 sm:px-6 py-12">
             {/* HEADER */}
-            <div className="mb-8">
-                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+            
+            {/* <div className="mb-8">
+                <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight leading-snug">
                     Explore Popular Categories
+                    
                 </h2>
 
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="text-sm sm:text-base text-slate-600 mt-6 leading-relaxed border-l-2 border-blue-300 pl-4">
                     Browse premium auction
                     collections
                 </p>
-            </div>
+            </div> */}
+
+              <div className="max-w-2xl">
+                           
+                                <div className="relative inline-block">
+                                    <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight leading-snug">
+                                         Explore Popular Categories
+                                    </h2>
+
+                                    {/* refined underline */}
+                                    <span className="absolute left-0 -bottom-2 w-24 h-[2px] bg-blue-600/80 rounded-full"></span>
+                                </div>
+                      
+
+                           
+                                <p className="text-sm sm:text-base text-slate-600 mt-6 leading-relaxed border-l-2 border-blue-300 pl-4">
+                                    Browse premium auction
+                    collections
+                                </p>
+                        
+                        </div>
 
             {/* WRAPPER */}
             <div className="relative">
