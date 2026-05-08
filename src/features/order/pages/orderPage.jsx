@@ -344,13 +344,14 @@ export default function OrderDetailsPage() {
             });
             const pd = data?.data;
             if (!pd?.razorOrder?.id) throw new Error("Razorpay order not created");
-            new window.Razorpay({
+            const razor = new window.Razorpay({
                 key: import.meta.env.VITE_RAZORPAY_KEY,
                 amount: pd.razorOrder.amount,
                 currency: "INR",
                 name: "Auctify",
                 description: "Auction Payment",
                 order_id: pd.razorOrder.id,
+
                 handler: async (res) => {
                     try {
                         await api.post("/api/payment/verify", {
@@ -358,18 +359,34 @@ export default function OrderDetailsPage() {
                             razorpay_payment_id: res.razorpay_payment_id,
                             razorpay_signature: res.razorpay_signature,
                         });
+
                         showSuccess("Payment successful");
+
                         fetchOrder();
                     } catch (e) {
                         showError(e?.response?.data?.message || "Verification failed");
                     }
                 },
+
+                modal: {
+                    ondismiss: async () => {
+                        showError("Payment cancelled");
+                    },
+                },
+
                 prefill: {
                     name: `${order?.buyerId?.firstName || ""} ${order?.buyerId?.lastName || ""}`,
                     email: order?.buyerId?.email || "",
                 },
-                theme: { color: "#111827" },
-            }).open();
+
+                theme: {
+                    color: "#111827",
+                },
+            });
+
+            razor.open();
+
+            console.log(razor);
         } catch (err) {
             showError(err?.response?.data?.message || "Failed to initiate payment");
         } finally {
