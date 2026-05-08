@@ -174,13 +174,14 @@ export default function AuctionDetails() {
         const fetchRelated = async () => {
             try {
                 const data = await auctionAPI.getAll({
-                    category: auction.category,
+                    category: auction.category.cta,
                     page: 1,
                     limit: 5,
                     sortBy: "createdAt",
                 });
 
                 setRelatedAuctions(data);
+                console.log("related products :", relatedAuctions);
             } catch (error) {
                 setRelatedAuctions([]);
             }

@@ -11,8 +11,10 @@ const getSortParams = (sort) => {
     switch (sort) {
         case "price-low":
             return { sortBy: "currentHighestBid", order: "asc" };
+
         case "price-high":
             return { sortBy: "currentHighestBid", order: "desc" };
+
         default:
             return { sortBy: "createdAt", order: "desc" };
     }
@@ -21,20 +23,38 @@ const getSortParams = (sort) => {
 /* ---------- CUSTOM DROPDOWN ---------- */
 function Dropdown({ value, onChange, options }) {
     const [open, setOpen] = useState(false);
+
     const selected = options.find((o) => o.value === value);
 
     return (
-        <div className="relative">
+        <div className="relative w-full">
             <button
                 onClick={() => setOpen((p) => !p)}
-                className="w-full h-11 px-4 flex items-center justify-between rounded-xl bg-white shadow-sm hover:shadow-md transition"
+                className="
+                    w-full h-11 sm:h-12 px-4
+                    flex items-center justify-between
+                    rounded-xl bg-white
+                    border border-slate-200
+                    shadow-sm hover:shadow-md
+                    transition
+                "
             >
-                <span className="text-sm font-medium text-slate-700">{selected?.label}</span>
-                <ChevronDown size={16} className="text-slate-400" />
+                <span className="text-sm font-medium text-slate-700 truncate">
+                    {selected?.label}
+                </span>
+
+                <ChevronDown size={16} className="text-slate-400 shrink-0" />
             </button>
 
             {open && (
-                <div className="absolute z-20 mt-2 w-full bg-white rounded-xl shadow-xl overflow-hidden">
+                <div
+                    className="
+                        absolute z-20 mt-2 w-full
+                        bg-white rounded-xl shadow-xl
+                        border border-slate-100
+                        overflow-hidden
+                    "
+                >
                     {options.map((opt) => (
                         <button
                             key={opt.value}
@@ -43,7 +63,7 @@ function Dropdown({ value, onChange, options }) {
                                 setOpen(false);
                             }}
                             className={`
-                                w-full text-left px-4 py-2 text-sm transition
+                                w-full text-left px-4 py-3 text-sm transition
                                 ${
                                     opt.value === value
                                         ? "bg-blue-50 text-blue-600 font-medium"
@@ -85,7 +105,6 @@ export default function AuctionsGrid({
     const fetchAuctions = useCallback(
         async (nextPage = 1, reset = false) => {
             try {
-                console.log(auctionType);
                 setLoading(true);
 
                 const { sortBy, order } = getSortParams(sort);
@@ -98,7 +117,6 @@ export default function AuctionsGrid({
                         page: nextPage,
                         auctionType: auctionType || undefined,
                         limit: limit || 10,
-
                         sortBy,
                         order,
                     },
@@ -108,7 +126,8 @@ export default function AuctionsGrid({
 
                 setAuctions((prev) => (reset ? newData : [...prev, ...newData]));
 
-                setHasMore(newData.length === limit);
+                setHasMore(newData.length === (limit || 10));
+
                 setPage(nextPage);
             } catch (err) {
                 console.log(err);
@@ -124,39 +143,73 @@ export default function AuctionsGrid({
         fetchAuctions(1, true);
     }, [fetchAuctions]);
 
+    /* ---------- LOAD MORE ---------- */
     const loadMore = () => {
         if (!hasMore || loading) return;
+
         fetchAuctions(page + 1);
     };
 
     return (
-        <section className="max-w-[1400px] mx-auto px-4 sm:px-6 py-12">
-            {/* HEADER */}
+        <section
+            className="
+                max-w-[1400px] mx-auto
+                px-3 sm:px-5 lg:px-6
+                py-8 sm:py-10 lg:py-12
+            "
+        >
+            {/* ---------- HEADER ---------- */}
             {(heading || subheading) && (
-                <div className="border-b border-blue-200 pb-6 mb-4 ">
-                    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
-                        {/* LEFT SIDE */}
+                <div className="border-b border-blue-200 pb-6 mb-5">
+                    <div
+                        className="
+                            flex flex-col
+                            lg:flex-row lg:items-end lg:justify-between
+                            gap-5 lg:gap-6
+                        "
+                    >
+                        {/* LEFT */}
                         <div className="max-w-2xl">
                             {heading && (
                                 <div className="relative inline-block">
-                                    <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight leading-snug">
+                                    <h2
+                                        className="
+                                            text-2xl sm:text-3xl lg:text-4xl
+                                            font-bold text-slate-900
+                                            tracking-tight leading-snug
+                                        "
+                                    >
                                         {heading}
                                     </h2>
 
-                                    {/* refined underline */}
-                                    <span className="absolute left-0 -bottom-2 w-24 h-[2px] bg-blue-600/80 rounded-full"></span>
+                                    <span
+                                        className="
+                                            absolute left-0 -bottom-2
+                                            w-20 sm:w-24 h-[2px]
+                                            bg-blue-600/80 rounded-full
+                                        "
+                                    />
                                 </div>
                             )}
 
                             {subheading && (
-                                <p className="text-sm sm:text-base text-slate-600 mt-6 leading-relaxed border-l-2 border-blue-300 pl-4">
+                                <p
+                                    className="
+                                        text-sm sm:text-base
+                                        text-slate-600
+                                        mt-5 sm:mt-6
+                                        leading-relaxed
+                                        border-l-2 border-blue-300
+                                        pl-4
+                                    "
+                                >
                                     {subheading}
                                 </p>
                             )}
                         </div>
 
-                        {/* RIGHT SIDE */}
-                        <div className="mt-2 sm:mt-0 flex items-center">
+                        {/* RIGHT */}
+                        <div className="mt-2 sm:mt-0 flex items-center w-full lg:w-auto">
                             <button
                                 onClick={() =>
                                     navigate(
@@ -167,15 +220,25 @@ export default function AuctionsGrid({
                                               : "/explore",
                                     )
                                 }
-                                className="group inline-flex items-center gap-2 px-5 h-11 rounded-xl
-                    bg-blue-600 text-white text-sm font-semibold
-                    shadow-sm hover:bg-blue-700 hover:shadow-md
-                    active:scale-[0.98] transition-all duration-200"
+                                className="
+                                    group w-full sm:w-auto
+                                    inline-flex items-center justify-center gap-2
+                                    px-5 h-11 rounded-xl
+                                    bg-blue-600 text-white
+                                    text-sm font-semibold
+                                    shadow-sm hover:bg-blue-700 hover:shadow-md
+                                    active:scale-[0.98]
+                                    transition-all duration-200
+                                "
                             >
                                 <span>Explore All</span>
+
                                 <ArrowRight
                                     size={16}
-                                    className="transition-transform duration-200 group-hover:translate-x-1"
+                                    className="
+                                        transition-transform duration-200
+                                        group-hover:translate-x-1
+                                    "
                                 />
                             </button>
                         </div>
@@ -183,10 +246,17 @@ export default function AuctionsGrid({
                 </div>
             )}
 
-            {/* FILTERS */}
+            {/* ---------- FILTERS ---------- */}
             {filtering && (
                 <div className="mb-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 px-10">
+                    <div
+                        className="
+                            flex flex-col
+                            lg:flex-row lg:items-center
+                            gap-3 sm:gap-4
+                            px-0 sm:px-2
+                        "
+                    >
                         {/* SEARCH */}
                         <div className="flex-1 relative">
                             <input
@@ -194,78 +264,136 @@ export default function AuctionsGrid({
                                 placeholder="Search auctions..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="w-full h-12 px-4 pr-10 rounded-lg
-                bg-white border border-blue-300
-                text-sm text-slate-800
-                focus:border-blue-300 
-                transition"
+                                className="
+                                    w-full h-11 sm:h-12
+                                    px-4 pr-11
+                                    rounded-xl
+                                    bg-white
+                                    border border-blue-200
+                                    text-sm text-slate-800
+                                    placeholder:text-slate-400
+                                    focus:outline-none
+                                    focus:border-blue-400
+                                    transition
+                                "
                             />
 
-                            {/* subtle search indicator */}
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-600 text-sm">
-                                <Search />
+                            <span
+                                className="
+                                    absolute right-3 top-1/2
+                                    -translate-y-1/2
+                                    text-blue-600
+                                "
+                            >
+                                <Search size={18} />
                             </span>
                         </div>
 
                         {/* STATUS */}
-                        <div className="w-full sm:w-[180px]">
+                        <div className="w-full md:w-[180px]">
                             <Dropdown
                                 value={status}
                                 onChange={setStatus}
                                 options={[
-                                    { value: "all", label: "All Auctions" },
-                                    { value: "active", label: "Live Auctions" },
-                                    { value: "draft", label: "Draft Auctions" },
-                                    { value: "ended", label: "Ended Auctions" },
+                                    {
+                                        value: "all",
+                                        label: "All Auctions",
+                                    },
+                                    {
+                                        value: "active",
+                                        label: "Live Auctions",
+                                    },
+                                    {
+                                        value: "draft",
+                                        label: "Draft Auctions",
+                                    },
+                                    {
+                                        value: "ended",
+                                        label: "Ended Auctions",
+                                    },
                                 ]}
                             />
                         </div>
 
                         {/* SORT */}
-                        <div className="w-full sm:w-[180px]">
+                        <div className="w-full md:w-[180px]">
                             <Dropdown
                                 value={sort}
                                 onChange={setSort}
                                 options={[
-                                    { value: "latest", label: "Latest" },
-                                    { value: "price-low", label: "Price Low" },
-                                    { value: "price-high", label: "Price High" },
+                                    {
+                                        value: "latest",
+                                        label: "Latest",
+                                    },
+                                    {
+                                        value: "price-low",
+                                        label: "Price Low",
+                                    },
+                                    {
+                                        value: "price-high",
+                                        label: "Price High",
+                                    },
                                 ]}
                             />
                         </div>
                     </div>
 
-                    {/* divider instead of soft container */}
-                    <div className="mt-4 border-b border-blue-300"></div>
+                    <div className="mt-5 border-b border-blue-200" />
                 </div>
             )}
 
-            {/* GRID */}
+            {/* ---------- GRID ---------- */}
             {auctions.length > 0 ? (
                 <>
-                    <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 ">
-                        {auctions.map((a) => (
-                            <AuctionCard key={a._id} auction={a} />
+                    <div
+                        className="
+                            grid gap-4 sm:gap-5
+                            grid-cols-1
+                            xs:grid-cols-2
+                            md:grid-cols-3
+                            lg:grid-cols-4
+                            xl:grid-cols-5
+                        "
+                    >
+                        {auctions.map((auction) => (
+                            <AuctionCard key={auction._id} auction={auction} />
                         ))}
                     </div>
 
                     {hasMore && (
-                        <div className="flex justify-center mt-8">
+                        <div className="flex justify-center mt-8 sm:mt-10">
                             <button
                                 onClick={loadMore}
-                                className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900"
+                                className="
+                                    flex items-center gap-2
+                                    text-sm font-medium
+                                    text-slate-600 hover:text-slate-900
+                                    transition
+                                "
                             >
                                 {loading ? "Loading..." : "Show more"}
+
                                 <ChevronDown size={16} />
                             </button>
                         </div>
                     )}
                 </>
             ) : loading ? (
-                <div className="text-center py-12 bg-white rounded-2xl shadow-sm">
+                <div
+                    className="
+                        text-center
+                        py-10 sm:py-12 px-4
+                        bg-white rounded-2xl shadow-sm
+                    "
+                >
                     <div className="flex justify-center mb-6">
                         <motion.div
-                            className="w-12 h-12 border-4 border-[#E5E7EB] border-t-[#2563EB] rounded-full"
+                            className="
+                                w-12 h-12
+                                border-4 border-[#E5E7EB]
+                                border-t-[#2563EB]
+                                rounded-full
+                            "
                             animate={{ rotate: 360 }}
                             transition={{
                                 repeat: Infinity,
@@ -275,12 +403,17 @@ export default function AuctionsGrid({
                         />
                     </div>
 
-                    {/* Title */}
-                    <h2 className="text-xl font-semibold text-[#1F2937]">Loading...</h2>
+                    <h2 className="text-lg sm:text-xl font-semibold text-[#1F2937]">Loading...</h2>
                 </div>
             ) : (
-                <div className="text-center py-12 bg-white rounded-2xl shadow-sm">
-                    <p className="text-slate-500">No auctions found</p>
+                <div
+                    className="
+                        text-center
+                        py-10 sm:py-12 px-4
+                        bg-white rounded-2xl shadow-sm
+                    "
+                >
+                    <p className="text-sm sm:text-base text-slate-500">No auctions found</p>
                 </div>
             )}
         </section>

@@ -1,465 +1,391 @@
 import { motion, useInView } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { useRef } from "react";
-import AuctionsGrid from "../../features/home/pages/AuctionsGrid";
+import { useRef, useEffect, useState } from "react";
+import { Radio, ArrowRight, LayoutGrid, Sparkles } from "lucide-react";
+import { api } from "@/shared/services/axios";
 
-export default function PremiumCategories() {
+/* ─────────────────────────────────────────────
+   DESKTOP MOSAIC — 6 cols × 6 rows, all 1fr
+   Every cell is explicitly placed, no gaps.
+───────────────────────────────────────────── */
+const DESKTOP_LAYOUT = [
+    { gc: "1 / span 1", gr: "1 / span 3" },
+    { gc: "1 / span 1", gr: "4 / span 3" },
+    { gc: "2 / span 1", gr: "1 / span 2" },
+    { gc: "2 / span 1", gr: "3 / span 2" },
+    { gc: "2 / span 1", gr: "5 / span 2" },
+    { gc: "3 / span 1", gr: "1 / span 3" },
+    { gc: "3 / span 1", gr: "4 / span 2" },
+    { gc: "3 / span 1", gr: "6 / span 1" },
+    { gc: "4 / span 1", gr: "1 / span 2" },
+    { gc: "4 / span 1", gr: "3 / span 2" },
+    { gc: "4 / span 1", gr: "5 / span 2" },
+    { gc: "5 / span 1", gr: "1 / span 2" },
+    { gc: "5 / span 1", gr: "3 / span 2" },
+    { gc: "5 / span 1", gr: "5 / span 2" },
+    { gc: "6 / span 1", gr: "1 / span 2" },
+    { gc: "6 / span 1", gr: "3 / span 2" },
+    { gc: "6 / span 1", gr: "5 / span 1" },
+    { gc: "6 / span 1", gr: "6 / span 1" },
+];
+
+/*
+ * MOBILE — 2 columns, alternating tall/short pattern.
+ *
+ * The trick: we lay out cards in pairs. Within each pair:
+ *   - Left card spans 2 rows (tall)
+ *   - Right card spans 1 row each (two shorts stacked)
+ * Then the next pair flips: left = 2 shorts, right = tall.
+ * This gives an irregular but gapless rhythm.
+ *
+ * We use an explicit row counter so every card slots in perfectly.
+ * Total rows = ceil(N/2) * 2 — always even, always filled.
+ */
+function buildMobileLayout(count) {
+    const layout = [];
+    let row = 1;
+    let i = 0;
+    while (i < count) {
+        const pairIndex = Math.floor(i / 3); // every 3 cards = 1 "set"
+        if (pairIndex % 2 === 0) {
+            // Pattern A: col1=tall(2), col2=short+short
+            if (i < count) {
+                layout.push({ gc: "1 / span 1", gr: `${row} / span 2` });
+                i++;
+            }
+            if (i < count) {
+                layout.push({ gc: "2 / span 1", gr: `${row} / span 1` });
+                i++;
+            }
+            if (i < count) {
+                layout.push({ gc: "2 / span 1", gr: `${row + 1} / span 1` });
+                i++;
+            }
+            row += 2;
+        } else {
+            // Pattern B: col1=short+short, col2=tall(2)
+            if (i < count) {
+                layout.push({ gc: "1 / span 1", gr: `${row} / span 1` });
+                i++;
+            }
+            if (i < count) {
+                layout.push({ gc: "1 / span 1", gr: `${row + 1} / span 1` });
+                i++;
+            }
+            if (i < count) {
+                layout.push({ gc: "2 / span 1", gr: `${row} / span 2` });
+                i++;
+            }
+            row += 2;
+        }
+    }
+    return { layout, totalRows: row - 1 };
+}
+
+const toSlug = (name) => name.toLowerCase().replace(/\s+/g, "-");
+
+/* ─────────────────────────────────────────────
+   TILE CARD
+───────────────────────────────────────────── */
+function TileCard({ cat, i, isInView, style }) {
     const navigate = useNavigate();
-    const sectionRef = useRef(null);
-    const isInView = useInView(sectionRef, { once: true, margin: "-80px" });
 
-    const desktopCategories = [
-        {
-            slug: "electronics",
-            label: "Electronics",
-            count: 31,
-            image: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80",
-            gc: "1",
-            gr: "1 / span 3",
-        },
-        {
-            slug: "sports",
-            label: "Sports",
-            count: 16,
-            image: "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=800&q=80",
-            gc: "1",
-            gr: "4 / span 3",
-        },
-        {
-            slug: "fashion",
-            label: "Fashion",
-            count: 19,
-            image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=800&q=80",
-            gc: "2",
-            gr: "1 / span 2",
-        },
-        {
-            slug: "art",
-            label: "Art",
-            count: 9,
-            image: "https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&w=800&q=80",
-            gc: "2",
-            gr: "3 / span 2",
-        },
-        {
-            slug: "gaming",
-            label: "Gaming",
-            count: 11,
-            image: "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?auto=format&fit=crop&w=800&q=80",
-            gc: "2",
-            gr: "5 / span 2",
-        },
-        {
-            slug: "jewelry",
-            label: "Jewelry",
-            count: 27,
-            image: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=800&q=80",
-            gc: "3",
-            gr: "1 / span 3",
-        },
-        {
-            slug: "music",
-            label: "Music",
-            count: 7,
-            image: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=800&q=80",
-            gc: "3",
-            gr: "4 / span 2",
-        },
-        {
-            slug: "toys",
-            label: "Toys",
-            count: 10,
-            image: "https://images.unsplash.com/photo-1558060370-d644479cb6f7?auto=format&fit=crop&w=800&q=80",
-            gc: "3",
-            gr: "6 / span 1",
-        },
-        {
-            slug: "watches",
-            label: "Watches",
-            count: 24,
-            image: "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&w=800&q=80",
-            gc: "4",
-            gr: "1 / span 2",
-        },
-        {
-            slug: "collectibles",
-            label: "Collectibles",
-            count: 14,
-            image: "https://images.unsplash.com/photo-1612196808214-b7e239e5a4f4?auto=format&fit=crop&w=800&q=80",
-            gc: "4",
-            gr: "3 / span 2",
-        },
-        {
-            slug: "luxury",
-            label: "Luxury",
-            count: 12,
-            image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80",
-            gc: "4",
-            gr: "5 / span 2",
-        },
-        {
-            slug: "vehicles",
-            label: "Vehicles",
-            count: 18,
-            image: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=800&q=80",
-            gc: "5",
-            gr: "1 / span 2",
-        },
-        {
-            slug: "furniture",
-            label: "Furniture",
-            count: 8,
-            image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=800&q=80",
-            gc: "5",
-            gr: "3 / span 2",
-        },
-        {
-            slug: "antiques",
-            label: "Antiques",
-            count: 6,
-            image: "https://images.unsplash.com/photo-1578926375605-eaf7559b1458?auto=format&fit=crop&w=800&q=80",
-            gc: "5",
-            gr: "5 / span 2",
-        },
-        {
-            slug: "real_estate",
-            label: "Real Estate",
-            count: 5,
-            image: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80",
-            gc: "6",
-            gr: "1 / span 2",
-        },
-        {
-            slug: "books",
-            label: "Books",
-            count: 22,
-            image: "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&w=800&q=80",
-            gc: "6",
-            gr: "3 / span 2",
-        },
-        {
-            slug: "industrial",
-            label: "Industrial",
-            count: 4,
-            image: "https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?auto=format&fit=crop&w=800&q=80",
-            gc: "6",
-            gr: "5 / span 1",
-        },
-        {
-            slug: "other",
-            label: "Other",
-            count: 33,
-            image: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=800&q=80",
-            gc: "6",
-            gr: "6 / span 1",
-        },
-    ];
-
-    const mobileCategories = [
-        {
-            slug: "electronics",
-            count: 31,
-            image: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80",
-            gc: "1",
-            gr: "1 / span 2",
-        },
-        {
-            slug: "sports",
-            count: 16,
-            image: "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=800&q=80",
-            gc: "1",
-            gr: "3 / span 2",
-        },
-        {
-            slug: "watches",
-            count: 24,
-            image: "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&w=800&q=80",
-            gc: "1",
-            gr: "5 / span 1",
-        },
-        {
-            slug: "vehicles",
-            count: 18,
-            image: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=800&q=80",
-            gc: "1",
-            gr: "6 / span 1",
-        },
-        {
-            slug: "antiques",
-            count: 6,
-            image: "https://images.unsplash.com/photo-1578926375605-eaf7559b1458?auto=format&fit=crop&w=800&q=80",
-            gc: "1",
-            gr: "7 / span 1",
-        },
-        {
-            slug: "industrial",
-            count: 4,
-            image: "https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?auto=format&fit=crop&w=800&q=80",
-            gc: "1",
-            gr: "8 / span 1",
-        },
-        {
-            slug: "fashion",
-            count: 19,
-            image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=800&q=80",
-            gc: "2",
-            gr: "1 / span 1",
-        },
-        {
-            slug: "art",
-            count: 9,
-            image: "https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&w=800&q=80",
-            gc: "2",
-            gr: "2 / span 1",
-        },
-        {
-            slug: "gaming",
-            count: 11,
-            image: "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?auto=format&fit=crop&w=800&q=80",
-            gc: "2",
-            gr: "3 / span 2",
-        },
-        {
-            slug: "collectibles",
-            count: 14,
-            image: "https://images.unsplash.com/photo-1612196808214-b7e239e5a4f4?auto=format&fit=crop&w=800&q=80",
-            gc: "2",
-            gr: "5 / span 2",
-        },
-        {
-            slug: "real_estate",
-            count: 5,
-            image: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80",
-            gc: "2",
-            gr: "7 / span 2",
-        },
-        {
-            slug: "jewelry",
-            count: 27,
-            image: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=800&q=80",
-            gc: "3",
-            gr: "1 / span 2",
-        },
-        {
-            slug: "music",
-            count: 7,
-            image: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=800&q=80",
-            gc: "3",
-            gr: "3 / span 1",
-        },
-        {
-            slug: "toys",
-            count: 10,
-            image: "https://images.unsplash.com/photo-1558060370-d644479cb6f7?auto=format&fit=crop&w=800&q=80",
-            gc: "3",
-            gr: "4 / span 1",
-        },
-        {
-            slug: "luxury",
-            count: 12,
-            image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80",
-            gc: "3",
-            gr: "5 / span 1",
-        },
-        {
-            slug: "furniture",
-            count: 8,
-            image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=800&q=80",
-            gc: "3",
-            gr: "6 / span 1",
-        },
-        {
-            slug: "books",
-            count: 22,
-            image: "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&w=800&q=80",
-            gc: "3",
-            gr: "7 / span 1",
-        },
-        {
-            slug: "other",
-            count: 33,
-            image: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=800&q=80",
-            gc: "3",
-            gr: "8 / span 1",
-        },
-    ];
-
-    const cardVariants = {
-        hidden: { opacity: 0, scale: 0.93 },
-        visible: (i) => ({
-            opacity: 1,
-            scale: 1,
-            transition: { delay: i * 0.035, duration: 0.48, ease: [0.22, 1, 0.36, 1] },
-        }),
-    };
-
-    const formatLabel = (text) =>
-        text
-            .split("_")
-            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-            .join(" ");
-
-    const TileCard = ({ cat, i, fontSize = 12 }) => (
+    return (
         <motion.div
-            custom={i}
-            variants={cardVariants}
-            initial="hidden"
-            animate={isInView ? "visible" : "hidden"}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
+            transition={{ delay: i * 0.03, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             onClick={() => navigate(`/category/${cat.slug}`)}
-            whileHover={{ scale: 1.03, zIndex: 20, boxShadow: "0 12px 36px rgba(26,62,229,0.3)" }}
-            transition={{ duration: 0.2 }}
-            className="group relative overflow-hidden rounded-[10px] cursor-pointer bg-[#0A1240]"
-            style={{
-                gridColumn: cat.gc,
-                gridRow: cat.gr,
-                boxShadow: "0 2px 12px rgba(26,62,229,0.15)",
-            }}
+            whileHover={{ scale: 1.015, transition: { duration: 0.18 } }}
+            className="group relative overflow-hidden rounded-2xl cursor-pointer bg-slate-900"
+            style={style}
+            role="button"
+            tabIndex={0}
+            aria-label={`Browse ${cat.label} auctions`}
+            onKeyDown={(e) => e.key === "Enter" && navigate(`/category/${cat.slug}`)}
         >
-            {/* Background image */}
-            <img
-                src={cat.image}
-                alt={cat.label}
-                className="absolute inset-0 w-full h-full object-cover opacity-55 group-hover:scale-110 transition-transform duration-700"
-            />
+            {cat.image ? (
+                <img
+                    src={cat.image}
+                    alt={cat.label}
+                    loading="lazy"
+                    className="absolute inset-0 w-full h-full object-cover opacity-60 scale-100 group-hover:scale-110 transition-transform duration-700 ease-out"
+                />
+            ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-950 via-slate-800 to-slate-900" />
+            )}
 
-            {/* Bottom gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0A1240eb] via-[#1a3ee514] to-transparent" />
+            {/* dark gradient overlay — stronger at bottom */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/5" />
 
-            {/* Top hover gradient */}
-            <div className="absolute top-0 left-0 right-0 h-[40%] bg-gradient-to-b from-[#1a3ee54d] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            {/* hover blue tint */}
+            <div className="absolute inset-0 bg-blue-600/0 group-hover:bg-blue-600/10 transition-colors duration-300" />
 
-            {/* Live dot */}
-            <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-[#22D3A5] shadow-[0_0_6px_#22D3A5] block" />
+            {/* LIVE badge */}
+            <div className="absolute top-2.5 left-2.5 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-md border border-white/10">
+                <Radio
+                    size={8}
+                    className="text-emerald-400"
+                    style={{ filter: "drop-shadow(0 0 5px #34d399)" }}
+                    strokeWidth={2.5}
+                />
+                <span className="text-[7.5px] font-bold uppercase tracking-widest text-white/70 leading-none">
+                    Live
+                </span>
+            </div>
 
-            {/* Label */}
-            <div className="absolute bottom-0 left-0 right-0 px-2.5 pb-2.5 pt-2">
+            {/* label */}
+            <div className="absolute bottom-0 left-0 right-0 p-3">
+                {/* <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40 mb-0.5">
+                    Premium
+                </p> */}
                 <h4
-                    className="font-extrabold text-white leading-tight mb-px [text-shadow:0_1px_8px_rgba(0,0,0,0.6)]"
-                    style={{ fontSize, letterSpacing: "-0.01em" }}
+                    className="font-black text-white leading-tight line-clamp-2 [text-shadow:0_2px_8px_rgba(0,0,0,0.8)]"
+                    style={{ fontSize: "clamp(11px, 1.2vw, 15px)" }}
                 >
-                    {formatLabel(cat.slug)}
+                    {cat.label}
                 </h4>
-                <p className="text-[8px] font-semibold text-white/50 uppercase tracking-[0.06em]">
-                    {cat.count} live
-                </p>
+                <div className="mt-1.5 flex items-center gap-1 text-blue-300 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200">
+                    <span className="text-[10px] font-bold">Explore</span>
+                    <ArrowRight size={10} strokeWidth={2.5} />
+                </div>
             </div>
         </motion.div>
     );
+}
 
+/* ─────────────────────────────────────────────
+   MAIN
+───────────────────────────────────────────── */
+export default function PremiumCategories() {
+    const navigate = useNavigate();
+    const sectionRef = useRef(null);
+    const headerRef = useRef(null);
+    const isInView = useInView(sectionRef, { once: true, margin: "-60px" });
+
+    const [categories, setCategories] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [desktopGridHeight, setDesktopGridHeight] = useState(700);
+
+    // Measure the header block so the grid can fill exactly the remaining space
+    useEffect(() => {
+        const measure = () => {
+            if (!sectionRef.current || !headerRef.current) return;
+            const sectionPaddingTop = 56; // py-14 = 3.5rem = 56px
+            const sectionPaddingBottom = 56;
+            const headerH = headerRef.current.offsetHeight;
+            const gap = 40; // breathing room between header and grid
+            const available =
+                window.innerHeight - sectionPaddingTop - sectionPaddingBottom - headerH - gap;
+            // Clamp: never smaller than 480px, never larger than 900px
+            setDesktopGridHeight(Math.min(900, Math.max(480, available)));
+        };
+        measure();
+        window.addEventListener("resize", measure);
+        return () => window.removeEventListener("resize", measure);
+    }, [loading]); // re-measure once data loads (header size may change)
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await api.get("/api/category/get");
+                if (!cancelled) setCategories(res?.data?.data || []);
+            } catch (e) {
+                if (!cancelled) setError("Failed to load categories.");
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const capped = categories.slice(0, 18);
+    const hasData = capped.length > 0;
+
+    // Mobile layout is dynamic based on actual count
+    const { layout: mobileLayout, totalRows: mobileTotalRows } = buildMobileLayout(capped.length);
+
+    const mobileCards = capped.map((cat, i) => ({
+        ...cat,
+        slug: toSlug(cat.name),
+        label: cat.name,
+        ...mobileLayout[i],
+    }));
+
+    const desktopCards = capped.map((cat, i) => ({
+        ...cat,
+        slug: toSlug(cat.name),
+        label: cat.name,
+        ...DESKTOP_LAYOUT[i % DESKTOP_LAYOUT.length],
+    }));
+
+    /* ── RENDER ── */
     return (
         <section
             ref={sectionRef}
-            className="relative overflow-hidden py-[90px] md:py-[10px] bg-gradient-to-b from-white via-[#f0f4ff] to-white font-['Poppins','Segoe_UI',sans-serif]"
+            className="relative overflow-hidden bg-gradient-to-b from-white via-slate-50 to-white py-10 md:py-14"
         >
-            {/* Dot grid background */}
+            {/* subtle dot grid */}
             <div
-                className="absolute inset-0 pointer-events-none"
+                aria-hidden
+                className="absolute inset-0 pointer-events-none opacity-[0.4]"
                 style={{
-                    backgroundImage:
-                        "radial-gradient(circle, rgba(26,62,229,0.07) 1px, transparent 1px)",
-                    backgroundSize: "32px 32px",
+                    backgroundImage: "radial-gradient(rgba(37,99,235,0.12) 1px, transparent 1px)",
+                    backgroundSize: "28px 28px",
                 }}
             />
 
-            {/* Glow blobs */}
-            <div className="absolute -top-40 -right-40 w-[560px] h-[560px] rounded-full bg-[radial-gradient(circle,rgba(26,62,229,0.07)_0%,transparent_70%)] pointer-events-none" />
-            <div className="absolute -bottom-32 -left-32 w-[440px] h-[440px] rounded-full bg-[radial-gradient(circle,rgba(26,62,229,0.05)_0%,transparent_70%)] pointer-events-none" />
+            {/* top glow */}
+            <div
+                aria-hidden
+                className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[260px] pointer-events-none"
+                style={{
+                    background:
+                        "radial-gradient(ellipse at center, rgba(37,99,235,0.08) 0%, transparent 70%)",
+                }}
+            />
 
-            <div className="relative max-w-[1380px] mx-auto px-4 md:px-10">
-                {/* ══ DESKTOP grid — hidden on mobile ══ */}
-                <div
-                    className="hidden md:grid gap-2"
-                    style={{
-                        gridTemplateColumns: "repeat(6, 1fr)",
-                        gridTemplateRows: "repeat(6, 100px)",
-                    }}
-                >
-                    {desktopCategories.map((cat, i) => (
-                        <TileCard key={`d-${cat.slug}`} cat={cat} i={i} fontSize={12} />
-                    ))}
-                </div>
-
-                {/* ══ MOBILE grid — hidden on md+ ══ */}
-                <div
-                    className="grid md:hidden gap-1.5"
-                    style={{
-                        gridTemplateColumns: "repeat(3, 1fr)",
-                        gridTemplateRows: "repeat(8, 90px)",
-                    }}
-                >
-                    {mobileCategories.map((cat, i) => (
-                        <TileCard key={`m-${cat.slug}`} cat={cat} i={i} fontSize={11} />
-                    ))}
-                </div>
-
-                {/* View All CTA — mobile only */}
-                <div className="mt-6 flex justify-center md:hidden">
-                    <button
-                        onClick={() => navigate("/category")}
-                        className="border-[1.5px] border-[#1A3EE5] text-[#1A3EE5] px-8 py-3 rounded-md text-[11px] font-bold tracking-[0.18em] uppercase cursor-pointer hover:bg-[#1A3EE5] hover:text-white transition-all duration-200"
+            {/* ── HEADER ── */}
+            <div ref={headerRef} className="relative px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto">
+                <div className="max-w-[680px] mx-auto text-center mb-8 md:mb-10">
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={isInView ? { opacity: 1, y: 0 } : {}}
+                        transition={{ duration: 0.4 }}
+                        className="inline-flex items-center gap-2 px-3.5 py-1.5 mb-4 rounded-full bg-blue-50 border border-blue-100"
                     >
-                        View All Categories →
-                    </button>
-                </div>
-                {/* ── Header ── */}
-                <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8 md:mb-8">
-                    <div className="flex-1">
-                        {/* Badge */}
-                        {/* <motion.div
-                            initial={{ opacity: 0, x: -12 }}
-                            animate={isInView ? { opacity: 1, x: 0 } : {}}
-                            transition={{ duration: 0.45 }}
-                            className="mb-3"
-                        >
-                            <span className="inline-flex items-center gap-1.5 bg-[#1a3ee514] border border-[#1a3ee530] rounded-full px-3.5 py-1 text-[10px] font-bold tracking-[0.3em] uppercase text-[#1A3EE5]">
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#1A3EE5] inline-block" />
-                                Curated Collections
-                            </span>
-                        </motion.div> */}
+                        <Sparkles size={11} className="text-blue-600" strokeWidth={2.5} />
+                        <span className="text-[9.5px] font-bold uppercase tracking-[0.28em] text-blue-700">
+                            Curated Collections
+                        </span>
+                    </motion.div>
 
-                        {/* Heading */}
-                        <motion.h2
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={isInView ? { opacity: 1, y: 0 } : {}}
-                            transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-                            className="text-[clamp(28px,4.5vw,58px)] mt-15 font-extrabold text-[#0A1240] tracking-tight leading-[1.08]"
-                        >
-                            Explore{" "}
-                            <span className="text-[#1A3EE5] relative inline-block">
-                                Premium
-                                <motion.span
-                                    initial={{ scaleX: 0 }}
-                                    animate={isInView ? { scaleX: 1 } : {}}
-                                    transition={{ duration: 0.5, delay: 0.55 }}
-                                    className="absolute -bottom-1 left-0 right-0 h-[3px] bg-gradient-to-r from-[#1A3EE5] to-[#5B78F5] rounded origin-left block"
-                                />
-                            </span>
-                            <br />
-                            Auctions
-                        </motion.h2>
+                    <motion.h2
+                        initial={{ opacity: 0, y: 18 }}
+                        animate={isInView ? { opacity: 1, y: 0 } : {}}
+                        transition={{ duration: 0.5, delay: 0.07 }}
+                        className="text-[clamp(28px,4.5vw,56px)] font-black tracking-tight leading-[1.06] text-slate-950"
+                    >
+                        Explore <span className="text-blue-600">Premium</span>
+                        <br />
+                        Auction Categories
+                    </motion.h2>
 
-                        {/* Subtext */}
-                        <motion.p
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={isInView ? { opacity: 1, y: 0 } : {}}
-                            transition={{ duration: 0.5, delay: 0.2 }}
-                            className="mt-4 text-sm text-slate-500 leading-relaxed max-w-[440px]"
-                        >
-                            Rare items, luxury collections, and competitive live bidding — curated
-                            across all 18 categories.
-                        </motion.p>
-                    </div>
+                    <motion.p
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={isInView ? { opacity: 1, y: 0 } : {}}
+                        transition={{ duration: 0.45, delay: 0.14 }}
+                        className="mt-4 text-sm text-slate-500 leading-relaxed max-w-[480px] mx-auto"
+                    >
+                        Browse rare collectibles, luxury items, electronics, fashion and vehicles
+                        from premium live auctions on your marketplace.
+                    </motion.p>
                 </div>
             </div>
-            {desktopCategories.map((cat, index) => (
-                <AuctionsGrid
-                    heading={cat.label}
-                    category={cat.slug}
-                    key={index}
-                    filtering={false}
-                    limit={5}
-                />
-            ))}
+
+            {/* ── GRID AREA — small side padding so cards don't kiss the edge ── */}
+            <div className="px-2 sm:px-3 md:px-4">
+                {/* LOADING */}
+                {loading && (
+                    <div
+                        className="grid gap-2"
+                        style={{
+                            gridTemplateColumns: "repeat(2, 1fr)",
+                            gridTemplateRows: "repeat(6, 120px)",
+                        }}
+                    >
+                        {Array.from({ length: 12 }).map((_, i) => (
+                            <div key={i} className="rounded-2xl bg-slate-200 animate-pulse" />
+                        ))}
+                    </div>
+                )}
+
+                {/* ERROR */}
+                {!loading && error && (
+                    <div className="flex flex-col items-center gap-3 py-20 text-center">
+                        <LayoutGrid size={38} className="text-slate-300" />
+                        <p className="text-slate-500 text-sm">{error}</p>
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="px-5 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold uppercase tracking-widest hover:bg-blue-700 transition-colors"
+                        >
+                            Retry
+                        </button>
+                    </div>
+                )}
+
+                {/* EMPTY */}
+                {!loading && !error && !hasData && (
+                    <div className="flex flex-col items-center gap-3 py-20 text-center">
+                        <LayoutGrid size={38} className="text-slate-300" />
+                        <p className="text-slate-400 text-sm">No categories available yet.</p>
+                    </div>
+                )}
+
+                {hasData && !loading && !error && (
+                    <>
+                        {/*
+                         * DESKTOP GRID
+                         * - 6 equal columns (1fr each) → fills full width
+                         * - 6 equal rows (1fr each) + explicit height → fills that height perfectly
+                         * - No leftover space because 1fr rows divide the height evenly
+                         */}
+                        <div
+                            className="hidden md:grid"
+                            style={{
+                                gridTemplateColumns: "repeat(6, 1fr)",
+                                gridTemplateRows: "repeat(6, 1fr)",
+                                gap: "10px",
+                                height: `${desktopGridHeight}px`,
+                                width: "100%",
+                            }}
+                        >
+                            {desktopCards.map((cat, i) => (
+                                <TileCard
+                                    key={`d-${cat._id ?? i}`}
+                                    cat={cat}
+                                    i={i}
+                                    isInView={isInView}
+                                    style={{ gridColumn: cat.gc, gridRow: cat.gr }}
+                                />
+                            ))}
+                        </div>
+
+                        {/*
+                         * MOBILE GRID
+                         * - 2 equal columns (1fr each) → fills full width
+                         * - totalRows computed from buildMobileLayout, each row = fixed 130px
+                         *   We use px here on mobile (not vh) because the grid is very tall
+                         *   and we WANT it to scroll — unlike desktop where it fits the viewport.
+                         * - Cards alternate tall (130px×2 = 260px) and short (130px) each pair
+                         *   so sizes differ and there's never an empty cell.
+                         */}
+                        <div
+                            className="grid md:hidden"
+                            style={{
+                                gridTemplateColumns: "repeat(2, 1fr)",
+                                gridTemplateRows: `repeat(${mobileTotalRows}, 130px)`,
+                                gap: "8px",
+                                width: "100%",
+                            }}
+                        >
+                            {mobileCards.map((cat, i) => (
+                                <TileCard
+                                    key={`m-${cat._id ?? i}`}
+                                    cat={cat}
+                                    i={i}
+                                    isInView={isInView}
+                                    style={{ gridColumn: cat.gc, gridRow: cat.gr }}
+                                />
+                            ))}
+                        </div>
+                    </>
+                )}
+            </div>
         </section>
     );
 }
