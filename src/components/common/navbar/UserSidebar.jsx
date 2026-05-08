@@ -183,6 +183,9 @@ export default function UserSidebar({ open, onClose, user }) {
                         <SidebarNavItem to="/notifications" onClick={onClose}>
                             Notifications
                         </SidebarNavItem>
+                        <SidebarNavItem to="/orders" onClick={onClose}>
+                            Orders
+                        </SidebarNavItem>
                         <SidebarNavItem to="/setting" onClick={onClose}>
                             Settings
                         </SidebarNavItem>

@@ -11,85 +11,79 @@ import {
     Search,
     SlidersHorizontal,
 } from "lucide-react";
+
 import { api } from "@/shared/services/axios";
 import { showError } from "@/shared/utils/toast";
 
-/* ─── status configs ─────────────────────────────────────────── */
 const PAYMENT_CFG = {
-    pending: { label: "Pending", color: "#b45309", bg: "#fefce8", border: "#fde68a" },
-    completed: { label: "Paid", color: "#15803d", bg: "#f0fdf4", border: "#bbf7d0" },
-    failed: { label: "Failed", color: "#b91c1c", bg: "#fff1f2", border: "#fecaca" },
-    refunded: { label: "Refunded", color: "#6d28d9", bg: "#f5f3ff", border: "#ddd6fe" },
-    cancelled: { label: "Cancelled", color: "#6b7280", bg: "#f9fafb", border: "#e5e7eb" },
+    pending: {
+        label: "Pending",
+        classes: "bg-yellow-50 border-yellow-200 text-yellow-700",
+    },
+    completed: {
+        label: "Paid",
+        classes: "bg-green-50 border-green-200 text-green-700",
+    },
+    failed: {
+        label: "Failed",
+        classes: "bg-red-50 border-red-200 text-red-700",
+    },
+    refunded: {
+        label: "Refunded",
+        classes: "bg-purple-50 border-purple-200 text-purple-700",
+    },
+    cancelled: {
+        label: "Cancelled",
+        classes: "bg-gray-50 border-gray-200 text-gray-600",
+    },
 };
 
 const ORDER_CFG = {
     awaiting_payment: {
         label: "Awaiting payment",
-        color: "#b45309",
-        bg: "#fefce8",
-        border: "#fde68a",
+        classes: "bg-yellow-50 border-yellow-200 text-yellow-700",
         icon: Clock3,
     },
-    pending: { label: "Pending", color: "#b45309", bg: "#fefce8", border: "#fde68a", icon: Clock3 },
+    pending: {
+        label: "Pending",
+        classes: "bg-yellow-50 border-yellow-200 text-yellow-700",
+        icon: Clock3,
+    },
     confirmed: {
         label: "Confirmed",
-        color: "#1d4ed8",
-        bg: "#eff6ff",
-        border: "#bfdbfe",
+        classes: "bg-blue-50 border-blue-200 text-blue-700",
         icon: CheckCircle2,
     },
     processing: {
         label: "Processing",
-        color: "#0369a1",
-        bg: "#f0f9ff",
-        border: "#bae6fd",
+        classes: "bg-sky-50 border-sky-200 text-sky-700",
         icon: Clock3,
     },
-    shipped: { label: "Shipped", color: "#6d28d9", bg: "#f5f3ff", border: "#ddd6fe", icon: Truck },
+    shipped: {
+        label: "Shipped",
+        classes: "bg-purple-50 border-purple-200 text-purple-700",
+        icon: Truck,
+    },
     delivered: {
         label: "Delivered",
-        color: "#15803d",
-        bg: "#f0fdf4",
-        border: "#bbf7d0",
+        classes: "bg-green-50 border-green-200 text-green-700",
         icon: CheckCircle2,
     },
     cancelled: {
         label: "Cancelled",
-        color: "#b91c1c",
-        bg: "#fff1f2",
-        border: "#fecaca",
+        classes: "bg-red-50 border-red-200 text-red-700",
         icon: XCircle,
     },
 };
 
 function PaymentTag({ status }) {
     const c = PAYMENT_CFG[status] || PAYMENT_CFG.pending;
+
     return (
         <span
-            style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 5,
-                padding: "2px 8px",
-                borderRadius: 6,
-                background: c.bg,
-                border: `1px solid ${c.border}`,
-                fontSize: 11,
-                fontWeight: 600,
-                color: c.color,
-                letterSpacing: "0.03em",
-            }}
+            className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-semibold ${c.classes}`}
         >
-            <span
-                style={{
-                    width: 5,
-                    height: 5,
-                    borderRadius: "50%",
-                    background: c.color,
-                    flexShrink: 0,
-                }}
-            />
+            <span className="h-1.5 w-1.5 rounded-full bg-current" />
             {c.label}
         </span>
     );
@@ -98,21 +92,10 @@ function PaymentTag({ status }) {
 function OrderTag({ status }) {
     const c = ORDER_CFG[status] || ORDER_CFG.pending;
     const Icon = c.icon;
+
     return (
         <span
-            style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 5,
-                padding: "2px 8px",
-                borderRadius: 6,
-                background: c.bg,
-                border: `1px solid ${c.border}`,
-                fontSize: 11,
-                fontWeight: 600,
-                color: c.color,
-                letterSpacing: "0.03em",
-            }}
+            className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-semibold ${c.classes}`}
         >
             <Icon size={10} />
             {c.label}
@@ -120,9 +103,9 @@ function OrderTag({ status }) {
     );
 }
 
-/* ─── main ───────────────────────────────────────────────────── */
 export default function MyOrdersPage() {
     const navigate = useNavigate();
+
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
@@ -134,7 +117,9 @@ export default function MyOrdersPage() {
     const fetchOrders = async () => {
         try {
             setLoading(true);
+
             const { data } = await api.get("/api/order/my");
+
             setOrders(data?.data || []);
         } catch (err) {
             showError(err?.response?.data?.message || "Failed to fetch orders");
@@ -147,352 +132,165 @@ export default function MyOrdersPage() {
         (o) => !search || o?.auctionId?.name?.toLowerCase().includes(search.toLowerCase()),
     );
 
-    /* loading */
-    if (loading)
+    if (loading) {
         return (
-            <div
-                style={{
-                    minHeight: "100vh",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: "#f3f4f6",
-                }}
-            >
-                <Loader2
-                    size={22}
-                    color="#9ca3af"
-                    style={{ animation: "spin 1s linear infinite" }}
-                />
-                <style>{`@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
+            <div className="flex min-h-screen items-center justify-center bg-gray-100">
+                <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
             </div>
         );
+    }
 
-    /* empty */
-    if (!orders.length)
+    if (!orders.length) {
         return (
-            <div
-                style={{
-                    minHeight: "100vh",
-                    background: "#f3f4f6",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                }}
-            >
-                <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');*{box-sizing:border-box;margin:0;padding:0;}`}</style>
-                <div
-                    style={{ textAlign: "center", fontFamily: "'DM Sans', system-ui, sans-serif" }}
-                >
-                    <div
-                        style={{
-                            width: 48,
-                            height: 48,
-                            borderRadius: 12,
-                            background: "#fff",
-                            border: "1px solid #e5e7eb",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            margin: "0 auto 12px",
-                            boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-                        }}
-                    >
-                        <Package size={20} color="#9ca3af" />
+            <div className="flex min-h-screen items-center justify-center bg-gray-100">
+                <div className="text-center">
+                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 bg-white shadow-sm">
+                        <Package className="h-5 w-5 text-gray-400" />
                     </div>
-                    <p style={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>No orders yet</p>
-                    <p style={{ fontSize: 13, color: "#9ca3af", marginTop: 4 }}>
-                        You haven't placed any orders.
-                    </p>
+
+                    <p className="text-sm font-semibold text-gray-900">No orders yet</p>
+
+                    <p className="mt-1 text-sm text-gray-500">You haven't placed any orders.</p>
                 </div>
             </div>
         );
+    }
 
     return (
-        <div
-            style={{
-                minHeight: "100vh",
-                background: "#f3f4f6",
-                fontFamily: "'DM Sans', system-ui, sans-serif",
-            }}
-        >
-            <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
-                *{box-sizing:border-box;margin:0;padding:0;}
-                @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-                @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-                .row-hover:hover{background:#f9fafb !important;}
-            `}</style>
+        <div className="min-h-screen bg-gray-100">
+            {/* TOPBAR */}
 
-            {/* ── TOP BAR ── */}
-            <div
-                style={{
-                    background: "#fff",
-                    borderBottom: "1px solid #e5e7eb",
-                    padding: "0 24px",
-                    height: 52,
-                    display: "flex",
-                    alignItems: "center",
-                    position: "sticky",
-                    top: 0,
-                    zIndex: 50,
-                }}
-            >
-                <h1 style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>Orders</h1>
-                <span
-                    style={{
-                        marginLeft: 8,
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: "#6b7280",
-                        background: "#f3f4f6",
-                        border: "1px solid #e5e7eb",
-                        padding: "1px 7px",
-                        borderRadius: 20,
-                    }}
-                >
+            <div className="sticky top-0 z-20 flex h-14 items-center border-b border-gray-200 bg-white px-6">
+                <h1 className="text-sm font-bold text-gray-900">Orders</h1>
+
+                <span className="ml-2 rounded-full border border-gray-200 bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-600">
                     {orders.length}
                 </span>
             </div>
 
-            {/* ── BODY ── */}
-            <div style={{ maxWidth: 1100, margin: "0 auto", padding: "24px" }}>
-                {/* Search + filter bar */}
-                <div style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "center" }}>
-                    <div
-                        style={{
-                            flex: 1,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                            background: "#fff",
-                            border: "1px solid #e5e7eb",
-                            borderRadius: 8,
-                            padding: "0 12px",
-                            height: 36,
-                            boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
-                        }}
-                    >
-                        <Search size={14} color="#9ca3af" style={{ flexShrink: 0 }} />
+            {/* BODY */}
+
+            <div className="mx-auto w-full max-w-6xl p-6">
+                {/* SEARCH */}
+
+                <div className="mb-4 flex items-center gap-3">
+                    <div className="flex h-10 flex-1 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 shadow-sm">
+                        <Search className="h-4 w-4 text-gray-400" />
+
                         <input
-                            placeholder="Search orders…"
+                            placeholder="Search orders..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            style={{
-                                flex: 1,
-                                border: "none",
-                                outline: "none",
-                                background: "none",
-                                fontSize: 13,
-                                color: "#374151",
-                                fontFamily: "inherit",
-                            }}
+                            className="flex-1 bg-transparent text-sm outline-none placeholder:text-gray-400"
                         />
                     </div>
-                    <button
-                        style={{
-                            height: 36,
-                            padding: "0 14px",
-                            borderRadius: 8,
-                            background: "#fff",
-                            border: "1px solid #e5e7eb",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                            fontSize: 13,
-                            fontWeight: 600,
-                            color: "#374151",
-                            cursor: "pointer",
-                            fontFamily: "inherit",
-                            boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
-                        }}
-                    >
-                        <SlidersHorizontal size={13} color="#9ca3af" />
+
+                    <button className="flex h-10 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50">
+                        <SlidersHorizontal className="h-4 w-4 text-gray-400" />
                         Filter
                     </button>
                 </div>
 
-                {/* ── TABLE ── */}
-                <div
-                    style={{
-                        background: "#fff",
-                        border: "1px solid #e5e7eb",
-                        borderRadius: 12,
-                        overflow: "hidden",
-                        boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-                        animation: "fadeUp 0.2s ease both",
-                    }}
-                >
-                    {/* Header */}
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: "2.2fr 1fr 1fr 1fr 32px",
-                            gap: 0,
-                            padding: "0 20px",
-                            height: 38,
-                            background: "#f9fafb",
-                            borderBottom: "1px solid #e5e7eb",
-                            alignItems: "center",
-                        }}
-                    >
-                        {["Item", "Amount", "Payment", "Status", ""].map((h, i) => (
+                {/* TABLE */}
+
+                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                    {/* HEADER */}
+
+                    <div className="grid grid-cols-[2.2fr_1fr_1fr_1fr_40px] items-center border-b border-gray-200 bg-gray-50 px-5 py-3">
+                        {["Item", "Amount", "Payment", "Status", ""].map((h) => (
                             <span
-                                key={i}
-                                style={{
-                                    fontSize: 11,
-                                    fontWeight: 600,
-                                    color: "#9ca3af",
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.07em",
-                                    paddingRight: 16,
-                                }}
+                                key={h}
+                                className="text-[11px] font-semibold uppercase tracking-wider text-gray-400"
                             >
                                 {h}
                             </span>
                         ))}
                     </div>
 
-                    {/* Rows */}
+                    {/* ROWS */}
+
                     {filtered.length === 0 ? (
-                        <div
-                            style={{
-                                padding: "40px 20px",
-                                textAlign: "center",
-                                color: "#9ca3af",
-                                fontSize: 13,
-                            }}
-                        >
+                        <div className="p-10 text-center text-sm text-gray-400">
                             No orders match your search.
                         </div>
                     ) : (
                         filtered.map((order, idx) => {
                             const auction = order?.auctionId;
+
                             const image =
                                 auction?.media?.[0]?.[0] ||
                                 auction?.media?.[0] ||
                                 "/placeholder.png";
+
                             const isLast = idx === filtered.length - 1;
 
                             return (
                                 <div
                                     key={order?._id}
-                                    className="row-hover"
                                     onClick={() => navigate(`/orders/${order?._id}`)}
-                                    style={{
-                                        display: "grid",
-                                        gridTemplateColumns: "2.2fr 1fr 1fr 1fr 32px",
-                                        gap: 0,
-                                        padding: "12px 20px",
-                                        alignItems: "center",
-                                        borderBottom: isLast ? "none" : "1px solid #f3f4f6",
-                                        cursor: "pointer",
-                                        background: "#fff",
-                                        transition: "background 0.1s",
-                                    }}
+                                    className={`grid cursor-pointer grid-cols-[2.2fr_1fr_1fr_1fr_40px] items-center px-5 py-4 transition hover:bg-gray-50 ${
+                                        !isLast ? "border-b border-gray-100" : ""
+                                    }`}
                                 >
-                                    {/* Item */}
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 12,
-                                            minWidth: 0,
-                                            paddingRight: 16,
-                                        }}
-                                    >
-                                        <div
-                                            style={{
-                                                width: 40,
-                                                height: 40,
-                                                borderRadius: 8,
-                                                flexShrink: 0,
-                                                overflow: "hidden",
-                                                border: "1px solid #f3f4f6",
-                                                background: "#f9fafb",
-                                            }}
-                                        >
+                                    {/* ITEM */}
+
+                                    <div className="flex min-w-0 items-center gap-3 pr-4">
+                                        <div className="h-10 w-10 overflow-hidden rounded-lg border border-gray-100 bg-gray-50">
                                             <img
                                                 src={image}
                                                 alt={auction?.name}
-                                                style={{
-                                                    width: "100%",
-                                                    height: "100%",
-                                                    objectFit: "cover",
-                                                }}
+                                                className="h-full w-full object-cover"
                                             />
                                         </div>
-                                        <div style={{ minWidth: 0 }}>
-                                            <p
-                                                style={{
-                                                    fontSize: 13,
-                                                    fontWeight: 600,
-                                                    color: "#111827",
-                                                    whiteSpace: "nowrap",
-                                                    overflow: "hidden",
-                                                    textOverflow: "ellipsis",
-                                                }}
-                                            >
+
+                                        <div className="min-w-0">
+                                            <p className="truncate text-sm font-semibold text-gray-900">
                                                 {auction?.name}
                                             </p>
-                                            <div
-                                                style={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: 6,
-                                                    marginTop: 2,
-                                                }}
-                                            >
+
+                                            <div className="mt-1 flex items-center gap-1.5">
                                                 {order?.sellerId?.profile && (
                                                     <img
                                                         src={order.sellerId.profile}
-                                                        style={{
-                                                            width: 14,
-                                                            height: 14,
-                                                            borderRadius: "50%",
-                                                            objectFit: "cover",
-                                                            border: "1px solid #e5e7eb",
-                                                        }}
+                                                        className="h-3.5 w-3.5 rounded-full border border-gray-200 object-cover"
                                                     />
                                                 )}
-                                                <span style={{ fontSize: 12, color: "#9ca3af" }}>
+
+                                                <span className="text-xs text-gray-400">
                                                     {order?.sellerId?.firstName}
                                                 </span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Amount */}
-                                    <div style={{ paddingRight: 16 }}>
-                                        <p
-                                            style={{
-                                                fontSize: 13,
-                                                fontWeight: 700,
-                                                color: "#111827",
-                                                fontFamily: "'DM Mono', monospace",
-                                                letterSpacing: "-0.01em",
-                                            }}
-                                        >
+                                    {/* AMOUNT */}
+
+                                    <div>
+                                        <p className="text-sm font-bold text-gray-900">
                                             ₹{order?.finalPrice?.toLocaleString("en-IN")}
                                         </p>
-                                        <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>
+
+                                        <p className="mt-0.5 text-[11px] text-gray-400">
                                             Winning bid
                                         </p>
                                     </div>
 
-                                    {/* Payment */}
-                                    <div style={{ paddingRight: 16 }}>
+                                    {/* PAYMENT */}
+
+                                    <div>
                                         <PaymentTag status={order?.paymentStatus} />
                                     </div>
 
-                                    {/* Order Status */}
-                                    <div style={{ paddingRight: 16 }}>
+                                    {/* STATUS */}
+
+                                    <div>
                                         <OrderTag status={order?.orderStatus} />
                                     </div>
 
-                                    {/* Chevron */}
-                                    <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                                        <ChevronRight size={15} color="#d1d5db" />
+                                    {/* CHEVRON */}
+
+                                    <div className="flex justify-end">
+                                        <ChevronRight className="h-4 w-4 text-gray-300" />
                                     </div>
                                 </div>
                             );
@@ -500,8 +298,7 @@ export default function MyOrdersPage() {
                     )}
                 </div>
 
-                {/* Footer count */}
-                <p style={{ marginTop: 12, fontSize: 12, color: "#9ca3af", paddingLeft: 2 }}>
+                <p className="mt-3 pl-1 text-xs text-gray-400">
                     Showing {filtered.length} of {orders.length} orders
                 </p>
             </div>
