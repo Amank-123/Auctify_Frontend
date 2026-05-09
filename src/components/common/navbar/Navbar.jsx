@@ -155,7 +155,7 @@ export default function Navbar() {
                                 {/* Chat */}
                                 <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg  bg-white">
                                     <ChatButton
-                                        onClick={() => navigate("/auction/room")}
+                                        onClick={() => navigate("/chats")}
                                         refreshKey={refreshBell}
                                     />
                                 </div>
