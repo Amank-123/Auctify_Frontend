@@ -3,321 +3,265 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
     CreditCard,
     MapPin,
-    Package,
     ShieldCheck,
     Loader2,
     XCircle,
     RefreshCcw,
     CheckCircle2,
-    Truck,
     ArrowLeft,
-    MoreHorizontal,
-    Edit2,
-    User,
     AlertCircle,
+    Truck,
+    ChevronRight,
+    Package,
+    KeyRound,
+    Clock,
 } from "lucide-react";
 import { api } from "@/shared/services/axios";
 import { showError, showSuccess } from "@/shared/utils/toast";
 
-/* ─── helpers ────────────────────────────────────────────────── */
-const fmt = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
+const fmt = (n) => `₹${Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
 
-const TAG = ({ color, bg, border, children }) => (
-    <span
-        style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 5,
-            padding: "2px 8px",
-            borderRadius: 6,
-            background: bg,
-            border: `1px solid ${border}`,
-            fontSize: 11,
-            fontWeight: 600,
-            color,
-            letterSpacing: "0.03em",
-        }}
-    >
-        <span style={{ width: 5, height: 5, borderRadius: "50%", background: color }} />
-        {children}
-    </span>
+const HIGH_VALUE_LIMIT = 100000;
+
+const PAYMENT_STATUS = {
+    pending: { label: "Pending", color: "#b45309" },
+    completed: { label: "Payment Complete", color: "#15803d" },
+    refunded: { label: "Refunded", color: "#6d28d9" },
+    cancelled: { label: "Cancelled", color: "#dc2626" },
+    awaiting_offline_payment: { label: "Awaiting Offline Payment", color: "#c2410c" },
+};
+
+const ORDER_STATUS = {
+    pending: { label: "Order Placed", color: "#0369a1" },
+    confirmed: { label: "Order Confirmed", color: "#0369a1" },
+    shipped: { label: "Shipped", color: "#4f46e5" },
+    delivered: { label: "Delivered", color: "#047857" },
+    cancelled: { label: "Cancelled", color: "#dc2626" },
+    awaiting_offline_payment: { label: "Awaiting Offline Payment", color: "#c2410c" },
+};
+
+const Dot = ({ color }) => (
+    <span style={{ background: color }} className="inline-block h-2 w-2 rounded-full shrink-0" />
 );
+const Hr = () => <div className="border-t border-gray-100" />;
 
-const paymentTag = (s) =>
-    ({
-        pending: (
-            <TAG color="#b45309" bg="#fefce8" border="#fde68a">
-                Payment pending
-            </TAG>
-        ),
-        completed: (
-            <TAG color="#15803d" bg="#f0fdf4" border="#bbf7d0">
-                Paid
-            </TAG>
-        ),
-        cancelled: (
-            <TAG color="#b91c1c" bg="#fff1f2" border="#fecaca">
-                Payment cancelled
-            </TAG>
-        ),
-        refunded: (
-            <TAG color="#6d28d9" bg="#f5f3ff" border="#ddd6fe">
-                Refunded
-            </TAG>
-        ),
-    })[s] || (
-        <TAG color="#64748b" bg="#f8fafc" border="#e2e8f0">
-            {s}
-        </TAG>
-    );
-
-const orderTag = (s) =>
-    ({
-        pending: (
-            <TAG color="#b45309" bg="#fefce8" border="#fde68a">
-                Unfulfilled
-            </TAG>
-        ),
-        confirmed: (
-            <TAG color="#1d4ed8" bg="#eff6ff" border="#bfdbfe">
-                Confirmed
-            </TAG>
-        ),
-        shipped: (
-            <TAG color="#6d28d9" bg="#f5f3ff" border="#ddd6fe">
-                Shipped
-            </TAG>
-        ),
-        delivered: (
-            <TAG color="#15803d" bg="#f0fdf4" border="#bbf7d0">
-                Delivered
-            </TAG>
-        ),
-        cancelled: (
-            <TAG color="#b91c1c" bg="#fff1f2" border="#fecaca">
-                Cancelled
-            </TAG>
-        ),
-    })[s] || (
-        <TAG color="#64748b" bg="#f8fafc" border="#e2e8f0">
-            {s}
-        </TAG>
-    );
-
-/* ─── Card ───────────────────────────────────────────────────── */
-function Card({ children, style = {} }) {
-    return (
-        <div
-            style={{
-                background: "#fff",
-                border: "1px solid #e5e7eb",
-                borderRadius: 12,
-                overflow: "hidden",
-                boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-                ...style,
-            }}
-        >
-            {children}
-        </div>
-    );
-}
-
-function CardSection({ title, action, children }) {
-    return (
-        <div style={{ padding: "16px 20px" }}>
-            {title && (
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        marginBottom: 12,
-                    }}
-                >
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>{title}</span>
-                    {action && (
-                        <button
-                            style={{
-                                background: "none",
-                                border: "none",
-                                cursor: "pointer",
-                                color: "#9ca3af",
-                                padding: 2,
-                                borderRadius: 4,
-                                display: "flex",
-                                alignItems: "center",
-                            }}
-                        >
-                            {action}
-                        </button>
-                    )}
-                </div>
-            )}
-            {children}
-        </div>
-    );
-}
-
-const Divider = () => <div style={{ borderTop: "1px solid #f3f4f6" }} />;
-
-function Row({ label, value, bold }) {
-    return (
-        <div
-            style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "3px 0",
-            }}
-        >
-            <span style={{ fontSize: 13, color: "#6b7280" }}>{label}</span>
-            <span
-                style={{
-                    fontSize: 13,
-                    color: bold ? "#111827" : "#374151",
-                    fontWeight: bold ? 700 : 400,
-                }}
-            >
-                {value}
-            </span>
-        </div>
-    );
-}
-
-function Btn({ onClick, disabled, children, variant = "default", size = "md", fullWidth }) {
-    const v = {
-        default: { bg: "#fff", border: "#d1d5db", color: "#374151", hbg: "#f9fafb" },
-        primary: { bg: "#111827", border: "#111827", color: "#fff", hbg: "#1f2937" },
-        danger: { bg: "#fff", border: "#d1d5db", color: "#dc2626", hbg: "#fff1f2" },
-        subtle: { bg: "#f9fafb", border: "#e5e7eb", color: "#374151", hbg: "#f3f4f6" },
-    }[variant];
-    const h = size === "sm" ? 30 : size === "lg" ? 44 : 36;
-    const px = size === "sm" ? 10 : size === "lg" ? 18 : 14;
-    return (
-        <button
-            onClick={onClick}
-            disabled={disabled}
-            style={{
-                height: h,
-                padding: `0 ${px}px`,
-                background: v.bg,
-                border: `1px solid ${v.border}`,
-                borderRadius: 8,
-                color: v.color,
-                fontFamily: "inherit",
-                fontSize: size === "sm" ? 12 : 13,
-                fontWeight: 600,
-                cursor: disabled ? "not-allowed" : "pointer",
-                opacity: disabled ? 0.5 : 1,
-                transition: "all 0.12s",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                width: fullWidth ? "100%" : "auto",
-                justifyContent: fullWidth ? "center" : "flex-start",
-                whiteSpace: "nowrap",
-            }}
-            onMouseEnter={(e) => !disabled && (e.currentTarget.style.background = v.hbg)}
-            onMouseLeave={(e) => !disabled && (e.currentTarget.style.background = v.bg)}
-        >
-            {children}
-        </button>
-    );
-}
-
-/* ─── Fulfillment timeline ───────────────────────────────────── */
-const STEPS = [
-    { key: "confirmed", label: "Order confirmed" },
-    { key: "shipped", label: "Shipped" },
-    { key: "delivered", label: "Delivered" },
+/* ─── 3-step milestone map ───────────────────────────────────────
+   Step 0 → Order Placed   (always done once order exists)
+   Step 1 → Payment Done   (paymentStatus === "completed")
+   Step 2 → Delivered      (orderStatus  === "delivered")
+──────────────────────────────────────────────────────────────── */
+const MILESTONES = [
+    { key: "placed", label: "Order Placed", icon: Package },
+    { key: "paid", label: "Payment Done", icon: CreditCard },
+    { key: "delivered", label: "Delivered", icon: Truck },
 ];
 
-function FulfillmentTimeline({ status }) {
-    const idx = STEPS.findIndex((s) => s.key === status);
-    return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-            {STEPS.map((step, i) => {
-                const done = idx > i;
-                const active = idx === i;
-                return (
-                    <div
-                        key={step.key}
-                        style={{
-                            display: "flex",
-                            gap: 12,
-                            paddingBottom: i < STEPS.length - 1 ? 14 : 0,
-                        }}
-                    >
-                        <div
-                            style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                            }}
-                        >
-                            <div
-                                style={{
-                                    width: 20,
-                                    height: 20,
-                                    borderRadius: "50%",
-                                    flexShrink: 0,
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    background: done || active ? "#111827" : "#f3f4f6",
-                                    border: `2px solid ${done || active ? "#111827" : "#e5e7eb"}`,
-                                }}
-                            >
-                                {done ? (
-                                    <CheckCircle2 size={10} color="#fff" />
-                                ) : (
-                                    <span
-                                        style={{
-                                            width: 6,
-                                            height: 6,
-                                            borderRadius: "50%",
-                                            background: active ? "#fff" : "#d1d5db",
-                                        }}
-                                    />
-                                )}
-                            </div>
-                            {i < STEPS.length - 1 && (
-                                <div
-                                    style={{
-                                        width: 2,
-                                        flex: 1,
-                                        minHeight: 16,
-                                        marginTop: 2,
-                                        background: done ? "#111827" : "#e5e7eb",
-                                    }}
-                                />
-                            )}
-                        </div>
-                        <p
-                            style={{
-                                fontSize: 12,
-                                fontWeight: active || done ? 600 : 400,
-                                color: active || done ? "#111827" : "#9ca3af",
-                                paddingTop: 2,
-                            }}
-                        >
-                            {step.label}
-                        </p>
-                    </div>
-                );
-            })}
-        </div>
-    );
+function getMilestoneIndex(order) {
+    if (order?.orderStatus === "delivered") return 2;
+    if (order?.paymentStatus === "completed") return 1;
+    return 0; // order always placed
 }
 
-/* ─── Main ───────────────────────────────────────────────────── */
+const Stepper = ({ order }) => {
+    const activeIdx = getMilestoneIndex(order);
+    const isCancelled = order?.orderStatus === "cancelled";
+
+    return (
+        <div className="px-5 py-6">
+            {isCancelled ? (
+                <div className="flex items-center gap-2 text-sm text-red-600 font-medium">
+                    <XCircle size={16} className="shrink-0" />
+                    This order has been cancelled.
+                </div>
+            ) : (
+                <div className="relative flex items-start justify-between">
+                    {/* connecting lines — drawn behind circles */}
+                    <div className="absolute left-0 right-0 top-[14px] flex px-[14px]">
+                        {MILESTONES.slice(0, -1).map((_, i) => (
+                            <div key={i} className="flex-1 mx-1">
+                                <div
+                                    style={{
+                                        background: i < activeIdx ? "#2874f0" : "#e5e7eb",
+                                        height: 2,
+                                        width: "100%",
+                                        transition: "background 0.3s",
+                                    }}
+                                />
+                            </div>
+                        ))}
+                    </div>
+
+                    {MILESTONES.map((m, i) => {
+                        const done = i <= activeIdx;
+                        const active = i === activeIdx;
+                        const Icon = m.icon;
+                        return (
+                            <div
+                                key={m.key}
+                                className="relative z-10 flex flex-col items-center gap-2"
+                                style={{ flex: 1 }}
+                            >
+                                {/* circle */}
+                                <div
+                                    style={{
+                                        width: 30,
+                                        height: 30,
+                                        borderRadius: "50%",
+                                        background: done ? "#2874f0" : "#e5e7eb",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        boxShadow: active ? "0 0 0 3px #dbeafe" : "none",
+                                        transition: "background 0.3s, box-shadow 0.3s",
+                                    }}
+                                >
+                                    {done ? (
+                                        <CheckCircle2 size={15} color="#fff" />
+                                    ) : (
+                                        <Icon size={13} color="#9ca3af" />
+                                    )}
+                                </div>
+                                {/* label */}
+                                <span
+                                    style={{
+                                        color: active ? "#2874f0" : done ? "#111827" : "#9ca3af",
+                                        fontWeight: active || done ? 600 : 400,
+                                    }}
+                                    className="text-[11px] text-center leading-tight"
+                                >
+                                    {m.label}
+                                </span>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+};
+
+/* ─── OTP Delivery Modal ─────────────────────────────────────── */
+const OtpModal = ({ onClose, onConfirm, loading }) => {
+    const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+    const refs = Array.from({ length: 6 }, () => null).map(() => {
+        const r = { current: null };
+        return r;
+    });
+
+    const handleChange = (val, i) => {
+        if (!/^\d?$/.test(val)) return;
+        const next = [...otp];
+        next[i] = val;
+        setOtp(next);
+        if (val && i < 5) refs[i + 1].current?.focus();
+    };
+
+    const handleKeyDown = (e, i) => {
+        if (e.key === "Backspace" && !otp[i] && i > 0) refs[i - 1].current?.focus();
+    };
+
+    const handlePaste = (e) => {
+        const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+        if (!text) return;
+        e.preventDefault();
+        const next = [...otp];
+        text.split("").forEach((ch, i) => {
+            next[i] = ch;
+        });
+        setOtp(next);
+        refs[Math.min(text.length, 5)].current?.focus();
+    };
+
+    const value = otp.join("");
+
+    return (
+        /* backdrop */
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+            onClick={(e) => e.target === e.currentTarget && onClose()}
+        >
+            <div className="w-full max-w-sm rounded-lg bg-white shadow-xl border border-gray-200">
+                {/* header */}
+                <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+                    <div className="flex items-center gap-2">
+                        <KeyRound size={16} className="text-[#2874f0]" />
+                        <span className="text-sm font-bold text-gray-900">Confirm Delivery</span>
+                    </div>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                        <XCircle size={18} />
+                    </button>
+                </div>
+
+                {/* body */}
+                <div className="px-5 py-5">
+                    <p className="text-sm text-gray-500 leading-relaxed">
+                        Enter the <span className="font-semibold text-gray-800">6-digit OTP</span>{" "}
+                        provided by the buyer to confirm delivery. This ensures the item was safely
+                        received.
+                    </p>
+
+                    <div className="mt-5 flex justify-center gap-2" onPaste={handlePaste}>
+                        {otp.map((digit, i) => (
+                            <input
+                                key={i}
+                                ref={(el) => {
+                                    refs[i].current = el;
+                                }}
+                                type="text"
+                                inputMode="numeric"
+                                maxLength={1}
+                                value={digit}
+                                onChange={(e) => handleChange(e.target.value, i)}
+                                onKeyDown={(e) => handleKeyDown(e, i)}
+                                className="h-12 w-10 rounded border border-gray-300 text-center text-lg font-bold text-gray-900 outline-none focus:border-[#2874f0] focus:ring-2 focus:ring-blue-100 transition-colors"
+                            />
+                        ))}
+                    </div>
+
+                    <div className="mt-2 flex items-center justify-center gap-1.5 text-xs text-gray-400">
+                        <Clock size={11} />
+                        OTP shared with buyer at time of delivery
+                    </div>
+                </div>
+
+                {/* footer */}
+                <div className="flex gap-3 border-t border-gray-100 px-5 py-4">
+                    <button
+                        onClick={onClose}
+                        className="flex-1 rounded border border-gray-300 bg-white py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={() => onConfirm(value)}
+                        disabled={value.length < 6 || loading}
+                        className="flex flex-1 items-center justify-center gap-2 rounded bg-[#2874f0] py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                        {loading ? (
+                            <>
+                                <Loader2 className="h-4 w-4 animate-spin" /> Verifying…
+                            </>
+                        ) : (
+                            "Confirm Delivery"
+                        )}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+/* ════════════════════════════════════════════════════════════════ */
 export default function OrderDetailsPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
     const [paying, setPaying] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
+    const [otpOpen, setOtpOpen] = useState(false);
+    const [otpLoading, setOtpLoading] = useState(false);
 
     useEffect(() => {
         if (id) fetchOrder();
@@ -343,15 +287,13 @@ export default function OrderDetailsPage() {
                 paymentMethod: "upi",
             });
             const pd = data?.data;
-            if (!pd?.razorOrder?.id) throw new Error("Razorpay order not created");
             const razor = new window.Razorpay({
                 key: import.meta.env.VITE_RAZORPAY_KEY,
                 amount: pd.razorOrder.amount,
                 currency: "INR",
                 name: "Auctify",
-                description: "Auction Payment",
+                description: "Secure auction payment",
                 order_id: pd.razorOrder.id,
-
                 handler: async (res) => {
                     try {
                         await api.post("/api/payment/verify", {
@@ -359,34 +301,16 @@ export default function OrderDetailsPage() {
                             razorpay_payment_id: res.razorpay_payment_id,
                             razorpay_signature: res.razorpay_signature,
                         });
-
                         showSuccess("Payment successful");
-
                         fetchOrder();
                     } catch (e) {
                         showError(e?.response?.data?.message || "Verification failed");
                     }
                 },
-
-                modal: {
-                    ondismiss: async () => {
-                        showError("Payment cancelled");
-                    },
-                },
-
-                prefill: {
-                    name: `${order?.buyerId?.firstName || ""} ${order?.buyerId?.lastName || ""}`,
-                    email: order?.buyerId?.email || "",
-                },
-
-                theme: {
-                    color: "#111827",
-                },
+                modal: { ondismiss: () => showError("Payment cancelled") },
+                theme: { color: "#2874f0" },
             });
-
             razor.open();
-
-            console.log(razor);
         } catch (err) {
             showError(err?.response?.data?.message || "Failed to initiate payment");
         } finally {
@@ -394,30 +318,14 @@ export default function OrderDetailsPage() {
         }
     };
 
-    const cancelOrder = async () => {
+    const handleOfflinePayment = async () => {
         try {
             setActionLoading(true);
-            await api.patch(`/api/order/cancel/${order._id}`);
-            showSuccess("Order cancelled");
+            await api.patch(`/api/payment/offline-payment/${order._id}`);
+            showSuccess("Offline payment request submitted");
             fetchOrder();
         } catch (err) {
-            showError(err?.response?.data?.message || "Failed to cancel order");
-        } finally {
-            setActionLoading(false);
-        }
-    };
-
-    const cancelPayment = async () => {
-        try {
-            setActionLoading(true);
-            const r = await api.get(`/api/payment/order/${order._id}`);
-            const p = r?.data?.data;
-            if (!p?._id) return showError("Payment not found");
-            await api.patch(`/api/payment/cancel/${p._id}`);
-            showSuccess("Payment cancelled");
-            fetchOrder();
-        } catch (err) {
-            showError(err?.response?.data?.message || "Failed to cancel payment");
+            showError(err?.response?.data?.message || "Request failed");
         } finally {
             setActionLoading(false);
         }
@@ -439,567 +347,464 @@ export default function OrderDetailsPage() {
         }
     };
 
-    const updateOrderStatus = async (status) => {
+    const cancelOrder = async () => {
         try {
             setActionLoading(true);
-            await api.patch(`/api/order/status/${order._id}`, { status });
-            showSuccess(`Order marked as ${status}`);
+            await api.patch(`/api/order/cancel/${order._id}`);
+            showSuccess("Order cancelled");
             fetchOrder();
         } catch (err) {
-            showError(err?.response?.data?.message || "Failed updating status");
+            showError(err?.response?.data?.message || "Cancel failed");
         } finally {
             setActionLoading(false);
         }
     };
 
+    /* OTP delivery confirm — seller calls this with OTP from buyer */
+    const confirmDelivery = async (otp) => {
+        try {
+            setOtpLoading(true);
+            await api.patch(`/api/order/deliver/${order._id}`, { otp });
+            showSuccess("Delivery confirmed successfully");
+            setOtpOpen(false);
+            fetchOrder();
+        } catch (err) {
+            showError(
+                err?.response?.data?.message || "Invalid OTP or delivery confirmation failed",
+            );
+        } finally {
+            setOtpLoading(false);
+        }
+    };
+
+    /* ── guards ── */
     if (loading)
         return (
-            <div
-                style={{
-                    minHeight: "100vh",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: "#f3f4f6",
-                }}
-            >
-                <Loader2
-                    size={22}
-                    color="#9ca3af"
-                    style={{ animation: "spin 1s linear infinite" }}
-                />
-                <style>{`@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
+            <div className="flex min-h-screen items-center justify-center bg-[#f1f3f6]">
+                <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
             </div>
         );
-
     if (!order)
         return (
-            <div
-                style={{
-                    minHeight: "100vh",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: "#f3f4f6",
-                }}
-            >
-                <div style={{ textAlign: "center" }}>
-                    <Package size={36} color="#d1d5db" />
-                    <p style={{ marginTop: 8, color: "#9ca3af", fontSize: 14 }}>Order not found</p>
-                </div>
+            <div className="flex min-h-screen items-center justify-center bg-[#f1f3f6]">
+                <p className="text-sm text-gray-400">Order not found</p>
             </div>
         );
 
     const auction = order?.auctionId;
-    const image = auction?.media?.[0]?.[0] || auction?.media?.[0] || "/placeholder.png";
-    const address = order?.shippingAddress || order?.buyerId?.address;
     const buyer = order?.buyerId;
+    const image = auction?.media?.[0]?.[0] || auction?.media?.[0] || "/placeholder.png";
+
     const isPaid = order?.paymentStatus === "completed";
+    const isRefunded = order?.paymentStatus === "refunded";
     const isCancelled = order?.orderStatus === "cancelled";
     const isDelivered = order?.orderStatus === "delivered";
+    const isShipped = order?.orderStatus === "shipped";
+    const isHighValue = order?.finalPrice > HIGH_VALUE_LIMIT;
+    const offlineRequested = order?.orderStatus === "awaiting_offline_payment";
+    const paymentLocked = isPaid || isRefunded || isCancelled || isDelivered || offlineRequested;
+
+    /* seller can confirm delivery if order is shipped AND payment is done */
+    const canConfirmDelivery = isShipped && isPaid && !isDelivered;
+
+    const pStatus = PAYMENT_STATUS[order?.paymentStatus] || {
+        label: order?.paymentStatus,
+        color: "#6b7280",
+    };
+    const oStatus = ORDER_STATUS[order?.orderStatus] || {
+        label: order?.orderStatus,
+        color: "#6b7280",
+    };
+    const orderId = order._id?.slice(-8).toUpperCase();
 
     return (
         <div
-            style={{
-                minHeight: "100vh",
-                background: "#f3f4f6",
-                fontFamily: "'DM Sans', system-ui, sans-serif",
-            }}
+            className="min-h-screen bg-[#f1f3f6]"
+            style={{ fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif", fontSize: 14 }}
         >
-            <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
-                *{box-sizing:border-box;margin:0;padding:0;}
-                @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-                @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-                .fade{animation:fadeUp 0.2s ease both}
-            `}</style>
+            {/* OTP Modal */}
+            {otpOpen && (
+                <OtpModal
+                    onClose={() => setOtpOpen(false)}
+                    onConfirm={confirmDelivery}
+                    loading={otpLoading}
+                />
+            )}
 
-            {/* ── TOP BAR ── */}
-            <div
-                style={{
-                    background: "#fff",
-                    borderBottom: "1px solid #e5e7eb",
-                    padding: "0 24px",
-                    height: 52,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    position: "sticky",
-                    top: 0,
-                    zIndex: 50,
-                }}
-            >
-                <button
-                    onClick={() => navigate(-1)}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 5,
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        color: "#374151",
-                        fontSize: 13,
-                        fontWeight: 600,
-                        fontFamily: "inherit",
-                        padding: "5px 8px",
-                        borderRadius: 6,
-                        transition: "background 0.12s",
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f3f4f6")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
-                >
-                    <ArrowLeft size={15} /> Orders
-                </button>
-
-                <span style={{ color: "#d1d5db", fontSize: 16 }}>/</span>
-
-                <h1 style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>
-                    Order ID: {order._id?.slice(-10).toUpperCase()}
-                </h1>
-
-                <div style={{ display: "flex", gap: 6 }}>
-                    {paymentTag(order?.paymentStatus)}
-                    {orderTag(order?.orderStatus)}
+            {/* ── HEADER ── */}
+            <header className="sticky top-0 z-40 border-b border-gray-300 bg-white">
+                <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-4 sm:px-6">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="flex items-center gap-1 text-sm font-medium text-[#2874f0] hover:underline"
+                    >
+                        <ArrowLeft size={14} />
+                        My Orders
+                    </button>
+                    <ChevronRight size={13} className="text-gray-400" />
+                    <span className="hidden text-sm text-gray-500 sm:inline">Order Details</span>
+                    <span className="ml-auto font-mono text-xs text-gray-400">#{orderId}</span>
                 </div>
-
-                <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-                    {!isCancelled && (
-                        <Btn onClick={cancelOrder} disabled={actionLoading} variant="danger">
-                            <XCircle size={13} /> Cancel order
-                        </Btn>
-                    )}
-                    {isPaid && (
-                        <Btn onClick={refundPayment} disabled={actionLoading}>
-                            <RefreshCcw size={13} /> Refund
-                        </Btn>
-                    )}
-                    <Btn>
-                        <MoreHorizontal size={15} />
-                    </Btn>
-                </div>
-            </div>
+            </header>
 
             {/* ── BODY ── */}
-            <div
-                style={{
-                    maxWidth: 1100,
-                    margin: "0 auto",
-                    padding: "24px",
-                    display: "grid",
-                    gridTemplateColumns: "1fr 292px",
-                    gap: 18,
-                    alignItems: "start",
-                }}
-            >
-                {/* ════ LEFT / MAIN ════ */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                    {/* Order Item */}
-                    <Card className="fade">
-                        <CardSection title="Order Item">
-                            <div
-                                style={{
-                                    display: "flex",
-                                    gap: 14,
-                                    alignItems: "center",
-                                    padding: "8px 0 14px",
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        width: 56,
-                                        height: 56,
-                                        borderRadius: 8,
-                                        flexShrink: 0,
-                                        border: "1px solid #e5e7eb",
-                                        overflow: "hidden",
-                                        background: "#f9fafb",
-                                    }}
-                                >
-                                    <img
-                                        src={image}
-                                        alt={auction?.name}
-                                        style={{
-                                            width: "100%",
-                                            height: "100%",
-                                            objectFit: "cover",
-                                        }}
-                                    />
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                    <p style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>
-                                        {auction?.name}
-                                    </p>
-                                    {auction?.category && (
-                                        <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>
-                                            {auction.category}
-                                        </p>
-                                    )}
-                                </div>
-                                <div style={{ textAlign: "right", flexShrink: 0 }}>
-                                    <p style={{ fontSize: 13, color: "#6b7280" }}>
-                                        1 × {fmt(order?.finalPrice)}
-                                    </p>
-                                    <p
-                                        style={{
-                                            fontSize: 13,
-                                            fontWeight: 700,
-                                            color: "#111827",
-                                            marginTop: 2,
-                                        }}
+            <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6 sm:py-6">
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_304px]">
+                    {/* ══ LEFT ══ */}
+                    <div className="space-y-3">
+                        {/* ── Milestone Stepper card ── */}
+                        <div className="bg-white border border-gray-200 rounded">
+                            {/* card header */}
+                            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3">
+                                <div className="flex items-center gap-2">
+                                    <Dot color={oStatus.color} />
+                                    <span
+                                        style={{ color: oStatus.color }}
+                                        className="text-sm font-bold"
                                     >
+                                        {oStatus.label}
+                                    </span>
+                                </div>
+                                {isDelivered && (
+                                    <span className="inline-flex items-center gap-1.5 rounded border border-green-200 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
+                                        <CheckCircle2 size={12} /> Delivered
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* stepper */}
+                            <Stepper order={order} />
+
+                            {/* Confirm Delivery button — visible to seller when shipped + paid */}
+                            {canConfirmDelivery && (
+                                <>
+                                    <Hr />
+                                    <div className="px-5 py-4">
+                                        <div className="flex items-start gap-3 rounded border border-blue-100 bg-blue-50 px-4 py-3">
+                                            <KeyRound
+                                                size={15}
+                                                className="mt-0.5 shrink-0 text-blue-600"
+                                            />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-semibold text-blue-900">
+                                                    Ready to confirm delivery?
+                                                </p>
+                                                <p className="mt-0.5 text-xs text-blue-700 leading-relaxed">
+                                                    Ask the buyer for their delivery OTP and enter
+                                                    it below to mark this order as delivered.
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => setOtpOpen(true)}
+                                                className="shrink-0 rounded bg-[#2874f0] px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition-colors"
+                                            >
+                                                Enter OTP
+                                            </button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            {/* Delivered confirmation strip */}
+                            {isDelivered && (
+                                <>
+                                    <Hr />
+                                    <div className="flex items-center gap-2 px-5 py-4 text-sm text-green-700">
+                                        <CheckCircle2 size={14} className="shrink-0" />
+                                        Delivery confirmed via buyer OTP. Order complete.
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        {/* ── Item card ── */}
+                        <div className="bg-white border border-gray-200 rounded">
+                            <div className="border-b border-gray-100 px-5 py-3">
+                                <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                                    Item Ordered
+                                </span>
+                            </div>
+
+                            <div className="flex gap-4 px-5 py-5">
+                                <img
+                                    src={image}
+                                    alt={auction?.name}
+                                    className="h-[88px] w-[88px] shrink-0 rounded border border-gray-200 object-cover"
+                                />
+                                <div className="flex min-w-0 flex-col justify-between py-0.5">
+                                    <div>
+                                        <p className="line-clamp-2 text-sm font-semibold leading-snug text-gray-900">
+                                            {auction?.name}
+                                        </p>
+                                        <p className="mt-1 text-xs text-gray-400">Winning Bid</p>
+                                    </div>
+                                    <p className="text-lg font-bold text-gray-900">
                                         {fmt(order?.finalPrice)}
                                     </p>
                                 </div>
                             </div>
-                            <Divider />
-                            <div
-                                style={{
-                                    paddingTop: 12,
-                                    display: "flex",
-                                    gap: 8,
-                                    flexWrap: "wrap",
-                                }}
-                            >
-                                {isPaid && order?.orderStatus === "confirmed" && (
-                                    <Btn
-                                        onClick={() => updateOrderStatus("shipped")}
-                                        disabled={actionLoading}
-                                        variant="primary"
-                                        size="sm"
-                                    >
-                                        <Truck size={12} /> Mark as shipped
-                                    </Btn>
-                                )}
-                                {order?.orderStatus === "shipped" && (
-                                    <Btn
-                                        onClick={() => updateOrderStatus("delivered")}
-                                        disabled={actionLoading}
-                                        variant="primary"
-                                        size="sm"
-                                    >
-                                        <CheckCircle2 size={12} /> Mark as delivered
-                                    </Btn>
-                                )}
-                                {isCancelled && (
-                                    <span
-                                        style={{
-                                            fontSize: 12,
-                                            color: "#dc2626",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 5,
-                                        }}
-                                    >
-                                        <AlertCircle size={13} /> Order cancelled
-                                    </span>
-                                )}
-                                {isDelivered && (
-                                    <span
-                                        style={{
-                                            fontSize: 12,
-                                            color: "#16a34a",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 5,
-                                        }}
-                                    >
-                                        <CheckCircle2 size={13} /> Delivered successfully
-                                    </span>
-                                )}
-                            </div>
-                        </CardSection>
-                    </Card>
 
-                    {/* Fulfillment */}
-                    {!isCancelled && (
-                        <Card className="fade">
-                            <CardSection title="Fulfillment">
-                                <FulfillmentTimeline status={order?.orderStatus} />
-                            </CardSection>
-                        </Card>
-                    )}
-
-                    {/* Order Summary */}
-                    <Card className="fade">
-                        <CardSection title="Order summary">
-                            <div
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: 2,
-                                    marginBottom: 10,
-                                }}
-                            >
-                                <Row label={`Subtotal · 1 item`} value={fmt(order?.finalPrice)} />
-                                <Row label="Discount" value="—" />
-                                <Row label="Shipping" value="Free shipping" />
-                                <div style={{ borderTop: "1px solid #e5e7eb", margin: "8px 0" }} />
-                                <Row label="Total" value={fmt(order?.finalPrice)} bold />
-                            </div>
-                            <div
-                                style={{
-                                    borderTop: "1px solid #f3f4f6",
-                                    paddingTop: 10,
-                                    marginBottom: 14,
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: 2,
-                                }}
-                            >
-                                <Row
-                                    label="Paid by customer"
-                                    value={isPaid ? fmt(order?.finalPrice) : fmt(0)}
-                                />
-                                {!isPaid && (
-                                    <Row label="Payment due when invoice is sent" value="" />
-                                )}
-                            </div>
-                            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                                {!isPaid ? (
-                                    <>
-                                        <Btn
-                                            onClick={handlePayment}
-                                            disabled={paying}
-                                            variant="primary"
-                                        >
-                                            {paying ? (
-                                                <>
-                                                    <Loader2
-                                                        size={13}
-                                                        style={{
-                                                            animation: "spin 1s linear infinite",
-                                                        }}
-                                                    />{" "}
-                                                    Processing…
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <CreditCard size={13} /> Collect payment
-                                                </>
-                                            )}
-                                        </Btn>
-                                        <Btn onClick={cancelPayment} disabled={actionLoading}>
-                                            Cancel payment
-                                        </Btn>
-                                    </>
-                                ) : (
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 6,
-                                            fontSize: 13,
-                                            fontWeight: 600,
-                                            color: "#16a34a",
-                                        }}
-                                    >
-                                        <CheckCircle2 size={15} /> Payment collected
+                            {(!paymentLocked || isPaid) && (
+                                <>
+                                    <Hr />
+                                    <div className="flex flex-wrap gap-3 px-5 py-3">
+                                        {!paymentLocked && (
+                                            <button
+                                                onClick={cancelOrder}
+                                                disabled={actionLoading}
+                                                className="flex items-center gap-1.5 rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                                            >
+                                                <XCircle size={13} className="text-red-500" />
+                                                Cancel Order
+                                            </button>
+                                        )}
+                                        {isPaid && !isDelivered && (
+                                            <button
+                                                onClick={refundPayment}
+                                                disabled={actionLoading}
+                                                className="flex items-center gap-1.5 rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                                            >
+                                                <RefreshCcw size={13} className="text-indigo-500" />
+                                                Request Refund
+                                            </button>
+                                        )}
                                     </div>
-                                )}
-                            </div>
-                        </CardSection>
-                    </Card>
+                                </>
+                            )}
+                        </div>
 
-                    {/* Timeline */}
-                    <Card className="fade">
-                        <CardSection title="Timeline">
-                            <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                                <div
-                                    style={{
-                                        width: 28,
-                                        height: 28,
-                                        borderRadius: "50%",
-                                        background: "#111827",
-                                        flexShrink: 0,
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                    }}
-                                >
-                                    <User size={13} color="#fff" />
+                        {/* ── Price Details ── */}
+                        <div className="bg-white border border-gray-200 rounded">
+                            <div className="border-b border-gray-100 px-5 py-3">
+                                <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                                    Price Details
+                                </span>
+                            </div>
+
+                            <div className="space-y-3 px-5 py-4">
+                                <div className="flex justify-between text-sm text-gray-600">
+                                    <span>Winning Amount</span>
+                                    <span className="text-gray-900">{fmt(order?.finalPrice)}</span>
                                 </div>
-                                <div style={{ flex: 1 }}>
-                                    <p
-                                        style={{
-                                            fontSize: 13,
-                                            fontWeight: 600,
-                                            color: "#111827",
-                                            marginBottom: 6,
-                                        }}
+                                <div className="flex justify-between text-sm text-gray-600">
+                                    <span>Delivery Charges</span>
+                                    <span className="font-medium text-green-600">FREE</span>
+                                </div>
+                                <Hr />
+                                <div className="flex justify-between text-sm font-bold text-gray-900">
+                                    <span>Total Payable</span>
+                                    <span>{fmt(order?.finalPrice)}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 pt-0.5">
+                                    <Dot color={pStatus.color} />
+                                    <span
+                                        style={{ color: pStatus.color }}
+                                        className="text-xs font-semibold"
                                     >
-                                        {buyer?.firstName} {buyer?.lastName}
-                                    </p>
-                                    <textarea
-                                        placeholder="Leave a comment…"
-                                        style={{
-                                            width: "100%",
-                                            border: "1px solid #e5e7eb",
-                                            borderRadius: 8,
-                                            padding: "10px 12px",
-                                            fontSize: 13,
-                                            color: "#374151",
-                                            fontFamily: "inherit",
-                                            resize: "none",
-                                            outline: "none",
-                                            background: "#f9fafb",
-                                            lineHeight: 1.5,
-                                            minHeight: 64,
-                                            transition: "border-color 0.12s",
-                                        }}
-                                        onFocus={(e) => (e.target.style.borderColor = "#6b7280")}
-                                        onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
-                                    />
+                                        {pStatus.label}
+                                    </span>
                                 </div>
                             </div>
-                        </CardSection>
-                    </Card>
-                </div>
 
-                {/* ════ RIGHT PANEL ════ */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                    {/* Notes */}
-                    <Card className="fade">
-                        <CardSection title="Notes" action={<Edit2 size={13} />}>
-                            <p style={{ fontSize: 13, color: "#6b7280", lineHeight: 1.6 }}>
-                                {auction?.description
-                                    ? auction.description.slice(0, 90) +
-                                      (auction.description.length > 90 ? "…" : "")
-                                    : "No notes from customer"}
-                            </p>
-                        </CardSection>
-                    </Card>
+                            {/* inline status messages */}
+                            {(isPaid || isRefunded || offlineRequested) && (
+                                <>
+                                    <Hr />
+                                    <div className="px-5 py-3">
+                                        {isPaid && (
+                                            <p className="flex items-center gap-2 text-sm text-green-700">
+                                                <CheckCircle2 size={14} /> Payment successfully
+                                                completed.
+                                            </p>
+                                        )}
+                                        {isRefunded && (
+                                            <p className="flex items-center gap-2 text-sm text-indigo-700">
+                                                <RefreshCcw size={14} /> Refund has been processed
+                                                to your account.
+                                            </p>
+                                        )}
+                                        {offlineRequested && (
+                                            <p className="flex items-start gap-2 text-sm text-orange-700">
+                                                <ShieldCheck
+                                                    size={14}
+                                                    className="mt-0.5 shrink-0"
+                                                />
+                                                Offline payment requested. Our team will reach out
+                                                with secure instructions.
+                                            </p>
+                                        )}
+                                    </div>
+                                </>
+                            )}
 
-                    {/* Customer */}
-                    <Card className="fade">
-                        <CardSection title="Customer">
-                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                <div
-                                    style={{
-                                        width: 30,
-                                        height: 30,
-                                        borderRadius: "50%",
-                                        background: "#f3f4f6",
-                                        border: "1px solid #e5e7eb",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        flexShrink: 0,
-                                    }}
-                                >
-                                    <User size={14} color="#9ca3af" />
-                                </div>
-                                <div>
-                                    <p style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>
-                                        {buyer?.firstName} {buyer?.lastName}
-                                    </p>
-                                    <p style={{ fontSize: 11, color: "#9ca3af" }}>1 Order</p>
-                                </div>
+                            {/* pay actions */}
+                            {!paymentLocked && (
+                                <>
+                                    <Hr />
+                                    <div className="space-y-3 px-5 py-4">
+                                        {isHighValue && (
+                                            <div className="flex items-start gap-2 rounded border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-800">
+                                                <AlertCircle
+                                                    size={13}
+                                                    className="mt-0.5 shrink-0"
+                                                />
+                                                UPI transactions above ₹1,00,000 may be declined by
+                                                your bank. Consider requesting offline payment.
+                                            </div>
+                                        )}
+                                        <div className="flex flex-col gap-3 sm:flex-row">
+                                            <button
+                                                onClick={handlePayment}
+                                                disabled={paying || actionLoading}
+                                                className="flex items-center justify-center gap-2 rounded bg-[#fb641b] px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#e55d17] disabled:cursor-not-allowed disabled:opacity-60"
+                                            >
+                                                {paying ? (
+                                                    <>
+                                                        <Loader2 className="h-4 w-4 animate-spin" />{" "}
+                                                        Processing…
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <CreditCard size={14} /> Pay Now
+                                                    </>
+                                                )}
+                                            </button>
+                                            {isHighValue && (
+                                                <button
+                                                    onClick={handleOfflinePayment}
+                                                    disabled={actionLoading}
+                                                    className="flex items-center justify-center gap-2 rounded border border-gray-300 bg-white px-6 py-2.5 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                                >
+                                                    {actionLoading ? (
+                                                        <>
+                                                            <Loader2 className="h-4 w-4 animate-spin" />{" "}
+                                                            Requesting…
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <ShieldCheck size={14} /> Offline
+                                                            Payment
+                                                        </>
+                                                    )}
+                                                </button>
+                                            )}
+                                        </div>
+                                        <p className="flex items-center gap-1.5 text-xs text-gray-400">
+                                            <ShieldCheck size={11} />
+                                            100% Secure Payments · Powered by Razorpay
+                                        </p>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* ══ RIGHT ══ */}
+                    <div className="space-y-3">
+                        {/* Delivery Address */}
+                        <div className="bg-white border border-gray-200 rounded">
+                            <div className="border-b border-gray-100 px-5 py-3">
+                                <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                                    Delivery Address
+                                </span>
                             </div>
-                        </CardSection>
-
-                        <Divider />
-
-                        <CardSection title="Contact information" action={<Edit2 size={13} />}>
-                            <p style={{ fontSize: 13, color: "#374151" }}>
-                                {buyer?.email || "No email"}
-                            </p>
-                            <p style={{ fontSize: 13, color: "#9ca3af", marginTop: 2 }}>
-                                {buyer?.phone || "No phone number"}
-                            </p>
-                        </CardSection>
-
-                        <Divider />
-
-                        <CardSection title="Shipping address" action={<Edit2 size={13} />}>
-                            {address ? (
-                                <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.9 }}>
-                                    <p style={{ fontWeight: 600, color: "#111827" }}>
-                                        {buyer?.firstName} {buyer?.lastName}
-                                    </p>
-                                    <p>{address?.street}</p>
-                                    <p>
-                                        {address?.city}, {address?.state}
-                                    </p>
-                                    <p>{address?.country}</p>
-                                    <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
-                                        {address?.pin}
-                                    </p>
-                                    <button
-                                        style={{
-                                            marginTop: 4,
-                                            background: "none",
-                                            border: "none",
-                                            color: "#4f46e5",
-                                            fontSize: 12,
-                                            fontWeight: 600,
-                                            cursor: "pointer",
-                                            fontFamily: "inherit",
-                                            padding: 0,
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 4,
-                                        }}
-                                    >
-                                        <MapPin size={11} /> View Map
-                                    </button>
-                                </div>
-                            ) : (
-                                <p style={{ fontSize: 13, color: "#9ca3af" }}>
-                                    No shipping address
+                            <div className="px-5 py-4">
+                                <p className="text-sm font-bold text-gray-900">
+                                    {buyer?.firstName} {buyer?.lastName}
                                 </p>
-                            )}
-                        </CardSection>
-
-                        <Divider />
-
-                        <CardSection title="Billing address">
-                            <p style={{ fontSize: 13, color: "#6b7280" }}>
-                                Same as shipping address
-                            </p>
-                        </CardSection>
-                    </Card>
-
-                    {/* Conversion */}
-                    <Card className="fade">
-                        <CardSection title="Conversion summary">
-                            <p style={{ fontSize: 13, color: "#6b7280", lineHeight: 1.6 }}>
-                                {isPaid
-                                    ? "Customer completed payment successfully."
-                                    : "There aren't any conversion details available for this order."}
-                            </p>
-                            {!isPaid && (
-                                <button
-                                    style={{
-                                        background: "none",
-                                        border: "none",
-                                        cursor: "pointer",
-                                        color: "#4f46e5",
-                                        fontSize: 13,
-                                        fontWeight: 600,
-                                        fontFamily: "inherit",
-                                        padding: 0,
-                                        marginTop: 6,
-                                    }}
+                                <p className="mt-2 text-sm leading-6 text-gray-600">
+                                    {buyer?.address?.street}
+                                    <br />
+                                    {buyer?.address?.city}, {buyer?.address?.state}
+                                    <br />
+                                    {buyer?.address?.country}
+                                </p>
+                                <a
+                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                                        `${buyer?.address?.street}, ${buyer?.address?.city}`,
+                                    )}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#2874f0] hover:underline"
                                 >
-                                    Learn more
-                                </button>
-                            )}
-                        </CardSection>
-                    </Card>
+                                    <MapPin size={11} /> View on Map
+                                </a>
+                            </div>
+                        </div>
 
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 5,
-                            padding: "2px 2px",
-                        }}
-                    >
-                        <ShieldCheck size={12} color="#d1d5db" />
-                        <span style={{ fontSize: 11, color: "#d1d5db" }}>
-                            Secured · Razorpay · 256-bit SSL
-                        </span>
+                        {/* Buyer Info */}
+                        <div className="bg-white border border-gray-200 rounded">
+                            <div className="border-b border-gray-100 px-5 py-3">
+                                <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                                    Buyer Info
+                                </span>
+                            </div>
+                            <div className="divide-y divide-gray-100">
+                                <div className="flex items-center justify-between px-5 py-3 text-sm">
+                                    <span className="text-gray-500">Name</span>
+                                    <span className="font-medium text-gray-900">
+                                        {buyer?.firstName} {buyer?.lastName}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between gap-4 px-5 py-3 text-sm">
+                                    <span className="shrink-0 text-gray-500">Email</span>
+                                    <span className="truncate text-right font-medium text-gray-700">
+                                        {buyer?.email}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Order Summary */}
+                        <div className="bg-white border border-gray-200 rounded">
+                            <div className="border-b border-gray-100 px-5 py-3">
+                                <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                                    Order Summary
+                                </span>
+                            </div>
+                            <div className="divide-y divide-gray-100">
+                                <div className="flex items-center justify-between px-5 py-3 text-sm">
+                                    <span className="text-gray-500">Order ID</span>
+                                    <span className="font-mono text-xs font-semibold tracking-wider text-gray-900">
+                                        #{orderId}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between px-5 py-3 text-sm">
+                                    <span className="text-gray-500">Payment</span>
+                                    <span
+                                        style={{ color: pStatus.color }}
+                                        className="text-xs font-semibold"
+                                    >
+                                        {pStatus.label}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between px-5 py-3 text-sm">
+                                    <span className="text-gray-500">Shipping</span>
+                                    <span className="text-xs font-semibold text-green-600">
+                                        Free
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* OTP info box — shown when order is shipped, guiding buyer */}
+                        {isShipped && isPaid && !isDelivered && (
+                            <div className="rounded border border-blue-100 bg-blue-50 px-4 py-4">
+                                <div className="flex items-start gap-2">
+                                    <KeyRound size={14} className="mt-0.5 shrink-0 text-blue-500" />
+                                    <div>
+                                        <p className="text-xs font-bold text-blue-800">
+                                            Delivery OTP
+                                        </p>
+                                        <p className="mt-1 text-xs leading-relaxed text-blue-700">
+                                            The buyer has received a unique OTP on their registered
+                                            email/phone. Share it with the seller at the time of
+                                            delivery to confirm receipt.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

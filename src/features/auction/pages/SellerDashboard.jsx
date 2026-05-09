@@ -1,579 +1,624 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import {
-    LineChart,
-    Line,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-} from "recharts";
-import { showError, showSuccess } from "@/shared/utils/toast.js";
+import { Package, Search, CheckCircle2, ShieldCheck } from "lucide-react";
 
-import { auctionAPI } from "../auctionAPI.js";
+import { showError, showSuccess } from "@/shared/utils/toast.js";
+import { api } from "@/shared/services/axios";
+
 import { C } from "../constants/dashboardColors";
 import DashboardSidebar from "../components/dashboard/DashboardSidebar";
-import StatCard from "../components/dashboard/StatCard";
-import AuctionRow from "../components/dashboard/AuctionRow";
-import DashboardSkeleton from "../components/dashboard/DashboardSkeleton";
-
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const CHART_DATA = MONTHS.map((m, i) => ({
-    month: m,
-    revenue: [40, 55, 45, 60, 52, 48, 70, 125, 62, 80, 90, 110][i],
-}));
 
 const FILTERS = [
     { key: "all", label: "All" },
-    { key: "active", label: "Live" },
-    { key: "draft", label: "Draft" },
-    { key: "ended", label: "Ended" },
+    { key: "confirmed", label: "Confirmed" },
+    { key: "delivered", label: "Delivered" },
 ];
 
-function ChartTooltip({ active, payload, label }) {
-    if (!active || !payload?.length) return null;
-    return (
-        <div
-            style={{
-                background: C.white,
-                border: `1px solid ${C.slate200}`,
-                borderRadius: 8,
-                padding: "8px 12px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-            }}
-        >
-            <p style={{ fontSize: 10, color: C.slate400, marginBottom: 2 }}>Revenue in {label}</p>
-            <p style={{ fontSize: 13, fontWeight: 700, color: C.blue }}>
-                Rp. {(payload[0].value * 1_000_000).toLocaleString("id-ID")}
-            </p>
-        </div>
-    );
-}
-
-const fadeUp = {
-    hidden: {
-        opacity: 0,
-        y: 20,
-    },
-    visible: (delay = 0) => ({
-        opacity: 1,
-        y: 0,
-        transition: {
-            delay: delay * 0.1,
-            duration: 0.4,
-        },
-    }),
-};
 export default function SellerDashboard() {
-    const [auctions, setAuctions] = useState([]);
+    const [orders, setOrders] = useState([]);
+
     const [loading, setLoading] = useState(true);
+
     const [filter, setFilter] = useState("all");
+
     const [search, setSearch] = useState("");
 
-    const fetchAuctions = async () => {
+    const [otpModal, setOtpModal] = useState(null);
+
+    const [otp, setOtp] = useState("");
+
+    const fetchOrders = async () => {
         try {
             setLoading(true);
-            const data = await auctionAPI.getBySeller(); // already flattened media
-            setAuctions(data);
-        } catch {
-            showError("Failed to load your auctions");
+
+            const { data } = await api.get("/api/order/seller");
+
+            setOrders(data.data);
+        } catch (err) {
+            showError(err?.response?.data?.message || "Failed to load seller orders");
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchAuctions();
+        fetchOrders();
     }, []);
 
-    const handleStart = async (id) => {
+    const sendOTP = async (id) => {
         try {
-            await auctionAPI.start(id);
-            showSuccess("Auction is now live");
-            fetchAuctions();
+            await api.patch(`/api/order/send-otp/${id}`);
+
+            showSuccess("OTP sent successfully");
+
+            fetchOrders();
         } catch (err) {
-            showError(err.response?.data?.message || "Failed to start auction");
+            showError(err?.response?.data?.message || "Failed to send OTP");
         }
     };
 
-    const handleEnd = async (id) => {
+    const verifyOTP = async () => {
         try {
-            await auctionAPI.end(id);
-            showSuccess("Auction ended successfully");
-            fetchAuctions();
+            await api.patch(`/api/order/verify-otp/${otpModal}`, {
+                otp,
+            });
+
+            showSuccess("Order delivered successfully");
+
+            setOtpModal(null);
+
+            setOtp("");
+
+            fetchOrders();
         } catch (err) {
-            showError(err.response?.data?.message || "Failed to end auction");
+            showError(err?.response?.data?.message || "Invalid OTP");
         }
     };
 
-    const filtered = auctions
-        .filter((a) => filter === "all" || a.status === filter)
+    const filtered = orders
+        .filter((o) => filter === "all" || o.orderStatus === filter)
         .filter(
-            (a) =>
-                a.name.toLowerCase().includes(search.toLowerCase()) ||
-                a.description?.toLowerCase().includes(search.toLowerCase()),
+            (o) =>
+                o?.auctionId?.name?.toLowerCase().includes(search.toLowerCase()) ||
+                o?.buyerId?.firstName?.toLowerCase().includes(search.toLowerCase()),
         );
 
     const stats = {
-        total: auctions.length,
-        live: auctions.filter((a) => a.status === "active").length,
-        draft: auctions.filter((a) => a.status === "draft").length,
-        ended: auctions.filter((a) => ["ended", "expired"].includes(a.status)).length,
+        total: orders.length,
+
+        confirmed: orders.filter((o) => o.orderStatus === "confirmed").length,
+
+        delivered: orders.filter((o) => o.orderStatus === "delivered").length,
     };
 
     return (
         <>
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
-                * { font-family:'DM Sans',sans-serif; box-sizing:border-box; }
-                h1,h2,h3 { font-family:'Syne',sans-serif; }
-                ::-webkit-scrollbar { width:4px; }
-                ::-webkit-scrollbar-thumb { background:${C.slate200}; border-radius:9999px; }
-                @keyframes pulse-dot {
-                    0%   { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
-                    70%  { box-shadow: 0 0 0 5px rgba(34,197,94,0); }
-                    100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+
+                * {
+                    font-family: 'DM Sans', sans-serif;
+                    box-sizing: border-box;
                 }
-                .live-dot { animation: pulse-dot 1.8s ease-out infinite; }
+
+                h1,h2,h3 {
+                    font-family: 'Syne', sans-serif;
+                }
+
+                ::-webkit-scrollbar {
+                    width: 4px;
+                }
+
+                ::-webkit-scrollbar-thumb {
+                    background: ${C.slate200};
+                    border-radius: 9999px;
+                }
             `}</style>
 
-            <div style={{ minHeight: "100vh", background: C.slate50, display: "flex" }}>
-                <DashboardSidebar liveCount={stats.live} />
+            <div
+                style={{
+                    minHeight: "100vh",
 
-                <main style={{ flex: 1, marginLeft: 200, minHeight: "100vh" }}>
-                    <div style={{ maxWidth: 960, margin: "0 auto", padding: "32px 32px" }}>
-                        {/* Header */}
+                    background: C.slate50,
+
+                    display: "flex",
+                }}
+            >
+                <DashboardSidebar />
+
+                <main
+                    style={{
+                        flex: 1,
+
+                        marginLeft: 200,
+
+                        minHeight: "100vh",
+                    }}
+                >
+                    <div
+                        style={{
+                            maxWidth: 1100,
+
+                            margin: "0 auto",
+
+                            padding: "32px",
+                        }}
+                    >
+                        {/* HEADER */}
+
                         <div
                             style={{
                                 display: "flex",
-                                alignItems: "flex-start",
+
                                 justifyContent: "space-between",
+
+                                alignItems: "center",
+
                                 marginBottom: 24,
                             }}
                         >
-                            <motion.div
-                                initial={{ opacity: 0, y: -14 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ type: "spring", stiffness: 120 }}
-                            >
+                            <div>
                                 <h1
                                     style={{
-                                        fontSize: 28,
-                                        fontWeight: 800,
-                                        color: C.slate900,
-                                        lineHeight: 1,
-                                    }}
-                                >
-                                    My Auctions
-                                </h1>
-                                <p style={{ fontSize: 12, color: C.slate400, marginTop: 6 }}>
-                                    {new Date().toLocaleDateString("en-IN", {
-                                        weekday: "long",
-                                        day: "numeric",
-                                        month: "long",
-                                    })}
-                                </p>
-                            </motion.div>
+                                        fontSize: 30,
 
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: 0.1 }}
-                            >
-                                <Link
-                                    to="/auction/create"
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 6,
-                                        padding: "10px 18px",
-                                        borderRadius: 10,
-                                        fontWeight: 700,
-                                        fontSize: 13,
-                                        color: C.white,
-                                        textDecoration: "none",
-                                        background: C.blue,
-                                        boxShadow: "0 4px 14px rgba(37,99,235,0.3)",
+                                        fontWeight: 800,
+
+                                        color: C.slate900,
                                     }}
                                 >
-                                    <span style={{ fontSize: 16 }}>+</span> Create Auction
-                                </Link>
-                            </motion.div>
+                                    Seller Orders
+                                </h1>
+
+                                <p
+                                    style={{
+                                        marginTop: 6,
+
+                                        fontSize: 13,
+
+                                        color: C.slate400,
+                                    }}
+                                >
+                                    Manage payments and delivery verification
+                                </p>
+                            </div>
+
+                            <Link
+                                to="/auction/create"
+                                style={{
+                                    display: "flex",
+
+                                    alignItems: "center",
+
+                                    gap: 6,
+
+                                    padding: "10px 18px",
+
+                                    borderRadius: 10,
+
+                                    fontWeight: 700,
+
+                                    fontSize: 13,
+
+                                    color: C.white,
+
+                                    textDecoration: "none",
+
+                                    background: C.blue,
+                                }}
+                            >
+                                + Create Auction
+                            </Link>
                         </div>
 
-                        {/* Stats */}
+                        {/* STATS */}
+
                         <div
                             style={{
                                 display: "grid",
-                                gridTemplateColumns: "repeat(4,1fr)",
-                                gap: 12,
+
+                                gridTemplateColumns: "repeat(3,1fr)",
+
+                                gap: 14,
+
                                 marginBottom: 24,
+                            }}
+                        >
+                            {[
+                                {
+                                    label: "Total Orders",
+
+                                    value: stats.total,
+                                },
+
+                                {
+                                    label: "Confirmed",
+
+                                    value: stats.confirmed,
+                                },
+
+                                {
+                                    label: "Delivered",
+
+                                    value: stats.delivered,
+                                },
+                            ].map((s) => (
+                                <div
+                                    key={s.label}
+                                    style={{
+                                        background: C.white,
+
+                                        border: `1px solid ${C.slate200}`,
+
+                                        borderRadius: 14,
+
+                                        padding: 20,
+                                    }}
+                                >
+                                    <p
+                                        style={{
+                                            fontSize: 12,
+
+                                            color: C.slate400,
+                                        }}
+                                    >
+                                        {s.label}
+                                    </p>
+
+                                    <h2
+                                        style={{
+                                            marginTop: 8,
+
+                                            fontSize: 28,
+
+                                            fontWeight: 800,
+
+                                            color: C.slate900,
+                                        }}
+                                    >
+                                        {s.value}
+                                    </h2>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* SEARCH */}
+
+                        <div
+                            style={{
+                                display: "flex",
+
+                                gap: 12,
+
+                                marginBottom: 20,
                             }}
                         >
                             <div
                                 style={{
-                                    gridColumn: "1 / 4",
-                                    display: "grid",
-                                    gridTemplateColumns: "repeat(4,1fr)",
-                                    gap: 12,
+                                    position: "relative",
+
+                                    flex: 1,
                                 }}
                             >
-                                {[
-                                    {
-                                        label: "Total Auctions",
-                                        value: stats.total,
-                                        badge: "38% ▲",
-                                        badgeUp: true,
-                                    },
-                                    {
-                                        label: "Live Auctions",
-                                        value: stats.live,
-                                        badge: "24% ▼",
-                                        badgeUp: false,
-                                    },
-                                    { label: "Total Drafts", value: stats.draft },
-                                    { label: "Completed", value: stats.ended },
-                                ].map((s, i) => (
-                                    <StatCard key={s.label} {...s} delay={0.08 * i + 0.1} />
-                                ))}
-                            </div>
-
-                            <motion.div
-                                initial={{ opacity: 0, y: 16 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.4, type: "spring" }}
-                                style={{
-                                    background: C.blue,
-                                    borderRadius: 12,
-                                    padding: "16px 18px",
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    justifyContent: "center",
-                                }}
-                            >
-                                <p
-                                    style={{
-                                        fontSize: 11,
-                                        color: "rgba(255,255,255,0.7)",
-                                        marginBottom: 6,
-                                    }}
-                                >
-                                    Overall Revenue
-                                </p>
-                                <p
-                                    style={{
-                                        fontSize: 17,
-                                        fontWeight: 700,
-                                        color: C.white,
-                                        fontFamily: "'Syne',sans-serif",
-                                    }}
-                                >
-                                    ₹0
-                                </p>
-                                <span
-                                    style={{
-                                        marginTop: 6,
-                                        fontSize: 10,
-                                        fontWeight: 700,
-                                        background: "rgba(255,255,255,0.2)",
-                                        color: C.white,
-                                        padding: "2px 8px",
-                                        borderRadius: 4,
-                                        alignSelf: "flex-start",
-                                    }}
-                                >
-                                    Live data
-                                </span>
-                            </motion.div>
-                        </div>
-
-                        {/* Chart */}
-                        <div
-                            style={{
-                                display: "grid",
-                                gridTemplateColumns: "1fr 200px",
-                                gap: 12,
-                                marginBottom: 24,
-                            }}
-                        >
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.2 }}
-                                style={{
-                                    background: C.white,
-                                    border: `1px solid ${C.slate200}`,
-                                    borderRadius: 12,
-                                    padding: 18,
-                                }}
-                            >
-                                <h2
-                                    style={{
-                                        fontSize: 14,
-                                        fontWeight: 700,
-                                        color: C.slate900,
-                                        marginBottom: 14,
-                                        fontFamily: "'Syne',sans-serif",
-                                    }}
-                                >
-                                    Sales Analytics
-                                </h2>
-                                <ResponsiveContainer width="100%" height={160}>
-                                    <LineChart
-                                        data={CHART_DATA}
-                                        margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
-                                    >
-                                        <CartesianGrid strokeDasharray="3 3" stroke={C.slate100} />
-                                        <XAxis
-                                            dataKey="month"
-                                            tick={{ fontSize: 10, fill: C.slate400 }}
-                                            axisLine={false}
-                                            tickLine={false}
-                                        />
-                                        <YAxis
-                                            tick={{ fontSize: 10, fill: C.slate400 }}
-                                            axisLine={false}
-                                            tickLine={false}
-                                        />
-                                        <Tooltip content={<ChartTooltip />} />
-                                        <Line
-                                            type="monotone"
-                                            dataKey="revenue"
-                                            stroke={C.blue}
-                                            strokeWidth={2.5}
-                                            dot={false}
-                                            activeDot={{
-                                                r: 5,
-                                                fill: C.blue,
-                                                stroke: C.white,
-                                                strokeWidth: 2,
-                                            }}
-                                        />
-                                    </LineChart>
-                                </ResponsiveContainer>
-                            </motion.div>
-
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.3 }}
-                                style={{
-                                    background: C.blue,
-                                    borderRadius: 12,
-                                    padding: 20,
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    textAlign: "center",
-                                }}
-                            >
-                                <p
-                                    style={{
-                                        fontSize: 14,
-                                        fontWeight: 700,
-                                        color: C.white,
-                                        marginBottom: 16,
-                                        fontFamily: "'Syne',sans-serif",
-                                    }}
-                                >
-                                    Total Bids
-                                </p>
-                                <p
-                                    style={{
-                                        fontSize: 44,
-                                        fontWeight: 800,
-                                        color: C.white,
-                                        lineHeight: 1,
-                                        fontFamily: "'Syne',sans-serif",
-                                    }}
-                                >
-                                    {auctions.reduce((sum, a) => sum + (a.bidCount || 0), 0)}
-                                </p>
-                                <p
-                                    style={{
-                                        fontSize: 11,
-                                        color: "rgba(255,255,255,0.7)",
-                                        marginTop: 10,
-                                        lineHeight: 1.5,
-                                    }}
-                                >
-                                    Total bids across all your auctions.
-                                </p>
-                            </motion.div>
-                        </div>
-
-                        {/* Live alert */}
-                        <AnimatePresence>
-                            {stats.live > 0 && (
-                                <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: "auto" }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    style={{ overflow: "hidden", marginBottom: 16 }}
-                                >
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 10,
-                                            background: C.white,
-                                            border: `1px solid ${C.slate200}`,
-                                            borderLeft: `3px solid ${C.blue}`,
-                                            borderRadius: 10,
-                                            padding: "10px 14px",
-                                        }}
-                                    >
-                                        <span
-                                            className="live-dot"
-                                            style={{
-                                                width: 8,
-                                                height: 8,
-                                                borderRadius: "50%",
-                                                background: "#22c55e",
-                                                flexShrink: 0,
-                                            }}
-                                        />
-                                        <p style={{ fontSize: 12, color: C.slate600 }}>
-                                            <strong style={{ color: C.slate900 }}>
-                                                {stats.live} auction{stats.live > 1 ? "s" : ""}
-                                            </strong>{" "}
-                                            actively receiving bids right now
-                                        </p>
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-
-                        {/* Search + Filter */}
-                        <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
-                            <div style={{ position: "relative", flex: 1 }}>
-                                <svg
+                                <Search
+                                    size={15}
                                     style={{
                                         position: "absolute",
-                                        left: 12,
+
                                         top: "50%",
+
+                                        left: 12,
+
                                         transform: "translateY(-50%)",
+
                                         color: C.slate300,
                                     }}
-                                    width="14"
-                                    height="14"
-                                    viewBox="0 0 16 16"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="1.8"
-                                    strokeLinecap="round"
-                                >
-                                    <circle cx="6.5" cy="6.5" r="4.5" />
-                                    <path d="M10.5 10.5l3 3" />
-                                </svg>
+                                />
+
                                 <input
                                     type="text"
-                                    placeholder="Search by name or description…"
+                                    placeholder="Search orders..."
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     style={{
                                         width: "100%",
-                                        background: C.white,
+
+                                        padding: "11px 14px 11px 38px",
+
+                                        borderRadius: 12,
+
                                         border: `1px solid ${C.slate200}`,
-                                        borderRadius: 10,
-                                        padding: "9px 14px 9px 36px",
-                                        fontSize: 12,
-                                        color: C.slate700,
+
+                                        background: C.white,
+
                                         outline: "none",
-                                        transition: "border-color 0.2s",
+
+                                        fontSize: 13,
                                     }}
-                                    onFocus={(e) => (e.target.style.borderColor = C.blue)}
-                                    onBlur={(e) => (e.target.style.borderColor = C.slate200)}
                                 />
                             </div>
 
                             <div
                                 style={{
                                     display: "flex",
-                                    gap: 4,
+
+                                    gap: 6,
+
                                     background: C.white,
+
                                     border: `1px solid ${C.slate200}`,
-                                    borderRadius: 10,
-                                    padding: 4,
+
+                                    padding: 5,
+
+                                    borderRadius: 12,
                                 }}
                             >
-                                {FILTERS.map(({ key, label }) => (
+                                {FILTERS.map((f) => (
                                     <button
-                                        key={key}
-                                        onClick={() => setFilter(key)}
+                                        key={f.key}
+                                        onClick={() => setFilter(f.key)}
                                         style={{
-                                            padding: "6px 14px",
-                                            fontSize: 11,
-                                            fontWeight: 600,
-                                            borderRadius: 8,
+                                            padding: "8px 14px",
+
+                                            borderRadius: 10,
+
                                             border: "none",
+
                                             cursor: "pointer",
-                                            transition: "all 0.2s",
-                                            background: filter === key ? C.blue : "transparent",
-                                            color: filter === key ? C.white : C.slate400,
+
+                                            fontSize: 12,
+
+                                            fontWeight: 700,
+
+                                            background: filter === f.key ? C.blue : "transparent",
+
+                                            color: filter === f.key ? C.white : C.slate500,
                                         }}
                                     >
-                                        {label}
+                                        {f.label}
                                     </button>
                                 ))}
                             </div>
                         </div>
 
-                        {/* Auction list */}
+                        {/* LIST */}
+
                         {loading ? (
-                            <DashboardSkeleton />
+                            <div
+                                style={{
+                                    textAlign: "center",
+
+                                    padding: "80px 0",
+                                }}
+                            >
+                                Loading...
+                            </div>
                         ) : filtered.length === 0 ? (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
+                            <div
                                 style={{
                                     background: C.white,
+
                                     border: `1px solid ${C.slate200}`,
-                                    borderRadius: 12,
-                                    padding: "60px 0",
+
+                                    borderRadius: 16,
+
+                                    padding: "80px 0",
+
                                     textAlign: "center",
                                 }}
                             >
-                                <p
+                                <Package size={38} color={C.slate300} />
+
+                                <h2
                                     style={{
+                                        marginTop: 16,
+
+                                        fontSize: 18,
+
                                         fontWeight: 700,
-                                        fontSize: 15,
-                                        color: C.slate700,
-                                        fontFamily: "'Syne',sans-serif",
-                                        marginBottom: 6,
                                     }}
                                 >
-                                    No auctions found
-                                </p>
-                                <p style={{ fontSize: 12, color: C.slate400, marginBottom: 18 }}>
-                                    Try adjusting your search or filter criteria
-                                </p>
-                                <Link
-                                    to="/auction/create"
-                                    style={{
-                                        fontSize: 12,
-                                        fontWeight: 600,
-                                        color: C.blue,
-                                        textDecoration: "none",
-                                    }}
-                                >
-                                    + Create a new auction
-                                </Link>
-                            </motion.div>
+                                    No Orders
+                                </h2>
+                            </div>
                         ) : (
-                            <AnimatePresence mode="popLayout">
-                                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                                    {filtered.map((auction, i) => (
-                                        <AuctionRow
-                                            key={auction._id}
-                                            auction={auction}
-                                            index={i}
-                                            onStart={handleStart}
-                                            onEnd={handleEnd}
-                                        />
+                            <AnimatePresence>
+                                <div
+                                    style={{
+                                        display: "flex",
+
+                                        flexDirection: "column",
+
+                                        gap: 14,
+                                    }}
+                                >
+                                    {filtered.map((order) => (
+                                        <motion.div
+                                            key={order._id}
+                                            initial={{
+                                                opacity: 0,
+
+                                                y: 10,
+                                            }}
+                                            animate={{
+                                                opacity: 1,
+
+                                                y: 0,
+                                            }}
+                                            style={{
+                                                background: C.white,
+
+                                                border: `1px solid ${C.slate200}`,
+
+                                                borderRadius: 16,
+
+                                                padding: 18,
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    display: "flex",
+
+                                                    gap: 18,
+
+                                                    alignItems: "center",
+                                                }}
+                                            >
+                                                <img
+                                                    src={order?.auctionId?.media?.[0]}
+                                                    alt=""
+                                                    style={{
+                                                        width: 90,
+
+                                                        height: 90,
+
+                                                        borderRadius: 14,
+
+                                                        objectFit: "cover",
+                                                    }}
+                                                />
+
+                                                <div
+                                                    style={{
+                                                        flex: 1,
+                                                    }}
+                                                >
+                                                    <h2
+                                                        style={{
+                                                            fontSize: 20,
+
+                                                            fontWeight: 700,
+
+                                                            color: C.slate900,
+                                                        }}
+                                                    >
+                                                        {order?.auctionId?.name}
+                                                    </h2>
+
+                                                    <p
+                                                        style={{
+                                                            marginTop: 6,
+
+                                                            fontSize: 13,
+
+                                                            color: C.slate500,
+                                                        }}
+                                                    >
+                                                        Buyer: {order?.buyerId?.firstName}{" "}
+                                                        {order?.buyerId?.lastName}
+                                                    </p>
+
+                                                    <p
+                                                        style={{
+                                                            marginTop: 4,
+
+                                                            fontSize: 13,
+
+                                                            color: C.slate500,
+                                                        }}
+                                                    >
+                                                        Payment: {order.paymentStatus}
+                                                    </p>
+
+                                                    <p
+                                                        style={{
+                                                            marginTop: 4,
+
+                                                            fontSize: 13,
+
+                                                            color: C.slate500,
+                                                        }}
+                                                    >
+                                                        Status: {order.orderStatus}
+                                                    </p>
+                                                </div>
+
+                                                <div
+                                                    style={{
+                                                        display: "flex",
+
+                                                        flexDirection: "column",
+
+                                                        gap: 10,
+                                                    }}
+                                                >
+                                                    {order.paymentStatus === "completed" &&
+                                                        order.orderStatus !== "delivered" && (
+                                                            <button
+                                                                onClick={() => sendOTP(order._id)}
+                                                                style={{
+                                                                    border: "none",
+
+                                                                    background: C.blue,
+
+                                                                    color: C.white,
+
+                                                                    padding: "11px 18px",
+
+                                                                    borderRadius: 12,
+
+                                                                    fontWeight: 700,
+
+                                                                    cursor: "pointer",
+                                                                }}
+                                                            >
+                                                                Send OTP
+                                                            </button>
+                                                        )}
+
+                                                    {order.orderStatus !== "delivered" && (
+                                                        <button
+                                                            onClick={() => setOtpModal(order._id)}
+                                                            style={{
+                                                                border: "none",
+
+                                                                background: "#16a34a",
+
+                                                                color: "white",
+
+                                                                padding: "11px 18px",
+
+                                                                borderRadius: 12,
+
+                                                                fontWeight: 700,
+
+                                                                cursor: "pointer",
+                                                            }}
+                                                        >
+                                                            Verify OTP
+                                                        </button>
+                                                    )}
+
+                                                    {order.orderStatus === "delivered" && (
+                                                        <div
+                                                            style={{
+                                                                display: "flex",
+
+                                                                alignItems: "center",
+
+                                                                gap: 6,
+
+                                                                background: "#dcfce7",
+
+                                                                color: "#166534",
+
+                                                                padding: "10px 14px",
+
+                                                                borderRadius: 12,
+
+                                                                fontSize: 12,
+
+                                                                fontWeight: 700,
+                                                            }}
+                                                        >
+                                                            <CheckCircle2 size={15} />
+                                                            Delivered
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </motion.div>
                                     ))}
                                 </div>
                             </AnimatePresence>
@@ -581,6 +626,48 @@ export default function SellerDashboard() {
                     </div>
                 </main>
             </div>
+
+            {/* OTP MODAL */}
+
+            {otpModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                    <div className="w-full max-w-md rounded-2xl bg-white p-6">
+                        <div className="flex items-center gap-3">
+                            <ShieldCheck className="text-green-600" />
+
+                            <h2 className="text-xl font-bold">Verify OTP</h2>
+                        </div>
+
+                        <input
+                            type="text"
+                            placeholder="Enter delivery OTP"
+                            value={otp}
+                            onChange={(e) => setOtp(e.target.value)}
+                            className="mt-5 w-full rounded-xl border p-3 outline-none"
+                        />
+
+                        <div className="mt-5 flex gap-3">
+                            <button
+                                onClick={verifyOTP}
+                                className="flex-1 rounded-xl bg-black px-4 py-3 font-semibold text-white"
+                            >
+                                Verify
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    setOtpModal(null);
+
+                                    setOtp("");
+                                }}
+                                className="flex-1 rounded-xl border px-4 py-3 font-semibold"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }
