@@ -78,11 +78,12 @@ const router = createBrowserRouter([
             { path: "reset-password", element: <ResetForgotPasswordPage /> },
         ],
     },
+    { path: "/chats", errorElement: <NotFound />, element: <RoomPage /> },
     {
         path: "/auction",
+        errorElement: <NotFound />,
         element: <RootLayout />,
         children: [
-            { path: "room", element: <RoomPage /> },
             { path: "room/:roomId", element: <ChatRoomPage /> },
 
             {
