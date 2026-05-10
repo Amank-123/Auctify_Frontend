@@ -517,25 +517,25 @@ export default function AuctionDetails() {
                                                 <div
                                                     key={label}
                                                     className="
-                        flex items-center justify-between
-                        gap-3
-                        px-3 py-2.5
-                        rounded-2xl
-                        border border-transparent
-                        hover:border-[#E5E7EB]
-                        hover:bg-white
-                        transition-all duration-200
-                    "
+                                                            flex items-center justify-between
+                                                            gap-3
+                                                            px-3 py-2.5
+                                                            rounded-2xl
+                                                            border border-transparent
+                                                            hover:border-[#E5E7EB]
+                                                            hover:bg-white
+                                                            transition-all duration-200
+                                                        "
                                                 >
                                                     {/* LEFT */}
                                                     <span className="flex items-center gap-2.5 min-w-0">
                                                         <span
                                                             className={`
-                                w-8 h-8 rounded-xl
-                                flex items-center justify-center
-                                shrink-0
-                                ${iconBg}
-                            `}
+                                                                    w-8 h-8 rounded-xl
+                                                                    flex items-center justify-center
+                                                                    shrink-0
+                                                                    ${iconBg}
+                                                                `}
                                                         >
                                                             <Icon size={14} className={iconColor} />
                                                         </span>
@@ -645,7 +645,7 @@ export default function AuctionDetails() {
                                                 View Order
                                             </button>
                                             <button
-                                                onClick={() => navigate(`/auction/room`)}
+                                                onClick={() => navigate(`/chats`)}
                                                 className="h-8 px-4 rounded-lg border border-emerald-200 bg-white text-emerald-700 text-xs font-semibold hover:bg-emerald-50 transition-colors flex items-center gap-1.5"
                                             >
                                                 <MessageCircle size={13} />

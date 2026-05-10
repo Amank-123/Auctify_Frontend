@@ -81,25 +81,31 @@ export default function ChatButton({ onClick, refreshKey }) {
         }
 
         try {
-            console.log("📦 FETCHING ROOMS...");
-
             const res = await api.get("/api/Room/getRooms");
 
-            console.log("📦 ROOM RESPONSE:", res.data);
-
-            const rooms = res.data?.data || [];
-
-            console.log("📦 ROOMS:", rooms);
+            const rooms = Array.isArray(res.data?.data) ? res.data.data : [];
 
             let totalUnread = 0;
 
             rooms.forEach((room) => {
-                console.log("📦 ROOM unreadCount:", room.unreadCount);
+                const lastMsg = room?.lastMessageId;
 
-                totalUnread += room.unreadCount || 0;
+                if (!lastMsg) return;
+
+                const isMine =
+                    String(
+                        typeof lastMsg.senderId === "object"
+                            ? lastMsg.senderId?._id
+                            : lastMsg.senderId,
+                    ) === String(User?._id);
+
+                const seen =
+                    lastMsg?.seenBy?.some((id) => String(id) === String(User?._id)) || false;
+
+                if (!isMine && !seen) {
+                    totalUnread += 1;
+                }
             });
-
-            console.log("🔴 TOTAL UNREAD:", totalUnread);
 
             setCount(totalUnread);
         } catch (error) {
@@ -192,6 +198,22 @@ export default function ChatButton({ onClick, refreshKey }) {
     useEffect(() => {
         fetchUnreadCount();
     }, [refreshKey, fetchUnreadCount]);
+
+    useEffect(() => {
+        const handleSeen = ({ seenBy }) => {
+            if (String(seenBy) !== String(User?._id)) {
+                return;
+            }
+
+            fetchUnreadCount();
+        };
+
+        socket.on("message_seen", handleSeen);
+
+        return () => {
+            socket.off("message_seen", handleSeen);
+        };
+    }, [User?._id, fetchUnreadCount]);
 
     return (
         <button
