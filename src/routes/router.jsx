@@ -67,7 +67,7 @@ const router = createBrowserRouter([
     {
         path: "/auth",
         element: <AuthLayout />,
-        // errorElement: <NotFound />,
+        errorElement: <NotFound />,
         children: [
             { path: "login", element: <LoginPage /> },
             { path: "register", element: <SignUpPage /> },
@@ -78,7 +78,17 @@ const router = createBrowserRouter([
             { path: "reset-password", element: <ResetForgotPasswordPage /> },
         ],
     },
-    { path: "/chats", errorElement: <NotFound />, element: <RoomPage /> },
+    {
+        path: "/chats",
+        element: <ProtectRoute />,
+        // errorElement: <NotFound />,
+        children: [
+            {
+                index: true,
+                element: <RoomPage />,
+            },
+        ],
+    },
     {
         path: "/auction",
         errorElement: <NotFound />,

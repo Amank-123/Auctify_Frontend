@@ -52,7 +52,7 @@ const CheckIcon = ({ double = false }) => (
     </svg>
 );
 
-function Avatar({ name, size = "md", online = false, className = "" }) {
+function Avatar({ name, image, size = "md", online = false, className = "" }) {
     const initials = name?.[0]?.toUpperCase() ?? "?";
 
     const sizes = {
@@ -69,11 +69,20 @@ function Avatar({ name, size = "md", online = false, className = "" }) {
 
     return (
         <div className={`relative shrink-0 ${className}`}>
-            <div
-                className={`${sizes[size]} rounded-full bg-gradient-to-br from-orange-400 to-rose-500 text-white font-semibold flex items-center justify-center shadow-sm`}
-            >
-                {initials}
-            </div>
+            {image ? (
+                <img
+                    src={image}
+                    alt={name}
+                    className={`${sizes[size]} rounded-full object-cover border border-zinc-200`}
+                />
+            ) : (
+                <div
+                    className={`${sizes[size]} rounded-full bg-gradient-to-br from-orange-400 to-rose-500 text-white font-semibold flex items-center justify-center shadow-sm`}
+                >
+                    {initials}
+                </div>
+            )}
+
             {online && (
                 <span
                     className={`absolute bottom-0 right-0 ${dotSizes[size]} rounded-full bg-emerald-400 ring-2 ring-white`}
@@ -181,6 +190,31 @@ export default function RoomPage() {
         return String(room?.buyerId?._id) === String(User?._id) ? room?.sellerId : room?.buyerId;
     };
 
+    const getRoomTitle = (room) => {
+        const partnerUser = getPartner(room);
+
+        const auctionTitle = room?.auctionId?.name || room?.auctionId?.name || "Auction";
+
+        const username = partnerUser?.username || "User";
+
+        return `${auctionTitle} (${username})`;
+    };
+
+    const getAuctionImage = (room) => {
+        const media = room?.auctionId?.media;
+
+        if (!Array.isArray(media) || media.length === 0) {
+            return "";
+        }
+
+        // because your schema currently stores nested arrays
+        if (Array.isArray(media[0])) {
+            return media[0][0] || "";
+        }
+
+        return media[0] || "";
+    };
+
     const sortMessages = (list = []) =>
         [...list].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
@@ -190,6 +224,16 @@ export default function RoomPage() {
 
     useEffect(() => {
         if (!User?._id) return;
+        socket.emit("join_user", User._id);
+    }, [User?._id]);
+
+    useEffect(() => {
+        if (!User?._id) return;
+
+        if (!socket.connected) {
+            socket.connect();
+        }
+
         socket.emit("join_user", User._id);
     }, [User?._id]);
 
@@ -205,6 +249,10 @@ export default function RoomPage() {
                 if (!mounted) return;
 
                 setRooms(data);
+
+                data.forEach((room) => {
+                    socket.emit("join_room", room._id);
+                });
 
                 if (data.length > 0) {
                     await selectRoom(data[0], data);
@@ -238,18 +286,44 @@ export default function RoomPage() {
         const handleReceiveMessage = (msg) => {
             const activeRoomId = selectedRoomRef.current?._id;
 
-            if (!activeRoomId) return;
-            if (String(msg?.roomId) !== String(activeRoomId)) return;
+            if (!msg?.roomId) return;
 
-            setMessages((prev) => {
-                const alreadyExists = prev.some((m) => String(m._id) === String(msg._id));
-                if (alreadyExists) return prev;
-                return [...prev, msg];
-            });
+            const isActiveRoom = String(msg.roomId) === String(activeRoomId);
 
-            if (User?._id) {
-                socket.emit("message_seen", { roomId: activeRoomId, userId: User._id });
+            if (isActiveRoom) {
+                setMessages((prev) => {
+                    const alreadyExists = prev.some((m) => String(m._id) === String(msg._id));
+
+                    if (alreadyExists) return prev;
+
+                    return [...prev, msg];
+                });
+
+                if (User?._id) {
+                    socket.emit("message_seen", {
+                        roomId: activeRoomId,
+                        userId: User._id,
+                    });
+                }
             }
+
+            setRooms((prev) => {
+                const updated = prev.map((room) =>
+                    String(room._id) === String(msg.roomId)
+                        ? {
+                              ...room,
+                              lastMessage: msg.text,
+                              lastMessageAt: msg.createdAt,
+                              lastMessageId: msg,
+                          }
+                        : room,
+                );
+
+                return updated.sort(
+                    (a, b) =>
+                        new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime(),
+                );
+            });
         };
 
         socket.on("receive_message", handleReceiveMessage);
@@ -260,16 +334,51 @@ export default function RoomPage() {
     }, [User?._id]);
 
     useEffect(() => {
-        const handleSeen = ({ messageIds, seenBy }) => {
+        const handleSeen = ({ messageIds, seenBy, roomId }) => {
             setMessages((prev) =>
                 prev.map((msg) => {
                     if (!Array.isArray(messageIds)) return msg;
-                    if (!messageIds.some((id) => String(id) === String(msg._id))) return msg;
+
+                    if (!messageIds.some((id) => String(id) === String(msg._id))) {
+                        return msg;
+                    }
 
                     const currentSeen = Array.isArray(msg.seenBy) ? msg.seenBy : [];
-                    if (currentSeen.some((id) => String(id) === String(seenBy))) return msg;
 
-                    return { ...msg, seenBy: [...currentSeen, seenBy] };
+                    if (currentSeen.some((id) => String(id) === String(seenBy))) {
+                        return msg;
+                    }
+
+                    return {
+                        ...msg,
+                        seenBy: [...currentSeen, seenBy],
+                    };
+                }),
+            );
+
+            setRooms((prev) =>
+                prev.map((room) => {
+                    if (String(room._id) !== String(roomId)) {
+                        return room;
+                    }
+
+                    const lastMsg = room?.lastMessageId;
+
+                    if (!lastMsg) return room;
+
+                    const currentSeen = Array.isArray(lastMsg.seenBy) ? lastMsg.seenBy : [];
+
+                    if (currentSeen.some((id) => String(id) === String(seenBy))) {
+                        return room;
+                    }
+
+                    return {
+                        ...room,
+                        lastMessageId: {
+                            ...lastMsg,
+                            seenBy: [...currentSeen, seenBy],
+                        },
+                    };
                 }),
             );
         };
@@ -312,23 +421,32 @@ export default function RoomPage() {
         };
     }, []);
 
-    const selectRoom = async (room, roomList = rooms) => {
+    const selectRoom = async (room) => {
         if (!room?._id || !User?._id) return;
 
         try {
             setSelectedRoom(room);
+
             selectedRoomRef.current = room;
+
             setSidebarOpen(false);
 
-            socket.emit("join_room", room._id);
+            const res = await api.post("/api/message/get", {
+                roomId: room._id,
+            });
 
-            const res = await api.post("/api/message/get", { roomId: room._id });
             const data = Array.isArray(res.data?.data) ? res.data.data : [];
 
             setMessages(sortMessages(data));
 
-            socket.emit("message_seen", { roomId: room._id, userId: User._id });
-            setTimeout(() => inputRef.current?.focus(), 50);
+            socket.emit("message_seen", {
+                roomId: room._id,
+                userId: User._id,
+            });
+
+            setTimeout(() => {
+                inputRef.current?.focus();
+            }, 50);
         } catch (err) {
             console.error(err);
         }
@@ -344,8 +462,9 @@ export default function RoomPage() {
                 userId: User._id,
             });
 
-            await api.post("/api/message/send", {
+            socket.emit("send_message", {
                 roomId: selectedRoom._id,
+                senderId: User._id,
                 text: trimmed,
             });
 
@@ -475,6 +594,14 @@ export default function RoomPage() {
                                     const pTyping = typingUsers.some(
                                         (id) => String(id) === String(partnerUser?._id),
                                     );
+                                    const lastMsg = room?.lastMessageId;
+
+                                    const hasUnread =
+                                        lastMsg &&
+                                        String(getSenderId(lastMsg)) !== String(User?._id) &&
+                                        !lastMsg?.seenBy?.some(
+                                            (id) => String(id) === String(User?._id),
+                                        );
 
                                     return (
                                         <button
@@ -490,11 +617,17 @@ export default function RoomPage() {
                                                 }
                                             `}
                                         >
-                                            <Avatar
-                                                name={partnerUser?.username}
-                                                size="md"
-                                                online={pOnline}
-                                            />
+                                            <div className="relative shrink-0">
+                                                <img
+                                                    src={getAuctionImage(room)}
+                                                    alt={room?.auctionId?.name}
+                                                    className="h-12 w-12 rounded-xl object-cover border border-zinc-200"
+                                                />
+
+                                                {pOnline && (
+                                                    <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-white" />
+                                                )}
+                                            </div>
 
                                             <div className="min-w-0 flex-1">
                                                 <div className="flex items-center justify-between gap-2">
@@ -504,32 +637,24 @@ export default function RoomPage() {
                                                             ${active ? "text-zinc-900" : "text-zinc-800"}
                                                         `}
                                                     >
-                                                        {partnerUser?.username || "Unknown user"}
+                                                        {getRoomTitle(room)}
                                                     </p>
                                                 </div>
 
                                                 <p
                                                     className={`
-                                                        mt-0.5 truncate text-[11.5px]
-                                                        ${
-                                                            pTyping
-                                                                ? "text-orange-600"
-                                                                : pOnline
-                                                                  ? "text-emerald-600"
-                                                                  : "text-zinc-500"
-                                                        }
-                                                    `}
+    mt-0.5 truncate text-[11.5px]
+    ${pTyping ? "text-orange-600" : hasUnread ? "font-semibold text-zinc-900" : "text-zinc-500"}
+`}
                                                 >
                                                     {pTyping
                                                         ? "typing..."
-                                                        : pOnline
-                                                          ? "Online"
-                                                          : room?.lastMessage || "No messages yet"}
+                                                        : room?.lastMessage || "No messages yet"}
                                                 </p>
                                             </div>
 
-                                            {active ? (
-                                                <span className="h-2 w-2 shrink-0 rounded-full bg-orange-500" />
+                                            {hasUnread ? (
+                                                <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-orange-500" />
                                             ) : null}
                                         </button>
                                     );
@@ -540,7 +665,7 @@ export default function RoomPage() {
 
                     <div className="border-t border-zinc-200 px-4 py-3">
                         <div className="flex items-center gap-3">
-                            <Avatar name={User?.username} size="sm" online />
+                            <Avatar name={User?.username} image={User?.profile} size="sm" online />
                             <div className="min-w-0 flex-1">
                                 <p className="truncate text-sm font-semibold">
                                     {User?.username || "User"}
@@ -564,23 +689,27 @@ export default function RoomPage() {
                                     <MenuIcon />
                                 </button>
 
-                                <Avatar name={partner?.username} size="md" online={isOnline} />
+                                <div className="relative shrink-0">
+                                    <img
+                                        src={getAuctionImage(selectedRoom)}
+                                        alt={selectedRoom?.auctionId?.name}
+                                        className="h-10 w-10 rounded-xl object-cover border border-zinc-200"
+                                    />
+
+                                    {isOnline && (
+                                        <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-white" />
+                                    )}
+                                </div>
 
                                 <div className="min-w-0 flex-1">
                                     <p className="truncate text-[14px] font-semibold leading-tight">
-                                        {partner?.username || "Conversation"}
+                                        {getRoomTitle(selectedRoom)}
                                     </p>
                                     <p
                                         className={`
-                                            text-[11.5px] font-medium
-                                            ${
-                                                isTyping
-                                                    ? "text-orange-600"
-                                                    : isOnline
-                                                      ? "text-emerald-600"
-                                                      : "text-zinc-500"
-                                            }
-                                        `}
+        text-[11.5px] font-medium
+        ${isTyping ? "text-orange-600" : isOnline ? "text-emerald-600" : "text-zinc-500"}
+    `}
                                     >
                                         {isTyping ? "typing..." : isOnline ? "Online" : "Offline"}
                                     </p>
@@ -648,6 +777,11 @@ export default function RoomPage() {
                                                                                 mine
                                                                                     ? User?.username
                                                                                     : partner?.username
+                                                                            }
+                                                                            image={
+                                                                                mine
+                                                                                    ? User?.profile
+                                                                                    : partner?.profile
                                                                             }
                                                                             size="sm"
                                                                         />
