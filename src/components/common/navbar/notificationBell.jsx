@@ -17,7 +17,7 @@ export default function NotificationBell({ onClick, refreshKey }) {
     const playSound = useCallback(() => {
         const sound = new Audio("/notify.mp3");
         sound.volume = 0.6;
-
+ 
         sound.play().catch((err) => {
             console.warn("🔇 Play blocked:", err);
         });

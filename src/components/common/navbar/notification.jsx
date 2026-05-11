@@ -116,6 +116,7 @@ export default function NotificationDrawer({ open = false, onClose, onMarkedAllR
             );
 
             navigate(`${item.ctaLink}`);
+            onMarkedAllRead?.();
             onClose();
         } catch (error) {
             console.log(error);
@@ -326,12 +327,7 @@ export default function NotificationDrawer({ open = false, onClose, onMarkedAllR
                         </div>
 
                         {/* Footer */}
-                        <div className="border-t border-slate-100 px-5 py-4">
-                            <Link className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
-                                get more
-                                <ArrowRight size={14} />
-                            </Link>
-                        </div>
+                        <div className="border-t border-slate-100 px-5 py-4"></div>
                     </motion.div>
                 </>
             )}

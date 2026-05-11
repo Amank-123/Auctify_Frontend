@@ -180,14 +180,14 @@ export default function UserSidebar({ open, onClose, user }) {
                         <SidebarNavItem to="/watchlist" onClick={onClose}>
                             Watchlist
                         </SidebarNavItem>
-                        <SidebarNavItem to="/notifications" onClick={onClose}>
-                            Notifications
+                        <SidebarNavItem to="/chats" onClick={onClose}>
+                            Chats
                         </SidebarNavItem>
                         <SidebarNavItem to="/orders" onClick={onClose}>
                             Orders
                         </SidebarNavItem>
                         <SidebarNavItem to="/setting" onClick={onClose}>
-                            Settings
+                            Reset Password
                         </SidebarNavItem>
                     </SidebarSection>
 
