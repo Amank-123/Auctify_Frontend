@@ -51,10 +51,10 @@ const HowBlueApplicationWorks = () => {
     };
 
     return (
-        <section className="py-24 bg-gradient-to-b from-[#F8F8FF] via-white to-[#F8F8FF]">
-            <div className="max-w-7xl mx-auto px-6">
+        <section className="py-14 sm:py-20 lg:py-24 bg-gradient-to-b from-[#F8F8FF] via-white to-[#F8F8FF]">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6">
                 {/* Header */}
-                <div className="text-center mb-20">
+                <div className="text-center mb-12 sm:mb-16 lg:mb-20">
                     <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white border border-gray-200 shadow-sm mb-6">
                         <div className="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center">
                             <Icon.Gavel className="w-4 h-4 text-white" />
@@ -65,27 +65,26 @@ const HowBlueApplicationWorks = () => {
                         </span>
                     </div>
 
-                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900 leading-[1.12]">
+                    <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900 leading-[1.15]">
                         Buy Smart. <span className="text-blue-600">Bid Fast.</span> Win Easy.
                     </h2>
-
-                    <p className="mt-4 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-8 font-medium">
+                    <p className="mt-4 text-sm sm:text-lg text-slate-600 max-w-2xl mx-auto leading-6 sm:leading-8 font-medium px-2">
                         A premium auction experience designed for trust, speed and excitement.
                         Discover products, place bids live, and connect directly after winning.
                     </p>
                 </div>
 
                 {/* Cards */}
-                <div className="grid lg:grid-cols-3 gap-8">
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8">
                     {steps.map((item, i) => (
                         <motion.div
                             key={i}
                             whileHover={{ y: -8 }}
                             transition={{ duration: 0.25 }}
-                            className="group bg-white rounded-[30px] overflow-hidden border border-gray-100 shadow-sm hover:shadow-2xl flex flex-col"
+                            className="group bg-white rounded-[22px] sm:rounded-[30px] overflow-hidden border border-gray-100 shadow-sm hover:shadow-2xl flex flex-col"
                         >
                             {/* Image */}
-                            <div className="relative h-56 overflow-hidden">
+                            <div className="relative h-44 sm:h-56 overflow-hidden">
                                 <img
                                     src={item.image}
                                     alt={item.title}
@@ -108,7 +107,7 @@ const HowBlueApplicationWorks = () => {
                             </div>
 
                             {/* Content */}
-                            <div className="p-7 flex flex-col flex-1">
+                            <div className="p-4 sm:p-7 flex flex-col flex-1">
                                 {/* Title */}
                                 <div className="flex items-center gap-3 mb-4">
                                     <span
@@ -117,13 +116,15 @@ const HowBlueApplicationWorks = () => {
                                         0{i + 1}
                                     </span>
 
-                                    <h3 className="text-[25px] font-semibold text-gray-900 tracking-tight">
+                                    <h3 className="text-xl sm:text-[25px] font-semibold text-gray-900 tracking-tight">
                                         {item.title}
                                     </h3>
                                 </div>
 
                                 {/* Description */}
-                                <p className="text-gray-600 leading-7 mb-6">{item.desc}</p>
+                                <p className="text-sm sm:text-base text-gray-600 leading-6 sm:leading-7 mb-5 sm:mb-6">
+                                    {item.desc}
+                                </p>
 
                                 {/* Fill Empty Area With Premium Content */}
                                 <div className="space-y-4 mb-6 flex-1">
@@ -198,8 +199,8 @@ const HowBlueApplicationWorks = () => {
                 </div>
 
                 {/* Clean Trust Section - No Fake Stats */}
-                <div className="mt-20 rounded-[34px] border border-gray-100 bg-white shadow-sm overflow-hidden">
-                    <div className="px-8 py-10 md:px-12">
+                <div className="mt-14 sm:mt-20 rounded-[24px] sm:rounded-[34px] border border-gray-100 bg-white shadow-sm overflow-hidden">
+                    <div className="px-4 sm:px-8 py-8 sm:py-10 md:px-12">
                         {/* Header */}
                         <div className="text-center mb-10">
                             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold tracking-wide">
@@ -218,7 +219,7 @@ const HowBlueApplicationWorks = () => {
                         </div>
 
                         {/* Features */}
-                        <div className="grid md:grid-cols-3 gap-6">
+                        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
                             {[
                                 {
                                     title: "Verified Sellers",
@@ -269,7 +270,7 @@ const HowBlueApplicationWorks = () => {
                         </div>
 
                         {/* Bottom Statement */}
-                        <div className="mt-10 rounded-3xl bg-blue-900 px-8 py-6 text-center">
+                        <div className="mt-8 sm:mt-10 rounded-2xl sm:rounded-3xl bg-blue-900 px-4 sm:px-8 py-5 sm:py-6 text-center">
                             <h4 className="text-white text-xl font-semibold">
                                 New Platform. Strong Standards.
                             </h4>

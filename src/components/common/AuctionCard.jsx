@@ -315,28 +315,28 @@ export default function AuctionCard({ auction }) {
         <article
             onClick={() => navigate(`/auction/${_id}`)}
             className="
-                group relative w-full bg-white
-                rounded-xl overflow-hidden border border-slate-200
-                cursor-pointer select-none
-                transition-all duration-300 ease-out
-                hover:-translate-y-1 hover:shadow-md
-            "
+        group relative w-full min-w-0 bg-white
+        rounded-xl overflow-hidden border border-slate-200
+        cursor-pointer select-none
+        transition-all duration-300 ease-out
+        hover:-translate-y-1 hover:shadow-md
+    "
         >
             {/* MEDIA */}
-            <div className="relative aspect-video overflow-hidden bg-slate-100">
+            <div className="relative aspect-[4/3] sm:aspect-video overflow-hidden bg-slate-100">
                 <MediaRenderer media={media} title={title} />
 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent pointer-events-none" />
 
                 {/* TOP */}
-                <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
+                <div className="absolute top-2 left-2 right-2 flex items-center justify-between z-10">
                     <StatusBadge status={status} auctionType={auctionType} />
 
                     <FavBtn auctionId={_id} sellerId={sellerId} />
                 </div>
 
                 {/* TIMER */}
-                <div className="absolute bottom-3 right-3 z-10">
+                <div className="absolute bottom-2 right-2 z-10">
                     {isLive && (
                         <TimerChip
                             endTime={endTime}
@@ -348,15 +348,15 @@ export default function AuctionCard({ auction }) {
             </div>
 
             {/* BODY */}
-            <div className="px-4 pt-3 pb-4 flex flex-col gap-2">
+            <div className="p-3 sm:px-4 sm:pt-3 sm:pb-4 flex flex-col gap-2">
                 {/* TITLE */}
-                <h3 className="text-[15px] font-semibold text-slate-900 leading-snug line-clamp-1">
+                <h3 className="text-[13px] sm:text-[15px] font-semibold text-slate-900 leading-snug line-clamp-1">
                     {title}
                 </h3>
 
                 {/* DESCRIPTION */}
                 {description && (
-                    <p className="text-[13px] text-slate-500 leading-relaxed line-clamp-2">
+                    <p className="text-[11px] sm:text-[13px] text-slate-500 leading-relaxed line-clamp-2">
                         {description}
                     </p>
                 )}
@@ -364,50 +364,48 @@ export default function AuctionCard({ auction }) {
                 <div className="h-px w-full bg-slate-200" />
 
                 {/* PRICE + META */}
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex items-start justify-between gap-2">
                     {/* LEFT */}
-                    <div className="flex flex-col min-w-0">
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                    <div className="flex flex-col min-w-0 flex-1">
+                        <span className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                             {hasBids ? "Current Bid" : "Starting Bid"}
                         </span>
 
                         <div className="flex items-baseline gap-1 mt-0.5">
-                            <span className="text-[13px] font-semibold text-slate-500">₹</span>
+                            <span className="text-[11px] sm:text-[13px] font-semibold text-slate-500">
+                                ₹
+                            </span>
 
-                            <span className="text-[22px] font-bold text-slate-900 tracking-tight">
+                            <span className="text-[16px] sm:text-[22px] font-bold text-slate-900 tracking-tight truncate">
                                 {price.toLocaleString("en-IN")}
                             </span>
                         </div>
 
                         {showActiveBidding && (
                             <div className="flex items-center gap-1 mt-1">
-                                <TrendingUp size={11} className="text-emerald-500" />
+                                <TrendingUp size={10} className="text-emerald-500" />
 
-                                <span className="text-[11px] text-emerald-600 font-medium">
-                                    Active bidding
+                                <span className="text-[10px] sm:text-[11px] text-emerald-600 font-medium">
+                                    Active
                                 </span>
                             </div>
                         )}
                     </div>
 
                     {/* RIGHT */}
-                    <div className="flex flex-col items-end gap-1.5">
+                    <div className="flex flex-col items-end gap-1 max-w-[40%]">
                         {/* BID COUNT */}
                         {bidCount > 0 && (
                             <div
                                 className="
-                                    flex items-center gap-2 px-3 py-2 rounded-lg
-                                    bg-blue-50 border border-blue-200
-                                "
+                            flex items-center gap-1 px-2 py-1 rounded-lg
+                            bg-blue-50 border border-blue-200
+                        "
                             >
-                                <Users size={14} className="text-blue-600" />
+                                <Users size={11} className="text-blue-600" />
 
-                                <span className="text-[12px] font-bold text-blue-700">
+                                <span className="text-[10px] sm:text-[12px] font-bold text-blue-700">
                                     {bidCount}
-                                </span>
-
-                                <span className="text-[12px] text-blue-600 font-medium">
-                                    {bidCount === 1 ? "bid" : "bids"}
                                 </span>
                             </div>
                         )}
@@ -416,13 +414,14 @@ export default function AuctionCard({ auction }) {
                         {category?.name && (
                             <div
                                 className="
-                                    flex items-center gap-1.5 px-2.5 py-1 rounded-md
-                                    bg-slate-100 border border-slate-200
-                                "
+                            flex items-center gap-1 px-2 py-1 rounded-md
+                            bg-slate-100 border border-slate-200
+                            max-w-full
+                        "
                             >
-                                <Tag size={12} className="text-orange-500" />
+                                <Tag size={10} className="text-orange-500 shrink-0" />
 
-                                <span className="text-[12px] font-medium text-orange-500 capitalize">
+                                <span className="text-[10px] sm:text-[12px] font-medium text-orange-500 capitalize truncate">
                                     {category.name.replace(/_/g, " ")}
                                 </span>
                             </div>

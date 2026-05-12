@@ -160,13 +160,13 @@ export default function AuctionsGrid({
         >
             {/* ---------- HEADER ---------- */}
             {(heading || subheading) && (
-                <div className="border-b border-blue-200 pb-6 mb-5">
+                <div className="border-b border-blue-200 pb-5 sm:pb-6 mb-5">
                     <div
                         className="
-                            flex flex-col
-                            lg:flex-row lg:items-end lg:justify-between
-                            gap-5 lg:gap-6
-                        "
+                flex flex-col
+                lg:flex-row lg:items-end lg:justify-between
+                gap-4 sm:gap-5 lg:gap-6
+            "
                     >
                         {/* LEFT */}
                         <div className="max-w-2xl">
@@ -174,20 +174,20 @@ export default function AuctionsGrid({
                                 <div className="relative inline-block">
                                     <h2
                                         className="
-                                            text-2xl sm:text-3xl lg:text-4xl
-                                            font-bold text-slate-900
-                                            tracking-tight leading-snug
-                                        "
+                                text-xl sm:text-3xl lg:text-4xl
+                                font-bold text-slate-900
+                                tracking-tight leading-snug
+                            "
                                     >
                                         {heading}
                                     </h2>
 
                                     <span
                                         className="
-                                            absolute left-0 -bottom-2
-                                            w-20 sm:w-24 h-[2px]
-                                            bg-blue-600/80 rounded-full
-                                        "
+                                absolute left-0 -bottom-2
+                                w-16 sm:w-24 h-[2px]
+                                bg-blue-600/80 rounded-full
+                            "
                                     />
                                 </div>
                             )}
@@ -195,13 +195,13 @@ export default function AuctionsGrid({
                             {subheading && (
                                 <p
                                     className="
-                                        text-sm sm:text-base
-                                        text-slate-600
-                                        mt-5 sm:mt-6
-                                        leading-relaxed
-                                        border-l-2 border-blue-300
-                                        pl-4
-                                    "
+                            text-[13px] sm:text-base
+                            text-slate-600
+                            mt-4 sm:mt-6
+                            leading-relaxed
+                            border-l-2 border-blue-300
+                            pl-3 sm:pl-4
+                        "
                                 >
                                     {subheading}
                                 </p>
@@ -209,7 +209,7 @@ export default function AuctionsGrid({
                         </div>
 
                         {/* RIGHT */}
-                        <div className="mt-2 sm:mt-0 flex items-center w-full lg:w-auto">
+                        <div className="mt-1 sm:mt-0 flex items-center w-full lg:w-auto">
                             <button
                                 onClick={() =>
                                     navigate(
@@ -221,24 +221,26 @@ export default function AuctionsGrid({
                                     )
                                 }
                                 className="
-                                    group w-full sm:w-auto
-                                    inline-flex items-center justify-center gap-2
-                                    px-5 h-11 rounded-xl
-                                    bg-blue-600 text-white
-                                    text-sm font-semibold
-                                    shadow-sm hover:bg-blue-700 hover:shadow-md
-                                    active:scale-[0.98]
-                                    transition-all duration-200
-                                "
+                        group w-full sm:w-auto
+                        inline-flex items-center justify-center gap-2
+                        px-4 sm:px-5
+                        h-10 sm:h-11
+                        rounded-xl
+                        bg-blue-600 text-white
+                        text-[13px] sm:text-sm font-semibold
+                        shadow-sm hover:bg-blue-700 hover:shadow-md
+                        active:scale-[0.98]
+                        transition-all duration-200
+                    "
                             >
                                 <span>Explore All</span>
 
                                 <ArrowRight
-                                    size={16}
+                                    size={15}
                                     className="
-                                        transition-transform duration-200
-                                        group-hover:translate-x-1
-                                    "
+                            transition-transform duration-200
+                            group-hover:translate-x-1
+                        "
                                 />
                             </button>
                         </div>
@@ -347,12 +349,13 @@ export default function AuctionsGrid({
                 <>
                     <div
                         className="
-                            grid gap-4 sm:gap-5
-                            grid-cols-1
-                            xs:grid-cols-2
-                            md:grid-cols-3
-                            lg:grid-cols-4
-                            xl:grid-cols-5
+                              grid
+        grid-cols-2
+        sm:grid-cols-2
+        md:grid-cols-3
+                     lg:grid-cols-4
+        xl:grid-cols-5
+                       gap-3 sm:gap-5
                         "
                     >
                         {auctions.map((auction) => (

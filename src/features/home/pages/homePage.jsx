@@ -30,7 +30,9 @@ export default function Homepage() {
         <>
             <style>{GLOBAL_STYLE}</style>
             <div style={{ minHeight: "100vh", background: "#F8F8FF" }}>
-                <AnnouncementBar />
+                <AnnouncementBar
+                    announcement={"Real-time Auctions • Direct seller-to-buyer • No middleman fees"}
+                />
                 <HeroBannerSlider />
                 <div style={{ paddingTop: 5 }}>
                     <CategoryRow />
