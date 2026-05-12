@@ -155,7 +155,7 @@ export default function AuctionsGrid({
             className="
                 max-w-[1400px] mx-auto
                 px-3 sm:px-5 lg:px-6
-                py-8 sm:py-10 lg:py-12
+                py-8 sm:py-10 lg:py-16
             "
         >
             {/* ---------- HEADER ---------- */}

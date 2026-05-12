@@ -1,5 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 import {
     Package,
     Loader2,
@@ -7,108 +12,136 @@ import {
     CheckCircle2,
     Clock3,
     XCircle,
-    ChevronRight,
     Search,
     SlidersHorizontal,
+    Download,
 } from "lucide-react";
 
 import { api } from "@/shared/services/axios";
 import { showError } from "@/shared/utils/toast";
 
+/* ───────────────── CONFIG ───────────────── */
+
 const PAYMENT_CFG = {
     pending: {
         label: "Pending",
-        classes: "bg-yellow-50 border-yellow-200 text-yellow-700",
+        dot: "bg-amber-400",
+        classes: "text-amber-700 bg-amber-50 ring-amber-200/80",
     },
+
     completed: {
         label: "Paid",
-        classes: "bg-green-50 border-green-200 text-green-700",
+        dot: "bg-emerald-400",
+        classes: "text-emerald-700 bg-emerald-50 ring-emerald-200/80",
     },
+
     failed: {
         label: "Failed",
-        classes: "bg-red-50 border-red-200 text-red-700",
+        dot: "bg-red-400",
+        classes: "text-red-700 bg-red-50 ring-red-200/80",
     },
+
     refunded: {
         label: "Refunded",
-        classes: "bg-purple-50 border-purple-200 text-purple-700",
+        dot: "bg-violet-400",
+        classes: "text-violet-700 bg-violet-50 ring-violet-200/80",
     },
+
     cancelled: {
         label: "Cancelled",
-        classes: "bg-gray-50 border-gray-200 text-gray-600",
+        dot: "bg-zinc-400",
+        classes: "text-zinc-500 bg-zinc-50 ring-zinc-200/80",
     },
 };
 
 const ORDER_CFG = {
     awaiting_payment: {
         label: "Awaiting payment",
-        classes: "bg-yellow-50 border-yellow-200 text-yellow-700",
-        icon: Clock3,
+        classes: "text-amber-700 bg-amber-50 ring-amber-200/80",
+        Icon: Clock3,
     },
+
     pending: {
         label: "Pending",
-        classes: "bg-yellow-50 border-yellow-200 text-yellow-700",
-        icon: Clock3,
+        classes: "text-amber-700 bg-amber-50 ring-amber-200/80",
+        Icon: Clock3,
     },
+
     confirmed: {
         label: "Confirmed",
-        classes: "bg-blue-50 border-blue-200 text-blue-700",
-        icon: CheckCircle2,
+        classes: "text-blue-700 bg-blue-50 ring-blue-200/80",
+        Icon: CheckCircle2,
     },
+
     processing: {
         label: "Processing",
-        classes: "bg-sky-50 border-sky-200 text-sky-700",
-        icon: Clock3,
+        classes: "text-sky-700 bg-sky-50 ring-sky-200/80",
+        Icon: Clock3,
     },
+
     shipped: {
         label: "Shipped",
-        classes: "bg-purple-50 border-purple-200 text-purple-700",
-        icon: Truck,
+        classes: "text-violet-700 bg-violet-50 ring-violet-200/80",
+        Icon: Truck,
     },
+
     delivered: {
         label: "Delivered",
-        classes: "bg-green-50 border-green-200 text-green-700",
-        icon: CheckCircle2,
+        classes: "text-emerald-700 bg-emerald-50 ring-emerald-200/80",
+        Icon: CheckCircle2,
     },
+
     cancelled: {
         label: "Cancelled",
-        classes: "bg-red-50 border-red-200 text-red-700",
-        icon: XCircle,
+        classes: "text-red-700 bg-red-50 ring-red-200/80",
+        Icon: XCircle,
     },
 };
 
-function PaymentTag({ status }) {
-    const c = PAYMENT_CFG[status] || PAYMENT_CFG.pending;
+/* ───────────────── BADGES ───────────────── */
+
+function PaymentBadge({ status }) {
+    const c = PAYMENT_CFG[status] ?? PAYMENT_CFG.pending;
 
     return (
         <span
-            className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-semibold ${c.classes}`}
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${c.classes}`}
         >
-            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+            <span className={`h-1.5 w-1.5 rounded-full ${c.dot}`} />
+
             {c.label}
         </span>
     );
 }
 
-function OrderTag({ status }) {
-    const c = ORDER_CFG[status] || ORDER_CFG.pending;
-    const Icon = c.icon;
+function OrderBadge({ status }) {
+    const c = ORDER_CFG[status] ?? ORDER_CFG.pending;
+
+    const { Icon } = c;
 
     return (
         <span
-            className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-semibold ${c.classes}`}
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${c.classes}`}
         >
             <Icon size={10} />
+
             {c.label}
         </span>
     );
 }
+
+/* ───────────────── PAGE ───────────────── */
 
 export default function MyOrdersPage() {
     const navigate = useNavigate();
 
     const [orders, setOrders] = useState([]);
+
     const [loading, setLoading] = useState(true);
+
     const [search, setSearch] = useState("");
+
+    const [activeTab, setActiveTab] = useState("all");
 
     useEffect(() => {
         fetchOrders();
@@ -128,180 +161,857 @@ export default function MyOrdersPage() {
         }
     };
 
-    const filtered = orders.filter(
-        (o) => !search || o?.auctionId?.name?.toLowerCase().includes(search.toLowerCase()),
-    );
+    const filtered = useMemo(() => {
+        return orders.filter((o) => {
+            const matchSearch =
+                !search || o?.auctionId?.name?.toLowerCase().includes(search.toLowerCase());
 
-    if (loading) {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-gray-100">
-                <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-            </div>
-        );
-    }
+            const matchTab = activeTab === "all" ? true : o?.orderStatus === activeTab;
 
-    if (!orders.length) {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-gray-100">
-                <div className="text-center">
-                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 bg-white shadow-sm">
-                        <Package className="h-5 w-5 text-gray-400" />
-                    </div>
+            return matchSearch && matchTab;
+        });
+    }, [orders, search, activeTab]);
 
-                    <p className="text-sm font-semibold text-gray-900">No orders yet</p>
+    const tabs = [
+        {
+            key: "all",
+            label: "All Orders",
+            count: orders.length,
+        },
 
-                    <p className="mt-1 text-sm text-gray-500">You haven't placed any orders.</p>
-                </div>
-            </div>
-        );
-    }
+        {
+            key: "processing",
+            label: "Processing",
+            count: orders.filter((o) => o.orderStatus === "processing").length,
+        },
+
+        {
+            key: "shipped",
+            label: "Shipped",
+            count: orders.filter((o) => o.orderStatus === "shipped").length,
+        },
+
+        {
+            key: "cancelled",
+            label: "Cancelled",
+            count: orders.filter((o) => o.orderStatus === "cancelled").length,
+        },
+    ];
 
     return (
-        <div className="min-h-screen bg-gray-100">
-            {/* TOPBAR */}
+        <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100/70">
+            {/* PAGE */}
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+                {/* HEADER */}
+                <div className="mb-8">
+                    <div
+                        className="
+                            flex flex-col lg:flex-row
+                            lg:items-start
+                            lg:justify-between
 
-            <div className="sticky top-0 z-20 flex h-14 items-center border-b border-gray-200 bg-white px-6">
-                <h1 className="text-sm font-bold text-gray-900">Orders</h1>
+                            gap-5
+                        "
+                    >
+                        <div>
+                            <h1
+                                className="
+                                    text-3xl
+                                    font-black
+                                    tracking-tight
+                                    text-zinc-900
+                                "
+                            >
+                                All Orders
+                            </h1>
 
-                <span className="ml-2 rounded-full border border-gray-200 bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-600">
-                    {orders.length}
-                </span>
-            </div>
+                            <p
+                                className="
+                                    mt-2
+                                    text-sm
+                                    text-zinc-500
+                                "
+                            >
+                                Track and manage all your auction orders.
+                            </p>
+                        </div>
 
-            {/* BODY */}
+                        <button
+                            className="
+                                inline-flex items-center
+                                justify-center gap-2
 
-            <div className="mx-auto w-full max-w-6xl p-6">
-                {/* SEARCH */}
+                                h-11 px-5
 
-                <div className="mb-4 flex items-center gap-3">
-                    <div className="flex h-10 flex-1 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 shadow-sm">
-                        <Search className="h-4 w-4 text-gray-400" />
+                                rounded-xl
 
-                        <input
-                            placeholder="Search orders..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="flex-1 bg-transparent text-sm outline-none placeholder:text-gray-400"
-                        />
+                                bg-blue-600
+                                hover:bg-blue-700
+
+                                text-sm font-semibold
+                                text-white
+
+                                shadow-sm
+
+                                transition-all
+                            "
+                        >
+                            <Download size={16} />
+                            Export Orders
+                        </button>
                     </div>
 
-                    <button className="flex h-10 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50">
-                        <SlidersHorizontal className="h-4 w-4 text-gray-400" />
+                    {/* TABS */}
+                    <div
+                        className="
+                            mt-6
+
+                            flex flex-wrap
+                            gap-3
+                        "
+                    >
+                        {tabs.map((tab) => (
+                            <button
+                                key={tab.key}
+                                onClick={() => setActiveTab(tab.key)}
+                                className={`
+                                    inline-flex items-center
+                                    gap-2
+
+                                    rounded-xl
+
+                                    px-4 py-2.5
+
+                                    text-sm font-medium
+
+                                    transition-all
+
+                                    ${
+                                        activeTab === tab.key
+                                            ? "bg-blue-600 text-white shadow-sm"
+                                            : "border border-zinc-200 bg-white/80 backdrop-blur-sm text-zinc-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                                    }
+                                `}
+                            >
+                                {tab.label}
+
+                                <span
+                                    className={`
+                                        rounded-full
+
+                                        px-2 py-0.5
+
+                                        text-[11px]
+                                        font-semibold
+
+                                        ${
+                                            activeTab === tab.key
+                                                ? "bg-white/20 text-white"
+                                                : "bg-zinc-100 text-zinc-600"
+                                        }
+                                    `}
+                                >
+                                    {tab.count}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* SEARCH */}
+                <div
+                    className="
+                        mb-5
+
+                        flex flex-col
+                        sm:flex-row
+
+                        gap-3
+                    "
+                >
+                    <label
+                        className="
+                            flex h-11 flex-1
+                            items-center gap-3
+
+                            rounded-2xl
+
+                            border border-zinc-200
+                            bg-white
+
+                            px-4
+
+                            shadow-sm
+                        "
+                    >
+                        <Search className="h-4 w-4 text-zinc-400" />
+
+                        <input
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Search orders..."
+                            className="
+                                flex-1
+                                bg-transparent
+
+                                text-sm
+                                text-zinc-900
+
+                                outline-none
+                            "
+                        />
+                    </label>
+
+                    <button
+                        className="
+                            flex h-11
+                            items-center justify-center
+                            gap-2
+
+                            rounded-2xl
+
+                            border border-zinc-200
+                            bg-white
+
+                            px-5
+
+                            text-sm font-medium
+                            text-zinc-600
+
+                            shadow-sm
+                        "
+                    >
+                        <SlidersHorizontal className="h-4 w-4 text-zinc-400" />
                         Filter
                     </button>
                 </div>
 
                 {/* TABLE */}
+                <div
+                    className="
+                        overflow-hidden
 
-                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-                    {/* HEADER */}
+                        rounded-3xl
 
-                    <div className="grid grid-cols-[2.2fr_1fr_1fr_1fr_40px] items-center border-b border-gray-200 bg-gray-50 px-5 py-3">
-                        {["Item", "Amount", "Payment", "Status", ""].map((h) => (
+                        border border-zinc-200
+
+                        bg-white/90
+                        backdrop-blur-sm
+
+                        shadow-[0_10px_30px_rgba(0,0,0,0.04)]
+                    "
+                >
+                    {/* DESKTOP HEADER */}
+                    <div
+                        className="
+                            hidden lg:grid
+
+                            grid-cols-[2.8fr_1fr_1fr_1fr_.9fr]
+
+                            border-b border-zinc-100
+
+                            bg-zinc-50/70
+
+                            px-6 py-4
+                        "
+                    >
+                        {["Product", "Amount", "Payment", "Status", "Actions"].map((h) => (
                             <span
                                 key={h}
-                                className="text-[11px] font-semibold uppercase tracking-wider text-gray-400"
+                                className="
+                                    text-[11px]
+                                    font-semibold
+                                    uppercase
+                                    tracking-widest
+                                    text-zinc-400
+                                "
                             >
                                 {h}
                             </span>
                         ))}
                     </div>
 
-                    {/* ROWS */}
+                    {/* CONTENT */}
+                    {loading ? (
+                        <div className="py-20 flex justify-center">
+                            <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+                        </div>
+                    ) : filtered.length === 0 ? (
+                        <div className="py-20 text-center">
+                            <Package className="mx-auto mb-4 h-10 w-10 text-zinc-300" />
 
-                    {filtered.length === 0 ? (
-                        <div className="p-10 text-center text-sm text-gray-400">
-                            No orders match your search.
+                            <p className="text-sm text-zinc-500">No orders found.</p>
                         </div>
                     ) : (
-                        filtered.map((order, idx) => {
-                            const auction = order?.auctionId;
-
-                            const image =
-                                auction?.media?.[0]?.[0] ||
-                                auction?.media?.[0] ||
-                                "/placeholder.png";
-
-                            const isLast = idx === filtered.length - 1;
-
-                            return (
-                                <div
-                                    key={order?._id}
-                                    onClick={() => navigate(`/orders/${order?._id}`)}
-                                    className={`grid cursor-pointer grid-cols-[2.2fr_1fr_1fr_1fr_40px] items-center px-5 py-4 transition hover:bg-gray-50 ${
-                                        !isLast ? "border-b border-gray-100" : ""
-                                    }`}
-                                >
-                                    {/* ITEM */}
-
-                                    <div className="flex min-w-0 items-center gap-3 pr-4">
-                                        <div className="h-10 w-10 overflow-hidden rounded-lg border border-gray-100 bg-gray-50">
-                                            <img
-                                                src={image}
-                                                alt={auction?.name}
-                                                className="h-full w-full object-cover"
-                                            />
-                                        </div>
-
-                                        <div className="min-w-0">
-                                            <p className="truncate text-sm font-semibold text-gray-900">
-                                                {auction?.name}
-                                            </p>
-
-                                            <div className="mt-1 flex items-center gap-1.5">
-                                                {order?.sellerId?.profile && (
-                                                    <img
-                                                        src={order.sellerId.profile}
-                                                        className="h-3.5 w-3.5 rounded-full border border-gray-200 object-cover"
-                                                    />
-                                                )}
-
-                                                <span className="text-xs text-gray-400">
-                                                    {order?.sellerId?.firstName}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* AMOUNT */}
-
-                                    <div>
-                                        <p className="text-sm font-bold text-gray-900">
-                                            ₹{order?.finalPrice?.toLocaleString("en-IN")}
-                                        </p>
-
-                                        <p className="mt-0.5 text-[11px] text-gray-400">
-                                            Winning bid
-                                        </p>
-                                    </div>
-
-                                    {/* PAYMENT */}
-
-                                    <div>
-                                        <PaymentTag status={order?.paymentStatus} />
-                                    </div>
-
-                                    {/* STATUS */}
-
-                                    <div>
-                                        <OrderTag status={order?.orderStatus} />
-                                    </div>
-
-                                    {/* CHEVRON */}
-
-                                    <div className="flex justify-end">
-                                        <ChevronRight className="h-4 w-4 text-gray-300" />
-                                    </div>
-                                </div>
-                            );
-                        })
+                        filtered.map((order, idx) => (
+                            <OrderRow
+                                key={order?._id}
+                                order={order}
+                                isLast={idx === filtered.length - 1}
+                                navigate={navigate}
+                            />
+                        ))
                     )}
                 </div>
-
-                <p className="mt-3 pl-1 text-xs text-gray-400">
-                    Showing {filtered.length} of {orders.length} orders
-                </p>
             </div>
         </div>
+    );
+}
+
+/* ───────────────── ORDER ROW ───────────────── */
+
+function OrderRow({ order, isLast, navigate }) {
+    const auction = order?.auctionId;
+
+    const image = auction?.media?.[0]?.[0] ?? auction?.media?.[0] ?? "/placeholder.png";
+
+    const downloadReceipt = (e) => {
+        e.stopPropagation();
+
+        const doc = new jsPDF();
+
+        const auction = order?.auctionId;
+        const buyer = order?.buyerId;
+        const seller = order?.sellerId;
+
+        const amount = new Intl.NumberFormat("en-IN", {
+            maximumFractionDigits: 0,
+        }).format(Number(order?.finalPrice || 0));
+
+        const pageWidth = doc.internal.pageSize.width;
+
+        /* ───────────────── COLORS ───────────────── */
+
+        const BLACK = [20, 20, 20];
+        const GRAY = [120, 120, 120];
+        const LIGHT = [240, 240, 240];
+        const BLUE = [37, 99, 235];
+
+        /* ───────────────── HEADER ───────────────── */
+
+        doc.setFont("times", "bold");
+
+        doc.setTextColor(...BLACK);
+
+        doc.setFontSize(24);
+
+        doc.text("Auctify", 16, 22);
+
+        doc.setFontSize(11);
+
+        doc.setFont("helvetica", "normal");
+
+        doc.setTextColor(...GRAY);
+
+        doc.text("Official Payment Receipt", 16, 30);
+
+        /* RIGHT */
+
+        doc.setFont("times", "bold");
+
+        doc.setTextColor(...BLACK);
+
+        doc.setFontSize(18);
+
+        doc.text("INVOICE", pageWidth - 16, 22, {
+            align: "right",
+        });
+
+        doc.setFontSize(10);
+
+        doc.setFont("helvetica", "normal");
+
+        doc.setTextColor(...GRAY);
+
+        doc.text(`#${order?._id?.slice(-8)}`, pageWidth - 16, 30, {
+            align: "right",
+        });
+
+        /* LINE */
+
+        doc.setDrawColor(...LIGHT);
+
+        doc.line(16, 38, 194, 38);
+
+        /* ───────────────── META ───────────────── */
+
+        doc.setTextColor(...BLACK);
+
+        doc.setFont("times", "bold");
+
+        doc.setFontSize(11);
+
+        doc.text("Date", 16, 50);
+
+        doc.setFont("helvetica", "normal");
+
+        doc.text(new Date(order?.createdAt).toLocaleDateString(), 40, 50);
+
+        doc.setFont("times", "bold");
+
+        doc.text("Payment", 110, 50);
+
+        doc.setFont("helvetica", "normal");
+
+        doc.text(order?.paymentStatus || "completed", 140, 50);
+
+        /* ───────────────── BILLING ───────────────── */
+
+        doc.setFont("times", "bold");
+
+        doc.setTextColor(...BLACK);
+
+        doc.setFontSize(12);
+
+        doc.text("Buyer Information", 16, 68);
+
+        doc.text("Seller Information", 110, 68);
+
+        doc.setFont("helvetica", "normal");
+
+        doc.setFontSize(10);
+
+        doc.setTextColor(...GRAY);
+
+        /* BUYER */
+
+        doc.text(`${buyer?.firstName || ""} ${buyer?.lastName || ""}`, 16, 78);
+
+        doc.text(buyer?.email || "", 16, 86);
+
+        doc.text(buyer?.address?.city || "", 16, 94);
+
+        /* SELLER */
+
+        doc.text(seller?.firstName || "", 110, 78);
+
+        doc.text(seller?.email || "", 110, 86);
+
+        /* ───────────────── TABLE HEADER ───────────────── */
+
+        doc.setFillColor(...BLACK);
+
+        doc.rect(16, 112, 178, 10, "F");
+
+        doc.setTextColor(255);
+
+        doc.setFont("times", "bold");
+
+        doc.setFontSize(10);
+
+        doc.text("Product", 20, 119);
+
+        doc.text("Category", 95, 119);
+
+        doc.text("Status", 140, 119);
+
+        doc.text("Amount", 182, 119, {
+            align: "right",
+        });
+
+        /* ───────────────── TABLE ROW ───────────────── */
+
+        doc.setDrawColor(...LIGHT);
+
+        doc.rect(16, 122, 178, 20);
+
+        doc.setTextColor(...BLACK);
+
+        doc.setFont("times", "bold");
+
+        doc.text(auction?.name || "Auction Product", 20, 132);
+
+        doc.setFont("helvetica", "normal");
+
+        doc.setTextColor(...GRAY);
+
+        const category =
+            typeof auction?.category === "object" ? auction?.category?.name : auction?.category;
+
+        doc.text(category || "General", 95, 132);
+
+        doc.text(order?.orderStatus || "Delivered", 140, 132);
+
+        doc.setTextColor(...BLACK);
+
+        doc.setFont("times", "bold");
+
+        doc.text(`Rs. ${amount}`, 182, 132, {
+            align: "right",
+        });
+
+        /* ───────────────── TOTALS ───────────────── */
+
+        let y = 162;
+
+        doc.setFont("helvetica", "normal");
+
+        doc.setTextColor(...GRAY);
+
+        doc.text("Subtotal", 130, y);
+
+        doc.text(`Rs. ${amount}`, 182, y, {
+            align: "right",
+        });
+
+        y += 10;
+
+        doc.text("Platform Fee", 130, y);
+
+        doc.text("Rs. 0", 182, y, {
+            align: "right",
+        });
+
+        y += 10;
+
+        doc.setDrawColor(...LIGHT);
+
+        doc.line(130, y, 182, y);
+
+        y += 10;
+
+        doc.setFont("times", "bold");
+
+        doc.setTextColor(...BLACK);
+
+        doc.setFontSize(13);
+
+        doc.text("Total", 130, y);
+
+        doc.setTextColor(...BLUE);
+
+        doc.text(`Rs. ${amount}`, 182, y, {
+            align: "right",
+        });
+
+        /* ───────────────── FOOTER ───────────────── */
+
+        doc.setFontSize(9);
+
+        doc.setFont("helvetica", "normal");
+
+        doc.setTextColor(...GRAY);
+
+        doc.text("This receipt confirms successful payment for your auction order.", 16, 260);
+
+        doc.text("Generated securely by Auctify.", 16, 268);
+
+        /* ───────────────── SAVE ───────────────── */
+
+        doc.save(`Invoice-${order?._id?.slice(-6)}.pdf`);
+    };
+
+    return (
+        <motion.div
+            layout
+            onClick={() => navigate(`/orders/${order?._id}`)}
+            className={`
+                group
+
+                cursor-pointer
+
+                bg-white
+
+                transition-all duration-300
+
+                hover:bg-zinc-50/80
+                hover:shadow-[0_4px_20px_rgba(0,0,0,0.03)]
+
+                ${!isLast ? "border-b border-zinc-100" : ""}
+            `}
+        >
+            {/* DESKTOP */}
+            <div
+                className="
+                    hidden lg:grid
+
+                    grid-cols-[2.8fr_1fr_1fr_1fr_.9fr]
+
+                    items-center
+
+                    px-6 py-4
+                "
+            >
+                <div className="flex min-w-0 items-center gap-4 pr-6">
+                    <div
+                        className="
+                            h-16 w-16
+                            overflow-hidden
+
+                            rounded-xl
+
+                            border border-zinc-100
+
+                            bg-zinc-50
+
+                            shadow-sm
+
+                            shrink-0
+                        "
+                    >
+                        <img
+                            src={image}
+                            alt={auction?.name}
+                            className="
+                                h-full w-full
+                                object-cover
+
+                                transition duration-500
+                                group-hover:scale-105
+                            "
+                        />
+                    </div>
+
+                    <div className="min-w-0">
+                        <p
+                            className="
+                                truncate
+
+                                text-[16px]
+                                font-bold
+
+                                tracking-tight
+
+                                text-zinc-900
+                            "
+                        >
+                            {auction?.name}
+                        </p>
+
+                        <div
+                            className="
+                                mt-1.5
+
+                                flex flex-wrap
+                                items-center gap-2
+
+                                text-[11px]
+                                text-zinc-400
+                            "
+                        >
+                            <span>
+                                Order ID:
+                                {order?._id?.slice(-6)}
+                            </span>
+
+                            <span>•</span>
+
+                            <span>
+                                Seller:
+                                {order?.sellerId?.firstName}
+                            </span>
+                        </div>
+
+                        <div className="mt-2 flex items-center gap-2">
+                            <span
+                                className="
+                                    rounded-full
+
+                                    bg-blue-50
+
+                                    px-2 py-1
+
+                                    text-[10px]
+                                    font-semibold
+
+                                    text-blue-700
+                                "
+                            >
+                                {typeof auction?.category === "object"
+                                    ? auction?.category?.name
+                                    : auction?.category}
+                            </span>
+
+                            <span className="text-[11px] text-zinc-400">
+                                {new Date(order.createdAt).toLocaleDateString()}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <p className="text-[20px] font-black tracking-tight text-zinc-900">
+                        ₹{order?.finalPrice?.toLocaleString("en-IN")}
+                    </p>
+
+                    <p className="mt-1 text-[11px] text-zinc-400">Winning bid</p>
+                </div>
+
+                <PaymentBadge status={order?.paymentStatus} />
+
+                <OrderBadge status={order?.orderStatus} />
+
+                <div className="flex flex-col gap-2">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+
+                            navigate(`/orders/${order?._id}`);
+                        }}
+                        className="
+                            h-8 px-4
+
+                            rounded-xl
+
+                            bg-gradient-to-r
+                            from-blue-600
+                            to-blue-500
+
+                            text-[11px]
+                            font-semibold
+                            text-white
+                        "
+                    >
+                        View Details
+                    </button>
+
+                    <button
+                        onClick={downloadReceipt}
+                        className="
+                            h-8 px-4
+
+                            rounded-xl
+
+                            border border-zinc-200
+
+                            bg-white/80
+
+                            text-[11px]
+                            font-semibold
+
+                            text-zinc-600
+                        "
+                    >
+                        Receipt
+                    </button>
+                </div>
+            </div>
+
+            {/* MOBILE */}
+            <div className="lg:hidden p-4">
+                <div
+                    className="
+                        rounded-2xl
+                        border border-zinc-200
+
+                        bg-white
+
+                        shadow-sm
+
+                        p-4
+                    "
+                >
+                    <div className="flex gap-3">
+                        <div
+                            className="
+                                h-[78px]
+                                w-[78px]
+
+                                shrink-0
+
+                                overflow-hidden
+
+                                rounded-xl
+
+                                border border-zinc-100
+                            "
+                        >
+                            <img
+                                src={image}
+                                alt={auction?.name}
+                                className="
+                                    h-full w-full
+                                    object-cover
+                                "
+                            />
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                            <p
+                                className="
+                                    line-clamp-2
+
+                                    text-[15px]
+                                    font-bold
+
+                                    leading-snug
+
+                                    text-zinc-900
+                                "
+                            >
+                                {auction?.name}
+                            </p>
+
+                            <div className="mt-2 text-[11px] text-zinc-400 space-y-1">
+                                <p>
+                                    Seller:
+                                    {order?.sellerId?.firstName}
+                                </p>
+
+                                <p>
+                                    Order ID:
+                                    {order?._id?.slice(-6)}
+                                </p>
+                            </div>
+
+                            <p className="mt-3 text-xl font-black tracking-tight text-zinc-900">
+                                ₹{order?.finalPrice?.toLocaleString("en-IN")}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                        <PaymentBadge status={order?.paymentStatus} />
+
+                        <OrderBadge status={order?.orderStatus} />
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+
+                                navigate(`/orders/${order?._id}`);
+                            }}
+                            className="
+                                h-10
+
+                                rounded-xl
+
+                                bg-gradient-to-r
+                                from-blue-600
+                                to-blue-500
+
+                                text-sm
+                                font-semibold
+                                text-white
+                            "
+                        >
+                            View
+                        </button>
+
+                        <button
+                            onClick={downloadReceipt}
+                            className="
+                                h-10
+
+                                rounded-xl
+
+                                border border-zinc-200
+
+                                bg-white
+
+                                text-sm
+                                font-semibold
+
+                                text-zinc-700
+                            "
+                        >
+                            Receipt
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </motion.div>
     );
 }

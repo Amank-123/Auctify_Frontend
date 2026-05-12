@@ -86,10 +86,27 @@ export default function Navbar() {
                         : "bg-[#F8F8FF] border-b"
                 }`}
             >
-                <div className="mx-auto flex max-w-[1800px] items-center justify-between px-4 py-1 sm:px-6 lg:px-10">
+                <div
+                    className="
+                    mx-auto flex
+                    h-16 sm:h-auto
+                    max-w-[1800px]
+                    items-center justify-between
+
+                    px-4 sm:px-6 lg:px-10
+                    py-2 sm:py-1
+                "
+                >
                     {/* LOGO */}
                     <Link to="/" className="flex items-center shrink-0">
-                        <img src={navlogo} alt="Auctify" className="h-10 sm:h-12 lg:h-13 w-auto" />
+                        <img
+                            src={navlogo}
+                            alt="Auctify"
+                            className="
+                            h-11 sm:h-12 lg:h-13
+                            w-auto object-contain
+                        "
+                        />
                     </Link>
 
                     {/* DESKTOP NAV */}
@@ -105,7 +122,13 @@ export default function Navbar() {
                         {isAuthenticated && (
                             <Link
                                 to="/auction/sell"
-                                className="rounded-xl px-3 py-2 text-sm font-semibold text-[#C2410C] hover:bg-orange-50"
+                                className="
+                                rounded-xl px-3 py-2
+                                text-sm font-semibold
+                                text-[#C2410C]
+                                hover:bg-orange-50
+                                transition-all
+                            "
                             >
                                 Sell
                             </Link>
@@ -120,43 +143,108 @@ export default function Navbar() {
                     <div className="flex items-center gap-2 sm:gap-4">
                         {!isAuthenticated ? (
                             <>
+                                {/* LOGIN */}
                                 <Link
                                     to="/auth/login"
-                                    className="hidden sm:block text-[16px] font-medium"
+                                    className="
+                                    px-3 py-2
+                                    rounded-xl
+
+                                    text-sm sm:text-[15px]
+                                    font-medium
+                                    text-slate-700
+
+                                    hover:bg-slate-100
+                                    hover:text-[#2563EB]
+
+                                    transition-all
+                                "
                                 >
                                     Login
                                 </Link>
 
+                                {/* REGISTER */}
                                 <Link
                                     to="/auth/register"
-                                    className="rounded-sm bg-[#2563EB] px-3 py-2 text-sm font-semibold text-white"
+                                    className="
+                                    rounded-xl
+                                    bg-[#2563EB]
+
+                                    px-4 sm:px-5
+                                    py-2.5
+
+                                    text-sm font-semibold
+                                    text-white
+
+                                    shadow-sm
+                                    hover:bg-blue-700
+
+                                    transition-all
+                                "
                                 >
                                     Register
                                 </Link>
                             </>
                         ) : (
                             <>
-                                {/* Admin dashboard */}
+                                {/* ADMIN DASHBOARD */}
                                 {isAdmin && (
                                     <Link
                                         to="/admin"
-                                        className="rounded-sm bg-[#C2410C] px-3 py-2 text-sm font-semibold gap-1 flex cursor-pointer justify-center items-center text-white"
+                                        className="
+                                        hidden md:flex
+                                        rounded-xl bg-[#C2410C]
+
+                                        px-4 py-2.5
+                                        text-sm font-semibold
+
+                                        gap-2
+                                        cursor-pointer
+                                        justify-center items-center
+
+                                        text-white
+                                        shadow-sm
+
+                                        hover:bg-orange-700
+                                        transition-all
+                                    "
                                     >
-                                        <User2 size={18} /> Admin Dashboard
+                                        <User2 size={18} />
+                                        Admin Dashboard
                                     </Link>
                                 )}
 
                                 {/* NOTIFICATION */}
-                                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg  bg-white">
+                                <div
+                                    className="
+                                    flex h-10 w-10
+                                    items-center justify-center
+
+                                    rounded-xl bg-white
+                                    border border-slate-200
+                                    shadow-sm
+
+                                    cursor-pointer
+                                "
+                                >
                                     <NotificationBell
                                         onClick={() => setNotificationOpen(true)}
                                         refreshKey={refreshBell}
                                     />
                                 </div>
 
-                                {/* Chat */}
+                                {/* CART / ORDERS */}
                                 <div
-                                    className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg  bg-white"
+                                    className="
+                                    flex h-10 w-10
+                                    items-center justify-center
+
+                                    rounded-xl bg-white
+                                    border border-slate-200
+                                    shadow-sm
+
+                                    cursor-pointer
+                                "
                                     onClick={() => navigate("/orders")}
                                 >
                                     <ShoppingCart />
@@ -165,12 +253,22 @@ export default function Navbar() {
                                 {/* MENU */}
                                 <button
                                     onClick={() => setSidebarOpen((prev) => !prev)}
-                                    className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg cursor-pointer bg-white"
+                                    className="
+                                    flex h-10 w-10
+                                    items-center justify-center
+
+                                    rounded-xl
+                                    cursor-pointer
+
+                                    bg-white
+                                    border border-slate-200
+                                    shadow-sm
+                                "
                                 >
                                     {sidebarOpen ? (
-                                        <HiOutlineX className="text-2xl" />
+                                        <HiOutlineX className="text-[22px]" />
                                     ) : (
-                                        <HiOutlineMenu className="text-2xl" />
+                                        <HiOutlineMenu className="text-[22px]" />
                                     )}
                                 </button>
                             </>

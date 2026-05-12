@@ -1,101 +1,90 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     Search,
     Gavel,
     Trophy,
     Package,
-    ShieldCheck,
     Clock3,
     ArrowRight,
     ChevronDown,
-    Zap,
-    Lock,
     Users,
-    TrendingUp,
+    ShieldCheck,
+    Zap,
 } from "lucide-react";
-import { motion, AnimatePresence, useInView, useScroll, useTransform } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function HowItWorksPage() {
     const navigate = useNavigate();
+
     const [tab, setTab] = useState("buyer");
     const [openFaq, setOpenFaq] = useState(null);
-    const heroRef = useRef(null);
-    const stepsRef = useRef(null);
-    const stepsInView = useInView(stepsRef, { once: true, margin: "-80px" });
-
-    const { scrollYProgress } = useScroll({
-        target: heroRef,
-        offset: ["start start", "end start"],
-    });
-    const heroY = useTransform(scrollYProgress, [0, 1], [0, 80]);
-    const heroOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
     const buyerSteps = [
         {
             icon: Search,
-            title: "Discover",
-            sub: "Browse Auctions",
-            desc: "Explore thousands of premium live listings across electronics, fashion, vehicles, watches and more — all in real time.",
+            title: "Discover Auctions",
+            sub: "Browse Listings",
+            desc: "Explore premium live auctions across electronics, fashion, vehicles, collectibles and more in real time.",
             stat: "10K+",
             statLabel: "Active Listings",
         },
         {
             icon: Gavel,
-            title: "Compete",
-            sub: "Bid in Real Time",
-            desc: "Place instant bids, compete live and track every auction update with full transparency. No delays, no hidden activity.",
-            stat: "< 1s",
-            statLabel: "Bid Latency",
+            title: "Place Your Bid",
+            sub: "Bid Live",
+            desc: "Compete with buyers in real time using instant bid updates and transparent auction activity.",
+            stat: "<1s",
+            statLabel: "Bid Updates",
         },
         {
             icon: Trophy,
-            title: "Win",
-            sub: "Win the Auction",
-            desc: "When the countdown ends, the highest bidder wins automatically. Instant confirmation, zero ambiguity.",
+            title: "Win Auctions",
+            sub: "Secure Victory",
+            desc: "The highest bidder automatically wins once the countdown reaches zero.",
             stat: "100%",
-            statLabel: "Auto-Confirmed",
+            statLabel: "Transparent",
         },
         {
             icon: Package,
-            title: "Receive",
-            sub: "Pay & Receive",
-            desc: "Complete payment through our secure gateway and receive your item. Buyer protection on every transaction.",
-            stat: "256-bit",
-            statLabel: "Encryption",
+            title: "Receive Item",
+            sub: "Delivery & Payment",
+            desc: "Complete secure checkout and receive your item with buyer protection included.",
+            stat: "Secure",
+            statLabel: "Payments",
         },
     ];
 
     const sellerSteps = [
         {
             icon: Package,
-            title: "List",
-            sub: "Create Listing",
-            desc: "Upload photos, write a detailed description and select your product category in minutes.",
-            stat: "2 min",
-            statLabel: "Avg. Setup",
+            title: "Create Listing",
+            sub: "Upload Product",
+            desc: "Add images, pricing details and product descriptions in just a few minutes.",
+            stat: "2 Min",
+            statLabel: "Setup Time",
         },
         {
             icon: Clock3,
-            title: "Configure",
-            sub: "Set Auction Rules",
-            desc: "Choose your starting price, set the auction duration and define any bidding conditions that fit your needs.",
+            title: "Configure Auction",
+            sub: "Set Rules",
+            desc: "Choose starting price, auction duration and bidding preferences easily.",
             stat: "Flexible",
-            statLabel: "Duration",
+            statLabel: "Controls",
         },
         {
             icon: Gavel,
-            title: "Watch",
-            sub: "Receive Bids",
-            desc: "Sit back as buyers compete live. Bids update in real time and you get notified at every milestone.",
+            title: "Receive Bids",
+            sub: "Real-Time Activity",
+            desc: "Track bidding activity live while buyers compete for your listing.",
             stat: "Live",
-            statLabel: "Bid Alerts",
+            statLabel: "Updates",
         },
         {
             icon: Trophy,
-            title: "Close",
-            sub: "Sell to Winner",
-            desc: "The auction closes automatically. The highest bidder wins, you get paid, and the deal is sealed securely.",
+            title: "Sell Securely",
+            sub: "Close Auction",
+            desc: "The winning bidder is selected automatically and payments are handled securely.",
             stat: "0%",
             statLabel: "Hidden Fees",
         },
@@ -104,354 +93,270 @@ export default function HowItWorksPage() {
     const faqs = [
         {
             q: "Is bidding free on Auctify?",
-            a: "Yes. Browsing and placing bids is completely free for all users. Charges only apply where our platform policies specifically require, and these are always disclosed upfront before you commit.",
+            a: "Yes. Users can browse and place bids without additional charges.",
         },
         {
-            q: "How is the auction winner selected?",
-            a: "The highest valid bid at the exact moment the timer reaches zero wins automatically. Our system handles this instantly with no human intervention, ensuring complete fairness.",
+            q: "How is the winner selected?",
+            a: "The highest valid bid before the timer ends wins automatically.",
         },
         {
-            q: "Can I sell used or pre-owned items?",
-            a: "Absolutely. Pre-owned items are welcome as long as they meet our category guidelines and quality standards. We ask sellers to be transparent about condition in their listings.",
+            q: "Can I sell used products?",
+            a: "Yes, used and pre-owned items are allowed under approved categories.",
         },
         {
-            q: "How are sellers verified?",
-            a: "Every seller goes through identity verification and account checks before listing. Our moderation team actively reviews listings and monitors for any suspicious activity.",
-        },
-        {
-            q: "Can I cancel a bid once placed?",
-            a: "It depends on the specific auction rules and timing. Some auctions treat bids as binding commitments. Always review the auction terms before placing a bid.",
+            q: "Are sellers verified?",
+            a: "Every seller goes through verification checks before listing products.",
         },
     ];
 
     const metrics = [
-        { value: "50K+", label: "Active Users", icon: Users },
-        { value: "99.9%", label: "Uptime SLA", icon: Zap },
-        { value: "128+", label: "Countries Reached", icon: TrendingUp },
-        { value: "0%", label: "Hidden Fees", icon: Lock },
+        {
+            icon: Users,
+            value: "50K+",
+            label: "Active Users",
+        },
+        {
+            icon: Zap,
+            value: "99.9%",
+            label: "Platform Uptime",
+        },
+        {
+            icon: ShieldCheck,
+            value: "Secure",
+            label: "Transactions",
+        },
     ];
 
     const steps = tab === "buyer" ? buyerSteps : sellerSteps;
 
     return (
-        <div
-            style={{
-                minHeight: "100vh",
-                background: "#FAFBFF",
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-                overflowX: "hidden",
-            }}
-        >
-            <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
-                body, * { font-family: 'Plus Jakarta Sans', sans-serif !important; }
-                .syne { font-family: 'Plus Jakarta Sans', sans-serif !important; font-weight: 800; letter-spacing: -0.03em; }
-                .body-text { font-family: 'Inter', sans-serif !important; }
-                .faq-item:hover { border-color: rgba(45,71,230,0.25) !important; }
-            `}</style>
-
-            {/* ── Announcement bar ── */}
+        <div className="min-h-screen bg-[#FAFBFF] overflow-x-hidden">
+            {/* TOP BAR */}
             <div
-                style={{
-                    background: "#2D47E6",
-                    padding: "10px 32px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 28,
-                }}
+                className="
+                    bg-[#2563EB]
+                    px-4 sm:px-6 lg:px-8
+                    py-2.5
+                    flex flex-wrap
+                    items-center justify-center
+                    gap-2 sm:gap-6
+                    text-center
+                "
             >
-                <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                <div className="flex items-center gap-2">
                     <motion.span
-                        animate={{ scale: [1, 1.4, 1], opacity: [1, 0.6, 1] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                        style={{
-                            width: 7,
-                            height: 7,
-                            borderRadius: "50%",
-                            background: "#4ADE80",
-                            display: "block",
-                            flexShrink: 0,
+                        animate={{
+                            scale: [1, 1.4, 1],
+                            opacity: [1, 0.5, 1],
                         }}
+                        transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                        }}
+                        className="w-2 h-2 rounded-full bg-green-400"
                     />
-                    <span
-                        style={{
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: "rgba(255,255,255,0.92)",
-                            letterSpacing: "0.05em",
-                        }}
-                    >
-                        Real-time Auctions
+
+                    <span className="text-[10px] sm:text-[11px] tracking-[0.12em] uppercase font-semibold text-white">
+                        Real-Time Auctions
                     </span>
                 </div>
-                <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 14 }}>|</span>
-                <span
-                    style={{
-                        fontSize: 11,
-                        fontWeight: 400,
-                        color: "rgba(255,255,255,0.65)",
-                        letterSpacing: "0.04em",
-                    }}
-                >
-                    Direct seller-to-buyer
-                </span>
-                <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 14 }}>|</span>
-                <span
-                    style={{
-                        fontSize: 11,
-                        fontWeight: 400,
-                        color: "rgba(255,255,255,0.65)",
-                        letterSpacing: "0.04em",
-                    }}
-                >
-                    No middleman fees
-                </span>
+
+                <span className="hidden sm:block text-white/30">|</span>
+
+                <span className="text-[10px] sm:text-[11px] text-white/70">Secure Marketplace</span>
+
+                <span className="hidden sm:block text-white/30">|</span>
+
+                <span className="text-[10px] sm:text-[11px] text-white/70">Verified Sellers</span>
             </div>
 
-            {/* ── HERO ── */}
-            <div
-                ref={heroRef}
-                style={{
-                    position: "relative",
-                    overflow: "hidden",
-                    background: "#F8F8FF",
-                    paddingBottom: 0,
-                }}
-            >
-                <motion.div
-                    style={{ y: heroY, opacity: heroOpacity }}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.6 }}
+            {/* HERO */}
+            <section className="relative">
+                <div
+                    className="
+                        max-w-[1100px]
+                        mx-auto
+                        px-4 sm:px-6 lg:px-8
+                        pt-16 sm:pt-20
+                        pb-14 sm:pb-16
+                        text-center
+                    "
                 >
-                    <div
-                        style={{
-                            maxWidth: 1280,
-                            margin: "0 auto",
-                            padding: "100px 32px 120px",
-                            position: "relative",
-                            zIndex: 2,
-                            textAlign: "center",
-                        }}
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="
+                            inline-flex items-center gap-2
+                            px-3 py-1
+                            rounded-full
+                            bg-blue-50
+                            border border-blue-100
+                            text-blue-600
+                            text-[11px]
+                            font-semibold
+                            tracking-[0.12em]
+                            uppercase
+                            mb-6
+                        "
                     >
-                        {/* Pill badge */}
-                        <motion.div
-                            initial={{ opacity: 0, y: -12, scale: 0.9 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            transition={{ duration: 0.45, delay: 0.1 }}
-                            style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 8,
-                                background: "rgba(45,71,230,0.18)",
-                                border: "1px solid rgba(45,71,230,0.35)",
-                                borderRadius: 100,
-                                padding: "6px 16px",
-                                marginBottom: 32,
-                            }}
-                        >
-                            <span
-                                style={{
-                                    width: 6,
-                                    height: 6,
-                                    borderRadius: "50%",
-                                    background: "#7B9EFF",
-                                    display: "block",
-                                }}
-                            />
-                            <span
-                                style={{
-                                    fontSize: 11,
-                                    fontWeight: 600,
-                                    color: "#7B9EFF",
-                                    letterSpacing: "0.12em",
-                                    textTransform: "uppercase",
-                                }}
-                            >
-                                How Auctify Works
-                            </span>
-                        </motion.div>
+                        How Auctify Works
+                    </motion.div>
 
-                        {/* Headline */}
-                        <motion.h1
-                            className="syne"
-                            initial={{ opacity: 0, y: 32 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.7, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                            style={{
-                                fontSize: "clamp(40px, 6vw, 76px)",
-                                fontWeight: 800,
-                                color: "#000000",
-                                letterSpacing: "-0.03em",
-                                lineHeight: 1.05,
-                                margin: "0 0 28px",
-                            }}
-                        >
-                            Buy Smart.{" "}
-                            <span
-                                style={{
-                                    background: "linear-gradient(135deg, #7B9EFF 0%, #2D47E6 100%)",
-                                    WebkitBackgroundClip: "text",
-                                    WebkitTextFillColor: "transparent",
-                                }}
-                            >
-                                Bid Fast.
-                            </span>
-                            <br />
-                            Win Easy.
-                        </motion.h1>
-
-                        {/* Sub */}
-                        <motion.p
-                            initial={{ opacity: 0, y: 16 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.55, delay: 0.28 }}
-                            style={{
-                                fontSize: 17,
-                                color: "#000000",
-                                lineHeight: 1.75,
-                                maxWidth: 560,
-                                margin: "0 auto 44px",
-                                fontWeight: 400,
-                            }}
-                        >
-                            Auctify brings modern, transparent and exciting online auctions to
-                            everyone. Discover products, place live bids, or sell directly to real
-                            buyers.
-                        </motion.p>
-
-                        {/* Buttons */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 12 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.45, delay: 0.38 }}
-                            style={{
-                                display: "flex",
-                                justifyContent: "center",
-                                gap: 14,
-                                flexWrap: "wrap",
-                            }}
-                        >
-                            <motion.button
-                                whileHover={{ scale: 1.04 }}
-                                whileTap={{ scale: 0.96 }}
-                                onClick={() => navigate("/explore")}
-                                style={{
-                                    height: 50,
-                                    padding: "0 32px",
-                                    borderRadius: 10,
-                                    background: "#2D47E6",
-                                    color: "#fff",
-                                    border: "none",
-                                    fontSize: 14,
-                                    fontWeight: 700,
-                                    cursor: "pointer",
-                                    letterSpacing: "0.01em",
-                                    boxShadow:
-                                        "0 0 0 1px rgba(45,71,230,0.5), 0 8px 24px rgba(45,71,230,0.4)",
-                                }}
-                            >
-                                Explore Auctions
-                            </motion.button>
-                            <motion.button
-                                whileHover={{ scale: 1.04, background: "rgba(255,255,255,0.1)" }}
-                                whileTap={{ scale: 0.96 }}
-                                onClick={() => navigate("/auction/create")}
-                                style={{
-                                    height: 50,
-                                    padding: "0 32px",
-                                    borderRadius: 10,
-                                    background: "rgba(255,255,255,0.06)",
-                                    color: "#000000",
-                                    border: "1px solid rgba(255,255,255,0.15)",
-                                    fontSize: 14,
-                                    fontWeight: 600,
-                                    cursor: "pointer",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 8,
-                                    backdropFilter: "blur(8px)",
-                                }}
-                            >
-                                Sell an Item <ArrowRight size={15} />
-                            </motion.button>
-                        </motion.div>
-                    </div>
-                </motion.div>
-            </div>
-
-            {/* ── METRICS BAR ── */}
-            <div
-                style={{
-                    background: "#fff",
-                    borderBottom: "1px solid #E9ECF5",
-                    borderTop: "1px solid #E9ECF5",
-                }}
-            >
-                <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 32px" }}>
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(4, 1fr)",
-                            borderLeft: "1px solid #E9ECF5",
-                        }}
+                    <motion.h1
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="
+                            text-[34px]
+                            sm:text-[48px]
+                            lg:text-[60px]
+                            font-bold
+                            tracking-tight
+                            leading-[1.05]
+                            text-slate-900
+                        "
                     >
-                        {metrics.map((m, i) => {
-                            const Icon = m.icon;
+                        Bid smarter.
+                        <br />
+                        Sell faster.
+                    </motion.h1>
+
+                    <motion.p
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="
+                            max-w-[620px]
+                            mx-auto
+                            mt-5
+                            text-[14px] sm:text-[16px]
+                            leading-7
+                            text-slate-600
+                        "
+                    >
+                        Discover live auctions, compete in real time, and sell directly to verified
+                        buyers on Auctify.
+                    </motion.p>
+
+                    <motion.div
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="
+                            flex flex-col sm:flex-row
+                            justify-center
+                            gap-3
+                            mt-8
+                        "
+                    >
+                        <button
+                            onClick={() => navigate("/explore")}
+                            className="
+                                h-11 sm:h-12
+                                px-6
+                                rounded-xl
+                                bg-blue-600
+                                hover:bg-blue-700
+                                text-white
+                                text-sm
+                                font-semibold
+                                transition
+                                shadow-sm
+                            "
+                        >
+                            Explore Auctions
+                        </button>
+
+                        <button
+                            onClick={() => navigate("/auction/create")}
+                            className="
+                                h-11 sm:h-12
+                                px-6
+                                rounded-xl
+                                bg-white
+                                border border-slate-200
+                                hover:border-blue-300
+                                text-slate-800
+                                text-sm
+                                font-semibold
+                                transition
+                                flex items-center justify-center gap-2
+                            "
+                        >
+                            Sell an Item
+                            <ArrowRight size={16} />
+                        </button>
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* METRICS */}
+            <section className="pb-10 sm:pb-14">
+                <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8">
+                    <div
+                        className="
+                            grid
+                            grid-cols-1
+                            sm:grid-cols-3
+                            gap-4
+                        "
+                    >
+                        {metrics.map((item, i) => {
+                            const Icon = item.icon;
+
                             return (
                                 <motion.div
                                     key={i}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ delay: i * 0.08 }}
-                                    style={{
-                                        padding: "28px 32px",
-                                        borderRight: "1px solid #E9ECF5",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 16,
+                                    initial={{
+                                        opacity: 0,
+                                        y: 20,
                                     }}
+                                    whileInView={{
+                                        opacity: 1,
+                                        y: 0,
+                                    }}
+                                    viewport={{ once: true }}
+                                    transition={{
+                                        delay: i * 0.1,
+                                    }}
+                                    className="
+                                        bg-white
+                                        rounded-2xl
+                                        border border-slate-200
+                                        p-5
+                                        flex items-center gap-4
+                                    "
                                 >
                                     <div
-                                        style={{
-                                            width: 40,
-                                            height: 40,
-                                            borderRadius: 10,
-                                            background: "rgba(45,71,230,0.08)",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            flexShrink: 0,
-                                        }}
+                                        className="
+                                            w-11 h-11
+                                            rounded-xl
+                                            bg-blue-50
+                                            flex items-center justify-center
+                                            shrink-0
+                                        "
                                     >
-                                        <Icon size={18} color="#2D47E6" />
+                                        <Icon size={18} className="text-blue-600" />
                                     </div>
+
                                     <div>
-                                        <p
-                                            style={{
-                                                fontSize: 22,
-                                                fontWeight: 800,
-                                                color: "#0A0E27",
-                                                letterSpacing: "-0.03em",
-                                                lineHeight: 1,
-                                                margin: "0 0 3px",
-                                            }}
+                                        <h3
+                                            className="
+                                                text-[20px]
+                                                font-bold
+                                                text-slate-900
+                                            "
                                         >
-                                            {m.value}
-                                        </p>
+                                            {item.value}
+                                        </h3>
+
                                         <p
-                                            style={{
-                                                fontSize: 11,
-                                                fontWeight: 500,
-                                                color: "#9CA3AF",
-                                                letterSpacing: "0.05em",
-                                                textTransform: "uppercase",
-                                                margin: 0,
-                                            }}
+                                            className="
+                                                text-[12px]
+                                                text-slate-500
+                                            "
                                         >
-                                            {m.label}
+                                            {item.label}
                                         </p>
                                     </div>
                                 </motion.div>
@@ -459,218 +364,169 @@ export default function HowItWorksPage() {
                         })}
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 32px 100px" }}>
-                {/* ── ROLE TABS ── */}
-                <div style={{ display: "flex", justifyContent: "center", padding: "72px 0 52px" }}>
+            {/* TABS */}
+            <section className="pb-10">
+                <div className="flex justify-center px-4">
                     <div
-                        style={{
-                            background: "#fff",
-                            border: "1px solid #E5E7EB",
-                            borderRadius: 12,
-                            padding: 5,
-                            display: "flex",
-                            gap: 4,
-                            boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-                        }}
+                        className="
+                            bg-white
+                            rounded-2xl
+                            border border-slate-200
+                            p-1
+                            flex
+                            gap-1
+                            w-full sm:w-auto
+                        "
                     >
                         {["buyer", "seller"].map((t) => (
                             <button
                                 key={t}
                                 onClick={() => setTab(t)}
-                                style={{
-                                    height: 42,
-                                    padding: "0 32px",
-                                    borderRadius: 8,
-                                    border: "none",
-                                    fontSize: 13,
-                                    fontWeight: 700,
-                                    cursor: "pointer",
-                                    background: tab === t ? "#2D47E6" : "transparent",
-                                    color: tab === t ? "#fff" : "#6B7280",
-                                    boxShadow:
-                                        tab === t ? "0 2px 12px rgba(45,71,230,0.3)" : "none",
-                                    transition: "all 0.22s",
-                                    letterSpacing: "0.01em",
-                                }}
+                                className={`
+                                    flex-1 sm:flex-none
+                                    h-11
+                                    px-6
+                                    rounded-xl
+                                    text-sm
+                                    font-semibold
+                                    transition
+                                    ${tab === t ? "bg-blue-600 text-white" : "text-slate-600"}
+                                `}
                             >
                                 {t === "buyer" ? "For Buyers" : "For Sellers"}
                             </button>
                         ))}
                     </div>
                 </div>
+            </section>
 
-                {/* ── STEPS GRID ── */}
-                <div ref={stepsRef}>
+            {/* STEPS */}
+            <section className="pb-20">
+                <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={tab}
-                            initial={{ opacity: 0, y: 24 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -12 }}
-                            transition={{ duration: 0.38 }}
-                            style={{
-                                display: "grid",
-                                gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-                                gap: 12,
-                                marginBottom: 100,
+                            initial={{
+                                opacity: 0,
+                                y: 20,
                             }}
+                            animate={{
+                                opacity: 1,
+                                y: 0,
+                            }}
+                            exit={{
+                                opacity: 0,
+                                y: -20,
+                            }}
+                            transition={{
+                                duration: 0.3,
+                            }}
+                            className="
+                                grid
+                                grid-cols-1
+                                sm:grid-cols-2
+                                xl:grid-cols-4
+                                gap-4 sm:gap-5
+                            "
                         >
                             {steps.map((item, i) => {
                                 const Icon = item.icon;
+
                                 return (
                                     <motion.div
                                         key={i}
-                                        className="step-card"
-                                        initial={{ opacity: 0, y: 28 }}
-                                        animate={stepsInView ? { opacity: 1, y: 0 } : {}}
-                                        transition={{
-                                            delay: i * 0.09,
-                                            duration: 0.5,
-                                            ease: [0.16, 1, 0.3, 1],
-                                        }}
-                                        style={{
-                                            background: "#fff",
-                                            border: "1px solid #E9ECF5",
-                                            borderRadius: 20,
-                                            padding: "32px 28px",
-                                            position: "relative",
-                                            cursor: "default",
-                                            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-                                            transition:
-                                                "box-shadow 0.25s, border-color 0.25s, transform 0.25s",
-                                            overflow: "hidden",
-                                        }}
-                                        whileHover={{
-                                            y: -6,
-                                            boxShadow: "0 20px 60px rgba(45,71,230,0.13)",
-                                            borderColor: "rgba(45,71,230,0.3)",
-                                        }}
+                                        whileHover={{ y: -4 }}
+                                        className="
+                                            bg-white
+                                            rounded-2xl
+                                            border border-slate-200
+                                            p-4 sm:p-5
+                                            transition-all duration-300
+                                            hover:border-blue-300
+                                            hover:shadow-lg hover:shadow-blue-100/40
+                                        "
                                     >
-                                        {/* Faded step number background */}
-                                        <div
-                                            style={{
-                                                position: "absolute",
-                                                top: -10,
-                                                right: 16,
-                                                fontSize: 88,
-                                                fontWeight: 800,
-                                                lineHeight: 1,
-                                                color: "rgba(45,71,230,0.04)",
-                                                userSelect: "none",
-                                                pointerEvents: "none",
-                                                letterSpacing: "-0.04em",
-                                            }}
-                                        >
-                                            {i + 1}
-                                        </div>
-
-                                        {/* Top row */}
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "flex-start",
-                                                justifyContent: "space-between",
-                                                marginBottom: 24,
-                                            }}
-                                        >
+                                        <div className="flex items-start justify-between mb-4">
                                             <div
-                                                style={{
-                                                    width: 48,
-                                                    height: 48,
-                                                    borderRadius: 14,
-                                                    background: "rgba(45,71,230,0.08)",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                }}
+                                                className="
+                                                    w-11 h-11
+                                                    rounded-xl
+                                                    bg-blue-50
+                                                    flex items-center justify-center
+                                                "
                                             >
-                                                <Icon size={21} color="#2D47E6" />
+                                                <Icon size={18} className="text-blue-600" />
                                             </div>
+
                                             <span
-                                                style={{
-                                                    fontSize: 10,
-                                                    fontWeight: 700,
-                                                    letterSpacing: "0.2em",
-                                                    textTransform: "uppercase",
-                                                    color: "#CBD5E1",
-                                                    background: "#F8FAFF",
-                                                    border: "1px solid #E9ECF5",
-                                                    padding: "4px 10px",
-                                                    borderRadius: 100,
-                                                }}
+                                                className="
+                                                    text-[10px]
+                                                    font-semibold
+                                                    text-slate-400
+                                                "
                                             >
-                                                Step {String(i + 1).padStart(2, "0")}
+                                                0{i + 1}
                                             </span>
                                         </div>
 
-                                        {/* Title */}
                                         <h3
-                                            className="syne"
-                                            style={{
-                                                fontSize: 20,
-                                                fontWeight: 800,
-                                                color: "#0A0E27",
-                                                letterSpacing: "-0.025em",
-                                                margin: "0 0 6px",
-                                            }}
+                                            className="
+                                                text-[17px] sm:text-[18px]
+                                                font-bold
+                                                text-slate-900
+                                                tracking-tight
+                                                mb-1.5
+                                            "
                                         >
                                             {item.title}
                                         </h3>
+
                                         <p
-                                            style={{
-                                                fontSize: 11,
-                                                fontWeight: 600,
-                                                color: "#2D47E6",
-                                                letterSpacing: "0.08em",
-                                                textTransform: "uppercase",
-                                                margin: "0 0 14px",
-                                            }}
+                                            className="
+                                                text-[11px]
+                                                uppercase
+                                                tracking-[0.14em]
+                                                text-blue-600
+                                                font-semibold
+                                                mb-3
+                                            "
                                         >
                                             {item.sub}
                                         </p>
+
                                         <p
-                                            style={{
-                                                fontSize: 13,
-                                                color: "#6B7280",
-                                                lineHeight: 1.75,
-                                                margin: "0 0 24px",
-                                                fontWeight: 400,
-                                            }}
+                                            className="
+                                                text-[13px]
+                                                leading-6
+                                                text-slate-600
+                                            "
                                         >
                                             {item.desc}
                                         </p>
 
-                                        {/* Stat chip */}
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 10,
-                                                paddingTop: 20,
-                                                borderTop: "1px solid #F1F3FA",
-                                            }}
-                                        >
-                                            <span
-                                                style={{
-                                                    fontSize: 17,
-                                                    fontWeight: 800,
-                                                    color: "#2D47E6",
-                                                    letterSpacing: "-0.02em",
-                                                }}
-                                            >
-                                                {item.stat}
-                                            </span>
-                                            <span
-                                                style={{
-                                                    fontSize: 11,
-                                                    fontWeight: 500,
-                                                    color: "#9CA3AF",
-                                                }}
-                                            >
-                                                {item.statLabel}
-                                            </span>
+                                        <div className="mt-5 pt-4 border-t border-slate-100">
+                                            <div className="flex items-center gap-2">
+                                                <span
+                                                    className="
+                                                        text-[15px]
+                                                        font-bold
+                                                        text-slate-900
+                                                    "
+                                                >
+                                                    {item.stat}
+                                                </span>
+
+                                                <span
+                                                    className="
+                                                        text-[11px]
+                                                        text-slate-500
+                                                    "
+                                                >
+                                                    {item.statLabel}
+                                                </span>
+                                            </div>
                                         </div>
                                     </motion.div>
                                 );
@@ -678,156 +534,123 @@ export default function HowItWorksPage() {
                         </motion.div>
                     </AnimatePresence>
                 </div>
+            </section>
 
-                {/* ── TRUST SECTION ── */}
-
-                {/* ── FAQ ── */}
-                <div style={{ maxWidth: 740, margin: "0 auto 100px" }}>
-                    <div style={{ textAlign: "center", marginBottom: 48 }}>
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                gap: 10,
-                                marginBottom: 16,
-                            }}
-                        >
-                            <span
-                                style={{
-                                    display: "block",
-                                    width: 24,
-                                    height: 2,
-                                    background: "#2D47E6",
-                                    borderRadius: 2,
-                                }}
-                            />
-                            <span
-                                style={{
-                                    fontSize: 10,
-                                    fontWeight: 700,
-                                    letterSpacing: "0.4em",
-                                    textTransform: "uppercase",
-                                    color: "#2D47E6",
-                                }}
-                            >
-                                FAQ
-                            </span>
-                            <span
-                                style={{
-                                    display: "block",
-                                    width: 24,
-                                    height: 2,
-                                    background: "#2D47E6",
-                                    borderRadius: 2,
-                                }}
-                            />
-                        </div>
+            {/* FAQ */}
+            <section className="pb-20">
+                <div className="max-w-[780px] mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-10">
                         <h2
-                            className="syne"
-                            style={{
-                                fontSize: "clamp(26px, 3.5vw, 42px)",
-                                fontWeight: 800,
-                                color: "#0A0E27",
-                                letterSpacing: "-0.03em",
-                                margin: 0,
-                            }}
+                            className="
+                                text-[28px]
+                                sm:text-[36px]
+                                font-bold
+                                tracking-tight
+                                text-slate-900
+                            "
                         >
                             Frequently Asked Questions
                         </h2>
+
+                        <p
+                            className="
+                                mt-3
+                                text-[14px]
+                                text-slate-600
+                            "
+                        >
+                            Everything you need to know about Auctify.
+                        </p>
                     </div>
 
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <div className="space-y-3">
                         {faqs.map((faq, i) => (
                             <motion.div
                                 key={i}
-                                className="faq-item"
-                                initial={{ opacity: 0, y: 10 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: i * 0.06 }}
-                                style={{
-                                    background: "#fff",
-                                    border: `1px solid ${openFaq === i ? "rgba(45,71,230,0.3)" : "#E9ECF5"}`,
-                                    borderRadius: 14,
-                                    overflow: "hidden",
-                                    boxShadow:
-                                        openFaq === i
-                                            ? "0 6px 24px rgba(45,71,230,0.09)"
-                                            : "0 1px 3px rgba(0,0,0,0.04)",
-                                    transition: "border-color 0.2s, box-shadow 0.2s",
+                                initial={{
+                                    opacity: 0,
+                                    y: 10,
                                 }}
+                                whileInView={{
+                                    opacity: 1,
+                                    y: 0,
+                                }}
+                                viewport={{ once: true }}
+                                transition={{
+                                    delay: i * 0.05,
+                                }}
+                                className="
+                                    bg-white
+                                    border border-slate-200
+                                    rounded-2xl
+                                    overflow-hidden
+                                "
                             >
                                 <button
                                     onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                                    style={{
-                                        width: "100%",
-                                        padding: "20px 24px",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "space-between",
-                                        background: "none",
-                                        border: "none",
-                                        cursor: "pointer",
-                                        textAlign: "left",
-                                        gap: 16,
-                                    }}
+                                    className="
+                                        w-full
+                                        px-5
+                                        py-4
+                                        flex items-center justify-between
+                                        gap-4
+                                        text-left
+                                    "
                                 >
                                     <span
-                                        style={{
-                                            fontSize: 14,
-                                            fontWeight: 700,
-                                            color: "#0A0E27",
-                                            letterSpacing: "-0.01em",
-                                            lineHeight: 1.4,
-                                        }}
+                                        className="
+                                            text-[14px]
+                                            font-semibold
+                                            text-slate-900
+                                        "
                                     >
                                         {faq.q}
                                     </span>
+
                                     <motion.div
-                                        animate={{ rotate: openFaq === i ? 180 : 0 }}
-                                        transition={{ duration: 0.22 }}
-                                        style={{
-                                            width: 30,
-                                            height: 30,
-                                            borderRadius: "50%",
-                                            background: openFaq === i ? "#2D47E6" : "#F3F4F6",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            flexShrink: 0,
+                                        animate={{
+                                            rotate: openFaq === i ? 180 : 0,
                                         }}
+                                        className="
+                                            w-8 h-8
+                                            rounded-full
+                                            bg-slate-100
+                                            flex items-center justify-center
+                                            shrink-0
+                                        "
                                     >
-                                        <ChevronDown
-                                            size={14}
-                                            color={openFaq === i ? "#fff" : "#6B7280"}
-                                        />
+                                        <ChevronDown size={16} className="text-slate-600" />
                                     </motion.div>
                                 </button>
 
                                 <AnimatePresence>
                                     {openFaq === i && (
                                         <motion.div
-                                            initial={{ height: 0, opacity: 0 }}
-                                            animate={{ height: "auto", opacity: 1 }}
-                                            exit={{ height: 0, opacity: 0 }}
-                                            transition={{ duration: 0.28, ease: "easeInOut" }}
-                                            style={{ overflow: "hidden" }}
+                                            initial={{
+                                                height: 0,
+                                                opacity: 0,
+                                            }}
+                                            animate={{
+                                                height: "auto",
+                                                opacity: 1,
+                                            }}
+                                            exit={{
+                                                height: 0,
+                                                opacity: 0,
+                                            }}
+                                            transition={{
+                                                duration: 0.25,
+                                            }}
+                                            className="overflow-hidden"
                                         >
-                                            <div
-                                                style={{
-                                                    padding: "0 24px 22px",
-                                                    borderTop: "1px solid #F1F3FA",
-                                                }}
-                                            >
+                                            <div className="px-5 pb-5 border-t border-slate-100">
                                                 <p
-                                                    style={{
-                                                        fontSize: 13,
-                                                        color: "#6B7280",
-                                                        lineHeight: 1.8,
-                                                        margin: "16px 0 0",
-                                                        fontWeight: 400,
-                                                    }}
+                                                    className="
+                                                        pt-4
+                                                        text-[13px]
+                                                        leading-6
+                                                        text-slate-600
+                                                    "
                                                 >
                                                     {faq.a}
                                                 </p>
@@ -839,7 +662,7 @@ export default function HowItWorksPage() {
                         ))}
                     </div>
                 </div>
-            </div>
+            </section>
         </div>
     );
 }
