@@ -4,6 +4,7 @@ import { HiOutlinePaperAirplane, HiOutlineArrowLeft } from "react-icons/hi2";
 import { api } from "@/shared/services/axios";
 import { useAuth } from "@/hooks/useAuth";
 import { socket } from "@/shared/services/socket";
+import { usePageTitle } from "../../shared/utils/usePageTitle";
 
 const SearchIcon = () => (
     <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -169,7 +170,7 @@ function getTimeLabel(dateValue) {
 export default function RoomPage() {
     const navigate = useNavigate();
     const { User } = useAuth();
-
+    usePageTitle("Auctify | Chats");
     const [rooms, setRooms] = useState([]);
     const [selectedRoom, setSelectedRoom] = useState(null);
     const [messages, setMessages] = useState([]);

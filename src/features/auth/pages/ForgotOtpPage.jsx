@@ -4,9 +4,9 @@ import { api } from "@/shared/services/axios.js";
 import { showError, showSuccess } from "@/shared/utils/toast.js";
 import { API_ENDPOINTS } from "@/shared/constants/apiEndpoints.js";
 import { useAuth } from "../../../hooks/useAuth.js";
+import { verifyForgottenOtp } from "../authAPI.js";
 
 export default function ForgotOtpPage() {
-    const { verifyOtp } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -65,7 +65,7 @@ export default function ForgotOtpPage() {
         try {
             setLoading(true);
 
-            const res = await verifyOtp(email, finalOtp);
+            const res = await verifyForgottenOtp(email, finalOtp);
             if (res.data.success) {
                 showSuccess("Account verified ");
                 navigate("/auth/reset-password", { state: { email: email } });
@@ -73,7 +73,7 @@ export default function ForgotOtpPage() {
                 throw new Error(res.data?.message || "Invalid OTP");
             }
         } catch (err) {
-            // showError(err.response?.data?.message || "Invalid OTP");
+            showError(err.response?.data?.message || "Invalid OTP");
         } finally {
             setLoading(false);
         }

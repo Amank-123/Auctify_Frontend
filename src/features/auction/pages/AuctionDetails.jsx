@@ -12,13 +12,11 @@ import {
     ChevronLeft,
     ChevronRight,
     Check,
-    Copy,
     ShoppingBag,
     MessageCircle,
     CheckCircle2,
     Trophy,
     Tag,
-    Hash,
     Activity,
     IndianRupee,
     AlignLeft,
@@ -33,6 +31,7 @@ import socket from "../../../shared/services/socket";
 import { api } from "../../../shared/services/axios";
 import { TrustingApp } from "../../../components/common/TrustingApp";
 import PremiumFAQSection from "../../../components/common/AuctionFAQCard";
+import { usePageTitle } from "../../../shared/utils/usePageTitle";
 
 /* ─── tiny helpers ─────────────────────────────────────────────────── */
 
@@ -45,6 +44,7 @@ const statusConfig = {
 
 function StatusBadge({ status }) {
     const cfg = statusConfig[status] ?? statusConfig.draft;
+
     return (
         <span
             className={`
@@ -61,6 +61,64 @@ function StatusBadge({ status }) {
     );
 }
 
+function DetailRow({
+    icon: Icon,
+    label,
+    value,
+    iconBg,
+    iconColor,
+    valueColor,
+    valueBg,
+    mono = false,
+}) {
+    return (
+        <div
+            className="
+                flex flex-col sm:flex-row sm:items-center sm:justify-between
+                gap-2 sm:gap-3
+                px-3 py-3
+                rounded-2xl
+                border border-transparent
+                hover:border-[#E5E7EB]
+                hover:bg-white
+                transition-all duration-200
+            "
+        >
+            <span className="flex items-center gap-2.5 min-w-0">
+                <span
+                    className={`
+                        w-8 h-8 rounded-xl
+                        flex items-center justify-center
+                        shrink-0
+                        ${iconBg}
+                    `}
+                >
+                    <Icon size={14} className={iconColor} />
+                </span>
+
+                <span className="text-[13px] font-medium text-[#6B7280]">{label}</span>
+            </span>
+
+            <span
+                className={`
+                    inline-flex w-full sm:w-auto sm:max-w-[58%]
+                    px-3 py-1.5
+                    rounded-xl
+                    border
+                    text-[12px]
+                    font-bold
+                    break-words
+                    ${valueColor}
+                    ${valueBg}
+                    ${mono ? "font-mono" : ""}
+                `}
+            >
+                {value}
+            </span>
+        </div>
+    );
+}
+
 /* ─── main component ───────────────────────────────────────────────── */
 
 export default function AuctionDetails() {
@@ -70,6 +128,9 @@ export default function AuctionDetails() {
 
     const [activeThumb, setActiveThumb] = useState(0);
     const [auction, setAuction] = useState(null);
+
+    usePageTitle(`Auctify | ${auction?.name || "Auction"}`);
+
     const [relatedAuctions, setRelatedAuctions] = useState([]);
     const [bids, setBids] = useState([]);
     const [canBid, setCanBid] = useState(true);
@@ -77,22 +138,27 @@ export default function AuctionDetails() {
     const [bidsLoading, setBidsLoading] = useState(true);
     const [copied, setCopied] = useState(false);
     const [winnerOrder, setWinnerOrder] = useState(null);
-    const [activeTab, setActiveTab] = useState("description"); // "description" | "details"
+    const [activeTab, setActiveTab] = useState("description");
 
     const userId = User?._id;
 
     /* ── copy link ──────────────────────────────────────────────────── */
 
     const handleCopy = async () => {
-        await navigator.clipboard.writeText(`${window.location.origin}/auction/${auction._id}`);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
+        try {
+            await navigator.clipboard.writeText(`${window.location.origin}/auction/${auction._id}`);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+        } catch {
+            setCopied(false);
+        }
     };
 
     /* ── fetch auction ──────────────────────────────────────────────── */
 
     useEffect(() => {
         if (!id) return;
+
         (async () => {
             try {
                 setLoading(true);
@@ -111,10 +177,13 @@ export default function AuctionDetails() {
 
     useEffect(() => {
         if (!id) return;
+
         if (auction?.status === "draft") {
             setBids([]);
+            setBidsLoading(false);
             return;
         }
+
         (async () => {
             try {
                 setBidsLoading(true);
@@ -137,19 +206,23 @@ export default function AuctionDetails() {
         socket.connect();
         socket.emit("join_auction", auction._id);
 
-        const handler = ({ type, payload } = {}) => {
-            if (!type || !payload) return;
+        const handler = (data) => {
+            if (!data?.type || !data?.payload) return;
 
-            if (type === "BID_CREATED") {
-                // payload is the new bid document; update auction fields separately
-                // if the server sends back updated auction stats inside the bid, use them:
-                if (payload.auctionSnapshot)
-                    setAuction((prev) => ({ ...prev, ...payload.auctionSnapshot }));
-                setBids((prev) => [payload, ...prev].sort((a, b) => b.amount - a.amount));
+            if (data.type === "BID_CREATED") {
+                const incoming = data.payload;
+
+                setAuction(incoming.auctionId);
+
+                setBids((prev) => [incoming, ...prev].sort((a, b) => b.amount - a.amount));
             }
 
-            if (type === "AUCTION_ENDED" || type === "AUCTION_STARTED") {
-                setAuction(payload); // payload IS the full updated auction here
+            if (data.type === "AUCTION_ENDED") {
+                setAuction(data.payload);
+            }
+
+            if (data.type === "AUCTION_STARTED") {
+                setAuction(data.payload);
             }
         };
 
@@ -164,25 +237,21 @@ export default function AuctionDetails() {
 
     /* ── related auctions ───────────────────────────────────────────── */
 
-    // Derive a stable string from the category so the effect dependency
-    // doesn't change on every render (object reference vs primitive).
-    // `getById` should populate category → { _id, name, cta, image }
     const _categoryName =
-        auction?.category && typeof auction.category === "object"
-            ? auction.category.name // populated object
-            : null; // raw ObjectId — name not yet known
+        auction?.category && typeof auction.category === "object" ? auction.category.name : null;
 
     useEffect(() => {
         if (!_categoryName) return;
+
         (async () => {
             try {
                 const data = await auctionAPI.getAll({
-                    category: _categoryName, // backend: case-insensitive regex on category.name
+                    category: _categoryName,
                     page: 1,
                     limit: 10,
                     sortBy: "createdAt",
                 });
-                // Normalise response — getAll may return array or { auctions/data: [] }
+
                 const list = Array.isArray(data) ? data : (data?.auctions ?? data?.data ?? []);
                 setRelatedAuctions(list);
             } catch {
@@ -198,6 +267,7 @@ export default function AuctionDetails() {
 
     useEffect(() => {
         if (!auction?._id || !isWinner) return;
+
         (async () => {
             try {
                 const { data } = await api.get("/api/order/my");
@@ -213,7 +283,7 @@ export default function AuctionDetails() {
 
     if (loading) {
         return (
-            <section className="bg-[#F8F8FF] min-h-screen flex items-center justify-center">
+            <section className="bg-[#F8F8FF] min-h-screen flex items-center justify-center px-4">
                 <div className="text-center space-y-3">
                     <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
                     <p className="text-[#6B7280] text-sm font-medium">Loading auction…</p>
@@ -224,7 +294,7 @@ export default function AuctionDetails() {
 
     if (!auction) {
         return (
-            <section className="min-h-screen flex items-center justify-center">
+            <section className="min-h-screen flex items-center justify-center px-4">
                 <p className="text-[#6B7280] text-[15px]">Auction not found.</p>
             </section>
         );
@@ -242,55 +312,42 @@ export default function AuctionDetails() {
     const endTime = auction.endTime ?? auction.countdownEnd;
     const startTime = auction.startTime;
 
-    // Normalise IDs to strings — MongoDB ObjectId !== plain string without this
     const filteredRelated = relatedAuctions.filter((a) => String(a._id) !== String(id)).slice(0, 5);
 
     /* ── render ──────────────────────────────────────────────────────── */
 
     return (
-        <section className="bg-[#F4F5F9] min-h-screen pb-20">
-            <div className="max-w-[1560px] mx-auto px-4 sm:px-6 py-10">
-                {/* ── breadcrumb ── */}
-                {/* <nav className="flex items-center gap-1.5 text-xs text-[#9CA3AF] mb-7 font-medium">
-                    <button
-                        onClick={() => navigate("/auctions")}
-                        className="hover:text-[#374151] transition-colors"
-                    >
-                        Auctions
-                    </button>
-                    <ChevronRight size={13} />
-                    <span className="text-[#374151] truncate max-w-[220px]">{auction.name}</span>
-                </nav> */}
-
-                {/* ── 3-column grid ── */}
-                <div className="grid lg:grid-cols-[1fr_1fr_340px] gap-5 items-start">
-                    {/* ════ LEFT — image gallery ════ */}
+        <section className="bg-[#F4F5F9] min-h-screen pb-16 sm:pb-20">
+            <div className="max-w-[1560px] mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 lg:py-10">
+                <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.95fr)_340px] gap-4 sm:gap-5 items-start">
+                    {/* LEFT COLUMN */}
                     <motion.div
                         variants={stagger}
                         initial="hidden"
                         animate="show"
-                        className="space-y-3"
+                        className="space-y-3 sm:space-y-4 min-w-0"
                     >
                         {/* main image */}
                         <motion.div
                             variants={itemVariant}
                             className="relative rounded-2xl overflow-hidden bg-white border border-[#E5E7EB] shadow-sm"
                         >
-                            <AnimatePresence mode="wait">
-                                <motion.img
-                                    key={currentImg}
-                                    src={currentImg}
-                                    alt={auction.name}
-                                    initial={{ opacity: 0, scale: 1.02 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.98 }}
-                                    transition={{ duration: 0.25 }}
-                                    className="w-full h-[440px] object-cover"
-                                />
-                            </AnimatePresence>
+                            <div className="relative w-full aspect-[4/3] sm:aspect-[16/11] xl:aspect-auto xl:h-[520px]">
+                                <AnimatePresence mode="wait">
+                                    <motion.img
+                                        key={currentImg}
+                                        src={currentImg}
+                                        alt={auction.name}
+                                        initial={{ opacity: 0, scale: 1.02 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.98 }}
+                                        transition={{ duration: 0.25 }}
+                                        className="absolute inset-0 w-full h-full object-cover"
+                                    />
+                                </AnimatePresence>
+                            </div>
 
-                            {/* overlay: status + image count */}
-                            <div className="absolute inset-x-0 top-0 flex items-start justify-between p-4">
+                            <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3 sm:p-4">
                                 <StatusBadge status={status} />
                                 {images.length > 1 && (
                                     <span className="bg-black/50 text-white text-[11px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm">
@@ -302,22 +359,26 @@ export default function AuctionDetails() {
 
                         {/* thumbnails */}
                         {images.length > 1 && (
-                            <motion.div variants={itemVariant} className="flex gap-2">
+                            <motion.div
+                                variants={itemVariant}
+                                className="flex items-stretch gap-2 overflow-x-auto pb-1 -mx-1 px-1 xl:overflow-visible xl:px-0 xl:mx-0"
+                            >
                                 <button
                                     onClick={() => setActiveThumb((t) => Math.max(0, t - 1))}
                                     disabled={activeThumb === 0}
-                                    className="w-9 h-[72px] flex items-center justify-center rounded-xl border border-[#E5E7EB] bg-white disabled:opacity-30 hover:bg-[#F3F4F6] transition-colors"
+                                    className="w-10 sm:w-11 h-16 sm:h-[72px] flex items-center justify-center rounded-xl border border-[#E5E7EB] bg-white disabled:opacity-30 hover:bg-[#F3F4F6] transition-colors shrink-0"
                                 >
                                     <ChevronLeft size={17} />
                                 </button>
 
-                                <div className="flex gap-2 flex-1 overflow-hidden">
+                                <div className="flex gap-2 min-w-0 flex-1">
                                     {images.slice(0, 5).map((img, i) => (
                                         <button
                                             key={i}
                                             onClick={() => setActiveThumb(i)}
                                             className={`
-                                                rounded-xl overflow-hidden h-[72px] flex-1
+                                                rounded-xl overflow-hidden h-16 sm:h-[72px]
+                                                min-w-[72px] flex-1
                                                 border-2 transition-all
                                                 ${
                                                     i === activeThumb
@@ -340,7 +401,7 @@ export default function AuctionDetails() {
                                         setActiveThumb((t) => Math.min(images.length - 1, t + 1))
                                     }
                                     disabled={activeThumb === images.length - 1}
-                                    className="w-9 h-[72px] flex items-center justify-center rounded-xl border border-[#E5E7EB] bg-white disabled:opacity-30 hover:bg-[#F3F4F6] transition-colors"
+                                    className="w-10 sm:w-11 h-16 sm:h-[72px] flex items-center justify-center rounded-xl border border-[#E5E7EB] bg-white disabled:opacity-30 hover:bg-[#F3F4F6] transition-colors shrink-0"
                                 >
                                     <ChevronRight size={17} />
                                 </button>
@@ -348,8 +409,10 @@ export default function AuctionDetails() {
                         )}
 
                         {/* description / details tabs */}
-                        <div>
-                            {/* tab switcher */}
+                        <motion.div
+                            variants={itemVariant}
+                            className="rounded-2xl bg-white border border-[#E5E7EB] shadow-sm overflow-hidden"
+                        >
                             <div className="flex bg-[#F9FAFB] border-b border-[#E5E7EB] p-1 gap-1">
                                 {[
                                     {
@@ -363,23 +426,22 @@ export default function AuctionDetails() {
                                         key={key}
                                         onClick={() => setActiveTab(key)}
                                         className={`
-                                                flex items-center justify-center gap-2 flex-1
-                                                py-2 px-3 rounded-xl text-sm font-semibold
-                                                transition-all duration-200
-                                                ${
-                                                    activeTab === key
-                                                        ? "bg-white text-[#1D4ED8] shadow-sm border border-[#E5E7EB]"
-                                                        : "text-[#9CA3AF] hover:text-[#6B7280]"
-                                                }
-                                            `}
+                                            flex items-center justify-center gap-2 flex-1
+                                            py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold
+                                            transition-all duration-200
+                                            ${
+                                                activeTab === key
+                                                    ? "bg-white text-[#1D4ED8] shadow-sm border border-[#E5E7EB]"
+                                                    : "text-[#9CA3AF] hover:text-[#6B7280]"
+                                            }
+                                        `}
                                     >
                                         <Icon size={14} />
-                                        {label}
+                                        <span className="truncate">{label}</span>
                                     </button>
                                 ))}
                             </div>
 
-                            {/* tab body */}
                             <AnimatePresence mode="wait">
                                 {activeTab === "description" ? (
                                     <motion.div
@@ -388,14 +450,14 @@ export default function AuctionDetails() {
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: -6 }}
                                         transition={{ duration: 0.15 }}
-                                        className="p-5"
+                                        className="p-4 sm:p-5"
                                     >
                                         {auction.description ? (
                                             <p className="text-[13.5px] text-[#374151] leading-[1.75] whitespace-pre-line">
                                                 {auction.description}
                                             </p>
                                         ) : (
-                                            <div className="flex flex-col items-center justify-center py-5 gap-2 text-center">
+                                            <div className="flex flex-col items-center justify-center py-6 gap-2 text-center">
                                                 <AlignLeft size={20} className="text-[#D1D5DB]" />
                                                 <p className="text-sm text-[#9CA3AF]">
                                                     No description provided.
@@ -410,193 +472,112 @@ export default function AuctionDetails() {
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: -6 }}
                                         transition={{ duration: 0.15 }}
-                                        className="p-3 space-y-1"
+                                        className="p-3 sm:p-4 space-y-2"
                                     >
-                                        {[
-                                            {
-                                                icon: Activity,
-                                                label: "Status",
-                                                value:
-                                                    status.charAt(0).toUpperCase() +
-                                                    status.slice(1),
+                                        <DetailRow
+                                            icon={Activity}
+                                            label="Status"
+                                            value={status.charAt(0).toUpperCase() + status.slice(1)}
+                                            iconBg={
+                                                status === "active"
+                                                    ? "bg-emerald-100"
+                                                    : status === "ended"
+                                                      ? "bg-blue-100"
+                                                      : status === "expired"
+                                                        ? "bg-red-100"
+                                                        : "bg-amber-100"
+                                            }
+                                            iconColor={
+                                                status === "active"
+                                                    ? "text-emerald-600"
+                                                    : status === "ended"
+                                                      ? "text-blue-600"
+                                                      : status === "expired"
+                                                        ? "text-red-600"
+                                                        : "text-amber-600"
+                                            }
+                                            valueColor={
+                                                status === "active"
+                                                    ? "text-emerald-700"
+                                                    : status === "ended"
+                                                      ? "text-blue-700"
+                                                      : status === "expired"
+                                                        ? "text-red-700"
+                                                        : "text-amber-700"
+                                            }
+                                            valueBg={
+                                                status === "active"
+                                                    ? "bg-emerald-50 border-emerald-100"
+                                                    : status === "ended"
+                                                      ? "bg-blue-50 border-blue-100"
+                                                      : status === "expired"
+                                                        ? "bg-red-50 border-red-100"
+                                                        : "bg-amber-50 border-amber-100"
+                                            }
+                                        />
 
-                                                mono: false,
+                                        <DetailRow
+                                            icon={IndianRupee}
+                                            label="Starting Price"
+                                            value={`₹${(auction.startPrice ?? 0).toLocaleString(
+                                                "en-IN",
+                                            )}`}
+                                            iconBg="bg-emerald-100"
+                                            iconColor="text-emerald-600"
+                                            valueColor="text-emerald-700"
+                                            valueBg="bg-emerald-50 border-emerald-100"
+                                        />
 
-                                                iconBg:
-                                                    status === "active"
-                                                        ? "bg-emerald-100"
-                                                        : status === "ended"
-                                                          ? "bg-blue-100"
-                                                          : status === "expired"
-                                                            ? "bg-red-100"
-                                                            : "bg-amber-100",
+                                        <DetailRow
+                                            icon={IndianRupee}
+                                            label="Current Bid"
+                                            value={`₹${currentBid.toLocaleString("en-IN")}`}
+                                            iconBg="bg-blue-100"
+                                            iconColor="text-blue-600"
+                                            valueColor="text-blue-700"
+                                            valueBg="bg-blue-50 border-blue-100"
+                                        />
 
-                                                iconColor:
-                                                    status === "active"
-                                                        ? "text-emerald-600"
-                                                        : status === "ended"
-                                                          ? "text-blue-600"
-                                                          : status === "expired"
-                                                            ? "text-red-600"
-                                                            : "text-amber-600",
-
-                                                valueColor:
-                                                    status === "active"
-                                                        ? "text-emerald-700"
-                                                        : status === "ended"
-                                                          ? "text-blue-700"
-                                                          : status === "expired"
-                                                            ? "text-red-700"
-                                                            : "text-amber-700",
-
-                                                valueBg:
-                                                    status === "active"
-                                                        ? "bg-emerald-50 border-emerald-100"
-                                                        : status === "ended"
-                                                          ? "bg-blue-50 border-blue-100"
-                                                          : status === "expired"
-                                                            ? "bg-red-50 border-red-100"
-                                                            : "bg-amber-50 border-amber-100",
-                                            },
-
-                                            {
-                                                icon: IndianRupee,
-                                                label: "Starting Price",
-                                                value: `₹${(auction.startPrice ?? 0).toLocaleString(
-                                                    "en-IN",
-                                                )}`,
-
-                                                mono: false,
-
-                                                iconBg: "bg-emerald-100",
-                                                iconColor: "text-emerald-600",
-                                                valueColor: "text-emerald-700",
-                                                valueBg: "bg-emerald-50 border-emerald-100",
-                                            },
-
-                                            {
-                                                icon: IndianRupee,
-                                                label: "Current Bid",
-                                                value: `₹${currentBid.toLocaleString("en-IN")}`,
-
-                                                mono: false,
-
-                                                iconBg: "bg-blue-100",
-                                                iconColor: "text-blue-600",
-                                                valueColor: "text-blue-700",
-                                                valueBg: "bg-blue-50 border-blue-100",
-                                            },
-
-                                            {
-                                                icon: Tag,
-                                                label: "Total Bids",
-                                                value: `${auction.bidCount ?? bids.length} bid${
-                                                    (auction.bidCount ?? bids.length) !== 1
-                                                        ? "s"
-                                                        : ""
-                                                }`,
-
-                                                mono: false,
-
-                                                iconBg: "bg-violet-100",
-                                                iconColor: "text-violet-600",
-                                                valueColor: "text-violet-700",
-                                                valueBg: "bg-violet-50 border-violet-100",
-                                            },
-                                        ].map(
-                                            ({
-                                                icon: Icon,
-                                                label,
-                                                value,
-                                                mono,
-                                                iconBg,
-                                                iconColor,
-                                                valueColor,
-                                                valueBg,
-                                            }) => (
-                                                <div
-                                                    key={label}
-                                                    className="
-                                                            flex items-center justify-between
-                                                            gap-3
-                                                            px-3 py-2.5
-                                                            rounded-2xl
-                                                            border border-transparent
-                                                            hover:border-[#E5E7EB]
-                                                            hover:bg-white
-                                                            transition-all duration-200
-                                                        "
-                                                >
-                                                    {/* LEFT */}
-                                                    <span className="flex items-center gap-2.5 min-w-0">
-                                                        <span
-                                                            className={`
-                                                                    w-8 h-8 rounded-xl
-                                                                    flex items-center justify-center
-                                                                    shrink-0
-                                                                    ${iconBg}
-                                                                `}
-                                                        >
-                                                            <Icon size={14} className={iconColor} />
-                                                        </span>
-
-                                                        <span className="text-[13px] font-medium text-[#6B7280]">
-                                                            {label}
-                                                        </span>
-                                                    </span>
-
-                                                    {/* VALUE */}
-                                                    <span
-                                                        className={`
-                            px-3 py-1.5
-                            rounded-xl
-                            border
-                            text-[12px]
-                            font-bold
-                            max-w-[58%]
-                            truncate
-                            ${valueColor}
-                            ${valueBg}
-                            ${mono ? "font-mono" : ""}
-                        `}
-                                                    >
-                                                        {value}
-                                                    </span>
-                                                </div>
-                                            ),
-                                        )}
+                                        <DetailRow
+                                            icon={Tag}
+                                            label="Total Bids"
+                                            value={`${auction.bidCount ?? bids.length} bid${
+                                                (auction.bidCount ?? bids.length) !== 1 ? "s" : ""
+                                            }`}
+                                            iconBg="bg-violet-100"
+                                            iconColor="text-violet-600"
+                                            valueColor="text-violet-700"
+                                            valueBg="bg-violet-50 border-violet-100"
+                                        />
                                     </motion.div>
                                 )}
                             </AnimatePresence>
-                        </div>
+                        </motion.div>
                     </motion.div>
 
-                    {/* ════ MIDDLE — info + bid panel ════ */}
+                    {/* MIDDLE COLUMN */}
                     <motion.div
                         variants={stagger}
                         initial="hidden"
                         animate="show"
-                        className="space-y-3"
+                        className="space-y-3 sm:space-y-4 min-w-0"
                     >
-                        {/* ── unified card: title + bid panel + tabs ── */}
                         <motion.div
                             variants={itemVariant}
                             className="rounded-2xl bg-white border border-[#E5E7EB] shadow-sm overflow-hidden"
                         >
-                            {/* title row */}
-                            <div className="px-5 pt-5 pb-4 border-b border-[#F3F4F6]">
+                            <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-4 border-b border-[#F3F4F6]">
                                 {_categoryName && (
                                     <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#1D4ED8] bg-blue-50 border border-blue-100 px-2.5 py-0.5 rounded-full uppercase tracking-widest mb-2">
                                         <Tag size={9} />
                                         {_categoryName}
                                     </span>
                                 )}
-                                <h1 className="text-[26px] font-extrabold text-[#111827] leading-tight tracking-tight">
+                                <h1 className="text-[22px] sm:text-[26px] lg:text-[28px] font-extrabold text-[#111827] leading-tight tracking-tight break-words">
                                     {auction.name}
                                 </h1>
                             </div>
 
-                            {/* bid panel — [&>*] overrides strip BidPanel's own card shell */}
                             <div className="border-b border-[#F3F4F6] [&>*]:shadow-none [&>*]:border-0 [&>*]:rounded-none [&>*]:bg-transparent">
                                 <BidPanel
                                     canBid={canBid}
@@ -613,11 +594,10 @@ export default function AuctionDetails() {
                             </div>
                         </motion.div>
 
-                        {/* winner banner — only shown when auction ended and user won */}
                         {status === "ended" && isWinner && winnerOrder && (
                             <motion.div
                                 variants={itemVariant}
-                                className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-green-50 p-5"
+                                className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-green-50 p-4 sm:p-5"
                             >
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="min-w-0">
@@ -634,6 +614,7 @@ export default function AuctionDetails() {
                                             Your winning bid has been placed. View your order or
                                             reach out to the seller.
                                         </p>
+
                                         <div className="mt-3.5 flex items-center gap-2 flex-wrap">
                                             <button
                                                 onClick={() =>
@@ -645,7 +626,7 @@ export default function AuctionDetails() {
                                                 View Order
                                             </button>
                                             <button
-                                                onClick={() => navigate(`/chats`)}
+                                                onClick={() => navigate("/chats")}
                                                 className="h-8 px-4 rounded-lg border border-emerald-200 bg-white text-emerald-700 text-xs font-semibold hover:bg-emerald-50 transition-colors flex items-center gap-1.5"
                                             >
                                                 <MessageCircle size={13} />
@@ -659,24 +640,23 @@ export default function AuctionDetails() {
                                 </div>
                             </motion.div>
                         )}
-                        {/* ── seller card (moved here, below gallery on left) ── */}
+
                         <motion.div variants={itemVariant}>
                             <SellerCard seller={auction.sellerId} />
                         </motion.div>
                     </motion.div>
 
-                    {/* ════ RIGHT — bid history + share ════ */}
+                    {/* RIGHT COLUMN */}
                     <motion.div
                         variants={stagger}
                         initial="hidden"
                         animate="show"
-                        className="space-y-4"
+                        className="space-y-4 sm:space-y-5 min-w-0"
                     >
                         <motion.div variants={itemVariant}>
                             <BidHistory bids={bids} loading={bidsLoading} status={status} />
                         </motion.div>
 
-                        {/* share / copy link card */}
                         <motion.div
                             variants={itemVariant}
                             className="rounded-2xl bg-white border border-[#E5E7EB] p-4 shadow-sm flex items-center justify-between gap-3"
@@ -709,11 +689,13 @@ export default function AuctionDetails() {
                     </motion.div>
                 </div>
 
-                {/* ── related auctions ── */}
+                {/* related auctions */}
                 {filteredRelated.length > 0 && (
-                    <div className="mt-16">
-                        <h2 className="text-xl font-bold text-[#111827] mb-5">Similar Auctions</h2>
-                        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                    <div className="mt-12 sm:mt-16">
+                        <h2 className="text-lg sm:text-xl font-bold text-[#111827] mb-4 sm:mb-5">
+                            Similar Auctions
+                        </h2>
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                             {filteredRelated.map((a) => (
                                 <AuctionCard key={a._id} auction={a} />
                             ))}
@@ -721,6 +703,7 @@ export default function AuctionDetails() {
                     </div>
                 )}
             </div>
+
             <TrustingApp />
             <PremiumFAQSection />
         </section>

@@ -55,6 +55,7 @@ const API_ENDPOINTS = {
 
     Otp: {
         VERIFY: "/api/otp/verify",
+        VERIFY_FORGOT: "/api/otp/verify-forgot",
         RESEND: "/api/otp/resend",
     },
 

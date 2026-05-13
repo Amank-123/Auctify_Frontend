@@ -91,7 +91,7 @@ const router = createBrowserRouter([
     },
     {
         path: "/auction",
-        errorElement: <NotFound />,
+        // errorElement: <NotFound />,
         element: <RootLayout />,
         children: [
             { path: "room/:roomId", element: <ChatRoomPage /> },

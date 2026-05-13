@@ -16,7 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function HowItWorksPage() {
     const navigate = useNavigate();
-
+    usePageTitle("Auctify | How it works");
     const [tab, setTab] = useState("buyer");
     const [openFaq, setOpenFaq] = useState(null);
 

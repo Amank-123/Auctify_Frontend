@@ -9,6 +9,14 @@ export const verifyOtp = async (email, otp) => {
     setUser(res.data.data);
 };
 
+export const verifyForgottenOtp = async (email, otp) => {
+    return await api.post(API_ENDPOINTS.Otp.VERIFY_FORGOT, {
+        email,
+        otp,
+    });
+    setUser(res.data.data);
+};
+
 export const forgotPassword = async (email) => {
     const res = await api.post(API_ENDPOINTS.Auth.FORGOT_PASSWORD, { email });
     return res.data;

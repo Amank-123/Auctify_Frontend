@@ -11,7 +11,7 @@ import NotificationDrawer from "./notification.jsx";
 
 import { socket } from "@/shared/services/socket";
 import { User2 } from "lucide-react";
-import ChatButton from "./ShoppingCart.jsx";
+import ChatButton from "./ChatButton.jsx";
 import { HiOutlineShoppingBag } from "react-icons/hi2";
 import ShoppingCart from "./ShoppingCart.jsx";
 
@@ -233,7 +233,7 @@ export default function Navbar() {
                                     />
                                 </div>
 
-                                {/* CART / ORDERS */}
+                                {/* orders */}
                                 <div
                                     className="
                                     flex h-10 w-10
@@ -248,6 +248,14 @@ export default function Navbar() {
                                     onClick={() => navigate("/orders")}
                                 >
                                     <ShoppingCart />
+                                </div>
+
+                                {/* Chat */}
+                                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg  bg-white">
+                                    <ChatButton
+                                        onClick={() => navigate("/chats")}
+                                        refreshKey={refreshBell}
+                                    />
                                 </div>
 
                                 {/* MENU */}

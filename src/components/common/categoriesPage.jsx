@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useRef, useEffect, useState } from "react";
 import { Radio, ArrowRight, LayoutGrid, Sparkles } from "lucide-react";
 import { api } from "@/shared/services/axios";
+import { usePageTitle } from "../../shared/utils/usePageTitle";
 
 /* ─────────────────────────────────────────────
    DESKTOP MOSAIC — 6 cols × 6 rows, all 1fr
@@ -158,6 +159,7 @@ function TileCard({ cat, i, isInView, style }) {
    MAIN
 ───────────────────────────────────────────── */
 export default function PremiumCategories() {
+    usePageTitle("Auctify | Categories Page");
     const navigate = useNavigate();
     const sectionRef = useRef(null);
     const headerRef = useRef(null);

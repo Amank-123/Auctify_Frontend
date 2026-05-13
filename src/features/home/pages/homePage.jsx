@@ -25,13 +25,17 @@ const GLOBAL_STYLE = `
 `;
 
 export default function Homepage() {
-    usePageTitle("Auctify | Explore Auctions");
+    usePageTitle("Auctify");
     return (
         <>
             <style>{GLOBAL_STYLE}</style>
             <div style={{ minHeight: "100vh", background: "#F8F8FF" }}>
                 <AnnouncementBar
-                    announcement={"Real-time Auctions • Direct seller-to-buyer • No middleman fees"}
+                    announcements={[
+                        "Real-time Auctions • Direct seller-to-buyer • No middleman fees",
+                        "New auctions drop every day — don't miss out!",
+                        "Secure payments • Verified sellers • Buyer protection",
+                    ]}
                 />
                 <HeroBannerSlider />
                 <div style={{ paddingTop: 5 }}>
@@ -48,6 +52,7 @@ export default function Homepage() {
                         limit={10}
                         filtering={false}
                         auctionType="short"
+                        exploreBtn={false}
                     />
                     <AuctionsGrid
                         heading="Explore All Long Auctions"
@@ -55,6 +60,7 @@ export default function Homepage() {
                         limit={10}
                         filtering={false}
                         auctionType="long"
+                        exploreBtn={false}
                     />
                     <HowAppWorks />
                 </div>

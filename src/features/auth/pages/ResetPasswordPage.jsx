@@ -57,8 +57,9 @@ export default function ResetForgotPasswordPage() {
 
         try {
             setLoading(true);
+            console.log({ email, form });
 
-            const res = await restPassword(email, restPassword);
+            const res = await restPassword(email, form.confirmPassword);
 
             if (res?.success) {
                 showSuccess(res.data?.message || "Password reset successful");

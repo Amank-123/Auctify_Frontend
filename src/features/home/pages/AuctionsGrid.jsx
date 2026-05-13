@@ -86,6 +86,7 @@ export default function AuctionsGrid({
     subheading,
     limit,
     category,
+    exploreBtn = true,
     explorePath,
     filtering = true,
     auctionType,
@@ -155,111 +156,65 @@ export default function AuctionsGrid({
             className="
                 max-w-[1400px] mx-auto
                 px-3 sm:px-5 lg:px-6
-                py-8 sm:py-10 lg:py-16
+                py-8 sm:py-10 lg:py-10
             "
         >
-            {/* ---------- HEADER ---------- */}
             {(heading || subheading) && (
                 <div className="border-b border-blue-200 pb-5 sm:pb-6 mb-5">
-                    <div
-                        className="
-                flex flex-col
-                lg:flex-row lg:items-end lg:justify-between
-                gap-4 sm:gap-5 lg:gap-6
-            "
-                    >
-                        {/* LEFT */}
+                    <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 sm:gap-5 lg:gap-6">
                         <div className="max-w-2xl">
                             {heading && (
                                 <div className="relative inline-block">
-                                    <h2
-                                        className="
-                                text-xl sm:text-3xl lg:text-4xl
-                                font-bold text-slate-900
-                                tracking-tight leading-snug
-                            "
-                                    >
+                                    <h2 className="text-xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight leading-snug">
                                         {heading}
                                     </h2>
-
-                                    <span
-                                        className="
-                                absolute left-0 -bottom-2
-                                w-16 sm:w-24 h-[2px]
-                                bg-blue-600/80 rounded-full
-                            "
-                                    />
+                                    <span className="absolute left-0 -bottom-2 w-16 sm:w-24 h-[2px] bg-blue-600/80 rounded-full" />
                                 </div>
                             )}
 
                             {subheading && (
-                                <p
-                                    className="
-                            text-[13px] sm:text-base
-                            text-slate-600
-                            mt-4 sm:mt-6
-                            leading-relaxed
-                            border-l-2 border-blue-300
-                            pl-3 sm:pl-4
-                        "
-                                >
+                                <p className="text-[13px] sm:text-base text-slate-600 mt-4 sm:mt-6 leading-relaxed border-l-2 border-blue-300 pl-3 sm:pl-4">
                                     {subheading}
                                 </p>
                             )}
                         </div>
 
-                        {/* RIGHT */}
-                        <div className="mt-1 sm:mt-0 flex items-center w-full lg:w-auto">
-                            <button
-                                onClick={() =>
-                                    navigate(
-                                        explorePath
-                                            ? explorePath
-                                            : category
-                                              ? `/category/${category}`
-                                              : "/explore",
-                                    )
-                                }
-                                className="
+                        {exploreBtn && (
+                            <div className="mt-1 sm:mt-0 flex items-center w-full lg:w-auto">
+                                <button
+                                    onClick={() =>
+                                        navigate(
+                                            explorePath
+                                                ? explorePath
+                                                : category
+                                                  ? `/category/${category}`
+                                                  : "/explore",
+                                        )
+                                    }
+                                    className="
                         group w-full sm:w-auto
                         inline-flex items-center justify-center gap-2
-                        px-4 sm:px-5
-                        h-10 sm:h-11
-                        rounded-xl
-                        bg-blue-600 text-white
+                        px-4 sm:px-5 h-10 sm:h-11
+                        rounded-xl bg-blue-600 text-white
                         text-[13px] sm:text-sm font-semibold
                         shadow-sm hover:bg-blue-700 hover:shadow-md
-                        active:scale-[0.98]
-                        transition-all duration-200
+                        active:scale-[0.98] transition-all duration-200
                     "
-                            >
-                                <span>Explore All</span>
-
-                                <ArrowRight
-                                    size={15}
-                                    className="
-                            transition-transform duration-200
-                            group-hover:translate-x-1
-                        "
-                                />
-                            </button>
-                        </div>
+                                >
+                                    <span>Explore All</span>
+                                    <ArrowRight
+                                        size={15}
+                                        className="transition-transform duration-200 group-hover:translate-x-1"
+                                    />
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
-
-            {/* ---------- FILTERS ---------- */}
             {filtering && (
                 <div className="mb-6">
-                    <div
-                        className="
-                            flex flex-col
-                            lg:flex-row lg:items-center
-                            gap-3 sm:gap-4
-                            px-0 sm:px-2
-                        "
-                    >
-                        {/* SEARCH */}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-0 sm:px-2">
                         <div className="flex-1 relative">
                             <input
                                 type="text"
@@ -267,74 +222,42 @@ export default function AuctionsGrid({
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 className="
-                                    w-full h-11 sm:h-12
-                                    px-4 pr-11
-                                    rounded-xl
-                                    bg-white
-                                    border border-blue-200
-                                    text-sm text-slate-800
-                                    placeholder:text-slate-400
-                                    focus:outline-none
-                                    focus:border-blue-400
-                                    transition
-                                "
+                        w-full h-11 sm:h-12
+                        px-4 pr-11
+                        rounded-xl bg-white
+                        border border-blue-200
+                        text-sm text-slate-800
+                        placeholder:text-slate-400
+                        focus:outline-none focus:border-blue-400
+                        transition
+                    "
                             />
-
-                            <span
-                                className="
-                                    absolute right-3 top-1/2
-                                    -translate-y-1/2
-                                    text-blue-600
-                                "
-                            >
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-600">
                                 <Search size={18} />
                             </span>
                         </div>
 
-                        {/* STATUS */}
-                        <div className="w-full md:w-[180px]">
+                        <div className="w-full sm:w-[160px]">
                             <Dropdown
                                 value={status}
                                 onChange={setStatus}
                                 options={[
-                                    {
-                                        value: "all",
-                                        label: "All Auctions",
-                                    },
-                                    {
-                                        value: "active",
-                                        label: "Live Auctions",
-                                    },
-                                    {
-                                        value: "draft",
-                                        label: "Draft Auctions",
-                                    },
-                                    {
-                                        value: "ended",
-                                        label: "Ended Auctions",
-                                    },
+                                    { value: "all", label: "All Auctions" },
+                                    { value: "active", label: "Live Auctions" },
+                                    { value: "draft", label: "Draft Auctions" },
+                                    { value: "ended", label: "Ended Auctions" },
                                 ]}
                             />
                         </div>
 
-                        {/* SORT */}
-                        <div className="w-full md:w-[180px]">
+                        <div className="w-full sm:w-[160px]">
                             <Dropdown
                                 value={sort}
                                 onChange={setSort}
                                 options={[
-                                    {
-                                        value: "latest",
-                                        label: "Latest",
-                                    },
-                                    {
-                                        value: "price-low",
-                                        label: "Price Low",
-                                    },
-                                    {
-                                        value: "price-high",
-                                        label: "Price High",
-                                    },
+                                    { value: "latest", label: "Latest" },
+                                    { value: "price-low", label: "Price Low" },
+                                    { value: "price-high", label: "Price High" },
                                 ]}
                             />
                         </div>
@@ -343,7 +266,6 @@ export default function AuctionsGrid({
                     <div className="mt-5 border-b border-blue-200" />
                 </div>
             )}
-
             {/* ---------- GRID ---------- */}
             {auctions.length > 0 ? (
                 <>

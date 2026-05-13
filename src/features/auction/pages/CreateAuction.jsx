@@ -58,17 +58,11 @@ export default function CreateAuction() {
        FILES
     ───────────────────────────────────────────── */
     const processFiles = (selected) => {
-        const validFiles = selected.filter((f) =>
-            f.type.startsWith("image/")
-        );
+        const validFiles = selected.filter((f) => f.type.startsWith("image/"));
 
         setFiles(validFiles);
 
-        setPreview(
-            validFiles.map((f) =>
-                URL.createObjectURL(f)
-            )
-        );
+        setPreview(validFiles.map((f) => URL.createObjectURL(f)));
     };
 
     const handleFileChange = (e) => {
@@ -80,19 +74,13 @@ export default function CreateAuction() {
 
         setDragOver(false);
 
-        processFiles(
-            Array.from(e.dataTransfer.files)
-        );
+        processFiles(Array.from(e.dataTransfer.files));
     };
 
     const removeImage = (index) => {
-        const newFiles = files.filter(
-            (_, i) => i !== index
-        );
+        const newFiles = files.filter((_, i) => i !== index);
 
-        const newPreviews = preview.filter(
-            (_, i) => i !== index
-        );
+        const newPreviews = preview.filter((_, i) => i !== index);
 
         setFiles(newFiles);
 
@@ -106,21 +94,13 @@ export default function CreateAuction() {
         e.preventDefault();
 
         if (!files.length) {
-            showError(
-                "Please upload at least one image"
-            );
+            showError("Please upload at least one image");
 
             return;
         }
 
-        if (
-            form.auctionType === "long" &&
-            new Date(form.endTime) <=
-                new Date(form.startTime)
-        ) {
-            showError(
-                "End time must be after start time"
-            );
+        if (form.auctionType === "long" && new Date(form.endTime) <= new Date(form.startTime)) {
+            showError("End time must be after start time");
 
             return;
         }
@@ -130,56 +110,27 @@ export default function CreateAuction() {
 
             const formData = new FormData();
 
-            Object.entries(form).forEach(
-                ([key, value]) => {
-                    if (
-                        value !== "" &&
-                        value !== null &&
-                        value !== undefined
-                    ) {
-                        if (
-                            key === "startTime" ||
-                            key === "endTime"
-                        ) {
-                            formData.append(
-                                key,
-                                new Date(
-                                    value
-                                ).toISOString()
-                            );
-                        } else {
-                            formData.append(
-                                key,
-                                value
-                            );
-                        }
+            Object.entries(form).forEach(([key, value]) => {
+                if (value !== "" && value !== null && value !== undefined) {
+                    if (key === "startTime" || key === "endTime") {
+                        formData.append(key, new Date(value).toISOString());
+                    } else {
+                        formData.append(key, value);
                     }
                 }
-            );
+            });
 
-            files.forEach((file) =>
-                formData.append("media", file)
-            );
+            files.forEach((file) => formData.append("media", file));
 
-            const res = await api.post(
-                API_ENDPOINTS.Auction.CREATE,
-                formData
-            );
+            const res = await api.post(API_ENDPOINTS.Auction.CREATE, formData);
 
-            showSuccess(
-                "Auction created successfully!"
-            );
+            showSuccess("Auction created successfully!");
 
-            navigate(
-                `/auction/${res?.data?.data?._id}`
-            );
+            navigate(`/auction/${res?.data?.data?._id}`);
         } catch (err) {
             console.log(err.response?.data);
 
-            showError(
-                err.response?.data?.message ||
-                    "Failed to create auction"
-            );
+            showError(err.response?.data?.message || "Failed to create auction");
         } finally {
             setLoading(false);
         }
@@ -188,8 +139,7 @@ export default function CreateAuction() {
     const inputClass =
         "w-full bg-white border border-gray-200 rounded-2xl px-5 py-4 text-base focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all placeholder:text-gray-400";
 
-    const labelClass =
-        "block text-sm font-semibold text-gray-700 mb-2 tracking-wide";
+    const labelClass = "block text-sm font-semibold text-gray-700 mb-2 tracking-wide";
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-orange-50 py-12 px-4">
@@ -197,11 +147,7 @@ export default function CreateAuction() {
                 {/* HEADER */}
                 <div className="mb-12">
                     <button
-                        onClick={() =>
-                            navigate(
-                                "/auction/seller"
-                            )
-                        }
+                        onClick={() => navigate("/auction/seller")}
                         className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition mb-8"
                     >
                         ← Back to Seller Dashboard
@@ -231,8 +177,7 @@ export default function CreateAuction() {
                             </h1>
 
                             <p className="text-gray-500 mt-1">
-                                List your item and let
-                                collectors bid
+                                List your item and let collectors bid
                             </p>
                         </div>
                     </div>
@@ -240,10 +185,7 @@ export default function CreateAuction() {
 
                 {/* FORM */}
                 <div className="bg-white rounded-3xl shadow-2xl shadow-gray-200/80 border border-gray-100 overflow-hidden">
-                    <form
-                        onSubmit={handleSubmit}
-                        className="p-10 space-y-8"
-                    >
+                    <form onSubmit={handleSubmit} className="p-10 space-y-8">
                         <AnimatePresence mode="wait">
                             {/* STEP 1 */}
                             {step === 1 && (
@@ -273,28 +215,16 @@ export default function CreateAuction() {
                                         animate="visible"
                                         custom={0}
                                     >
-                                        <label
-                                            className={
-                                                labelClass
-                                            }
-                                        >
-                                            Auction Title
-                                        </label>
+                                        <label className={labelClass}>Auction Title</label>
 
                                         <input
                                             type="text"
                                             name="name"
-                                            value={
-                                                form.name
-                                            }
-                                            onChange={
-                                                handleChange
-                                            }
+                                            value={form.name}
+                                            onChange={handleChange}
                                             placeholder="Vintage Rolex"
                                             required
-                                            className={
-                                                inputClass
-                                            }
+                                            className={inputClass}
                                         />
                                     </motion.div>
 
@@ -305,48 +235,22 @@ export default function CreateAuction() {
                                         animate="visible"
                                         custom={1}
                                     >
-                                        <label
-                                            className={
-                                                labelClass
-                                            }
-                                        >
-                                            Category
-                                        </label>
+                                        <label className={labelClass}>Category</label>
 
                                         <select
                                             name="category"
-                                            value={
-                                                form.category
-                                            }
-                                            onChange={
-                                                handleChange
-                                            }
+                                            value={form.category}
+                                            onChange={handleChange}
                                             required
-                                            className={
-                                                inputClass
-                                            }
+                                            className={inputClass}
                                         >
-                                            <option value="">
-                                                Select
-                                                Category
-                                            </option>
+                                            <option value="">Select Category</option>
 
-                                            {categories.map(
-                                                (cat) => (
-                                                    <option
-                                                        key={
-                                                            cat._id
-                                                        }
-                                                        value={
-                                                            cat._id
-                                                        }
-                                                    >
-                                                        {
-                                                            cat.name
-                                                        }
-                                                    </option>
-                                                )
-                                            )}
+                                            {categories.map((cat) => (
+                                                <option key={cat._id} value={cat._id}>
+                                                    {cat.name}
+                                                </option>
+                                            ))}
                                         </select>
                                     </motion.div>
 
@@ -357,22 +261,12 @@ export default function CreateAuction() {
                                         animate="visible"
                                         custom={2}
                                     >
-                                        <label
-                                            className={
-                                                labelClass
-                                            }
-                                        >
-                                            Description
-                                        </label>
+                                        <label className={labelClass}>Description</label>
 
                                         <textarea
                                             name="description"
-                                            value={
-                                                form.description
-                                            }
-                                            onChange={
-                                                handleChange
-                                            }
+                                            value={form.description}
+                                            onChange={handleChange}
                                             rows={6}
                                             required
                                             className={`${inputClass} resize-y min-h-[140px]`}
@@ -387,16 +281,12 @@ export default function CreateAuction() {
                                                 !form.description.trim() ||
                                                 !form.category
                                             ) {
-                                                showError(
-                                                    "Please fill all fields"
-                                                );
+                                                showError("Please fill all fields");
 
                                                 return;
                                             }
 
-                                            setStep(
-                                                2
-                                            );
+                                            setStep(2);
                                         }}
                                         className="w-full bg-gradient-to-r from-orange-600 to-amber-600 text-white py-4 rounded-2xl font-semibold"
                                     >
@@ -409,115 +299,57 @@ export default function CreateAuction() {
                             {step === 2 && (
                                 <motion.div className="space-y-8">
                                     <div>
-                                        <label
-                                            className={
-                                                labelClass
-                                            }
-                                        >
-                                            Starting
-                                            Price
-                                        </label>
+                                        <label className={labelClass}>Starting Price</label>
 
                                         <input
                                             type="number"
                                             name="startPrice"
-                                            value={
-                                                form.startPrice
-                                            }
-                                            onChange={
-                                                handleChange
-                                            }
+                                            value={form.startPrice}
+                                            onChange={handleChange}
                                             required
-                                            className={
-                                                inputClass
-                                            }
+                                            className={inputClass}
                                         />
                                     </div>
 
                                     <div>
-                                        <label
-                                            className={
-                                                labelClass
-                                            }
-                                        >
-                                            Auction
-                                            Type
-                                        </label>
+                                        <label className={labelClass}>Auction Type</label>
 
                                         <select
                                             name="auctionType"
-                                            value={
-                                                form.auctionType
-                                            }
-                                            onChange={
-                                                handleChange
-                                            }
-                                            className={
-                                                inputClass
-                                            }
+                                            value={form.auctionType}
+                                            onChange={handleChange}
+                                            className={inputClass}
                                         >
-                                            <option value="long">
-                                                Long
-                                                Auction
-                                            </option>
+                                            <option value="long">Long Auction</option>
 
-                                            <option value="short">
-                                                Short
-                                                Auction
-                                            </option>
+                                            <option value="short">Short Auction</option>
                                         </select>
                                     </div>
 
                                     <div>
-                                        <label
-                                            className={
-                                                labelClass
-                                            }
-                                        >
-                                            Start Time
-                                        </label>
+                                        <label className={labelClass}>Start Time</label>
 
                                         <input
                                             type="datetime-local"
                                             name="startTime"
-                                            value={
-                                                form.startTime
-                                            }
-                                            onChange={
-                                                handleChange
-                                            }
+                                            value={form.startTime}
+                                            onChange={handleChange}
                                             required
-                                            className={
-                                                inputClass
-                                            }
+                                            className={inputClass}
                                         />
                                     </div>
 
-                                    {form.auctionType ===
-                                        "long" && (
+                                    {form.auctionType === "long" && (
                                         <div>
-                                            <label
-                                                className={
-                                                    labelClass
-                                                }
-                                            >
-                                                End
-                                                Time
-                                            </label>
+                                            <label className={labelClass}>End Time</label>
 
                                             <input
                                                 type="datetime-local"
                                                 name="endTime"
-                                                value={
-                                                    form.endTime
-                                                }
-                                                onChange={
-                                                    handleChange
-                                                }
+                                                value={form.endTime}
+                                                onChange={handleChange}
                                                 required
-                                                className={
-                                                    inputClass
-                                                }
+                                                className={inputClass}
                                             />
                                         </div>
                                     )}
@@ -525,11 +357,7 @@ export default function CreateAuction() {
                                     <div className="flex gap-4">
                                         <button
                                             type="button"
-                                            onClick={() =>
-                                                setStep(
-                                                    1
-                                                )
-                                            }
+                                            onClick={() => setStep(1)}
                                             className="flex-1 border border-gray-300 py-4 rounded-2xl"
                                         >
                                             ← Back
@@ -537,11 +365,7 @@ export default function CreateAuction() {
 
                                         <button
                                             type="button"
-                                            onClick={() =>
-                                                setStep(
-                                                    3
-                                                )
-                                            }
+                                            onClick={() => setStep(3)}
                                             className="flex-1 bg-gradient-to-r from-orange-600 to-amber-600 text-white py-4 rounded-2xl"
                                         >
                                             Continue →
@@ -554,23 +378,13 @@ export default function CreateAuction() {
                             {step === 3 && (
                                 <motion.div className="space-y-8">
                                     <label
-                                        onDragOver={(
-                                            e
-                                        ) => {
+                                        onDragOver={(e) => {
                                             e.preventDefault();
 
-                                            setDragOver(
-                                                true
-                                            );
+                                            setDragOver(true);
                                         }}
-                                        onDragLeave={() =>
-                                            setDragOver(
-                                                false
-                                            )
-                                        }
-                                        onDrop={
-                                            handleDrop
-                                        }
+                                        onDragLeave={() => setDragOver(false)}
+                                        onDrop={handleDrop}
                                         className={`block border-2 border-dashed rounded-3xl p-12 text-center transition-all cursor-pointer ${
                                             dragOver
                                                 ? "border-orange-500 bg-orange-50"
@@ -581,65 +395,44 @@ export default function CreateAuction() {
                                             type="file"
                                             multiple
                                             accept="image/*"
-                                            onChange={
-                                                handleFileChange
-                                            }
+                                            onChange={handleFileChange}
                                             className="hidden"
                                         />
 
                                         <p className="text-lg font-medium text-gray-700">
-                                            Upload
-                                            Images
+                                            Upload Images
                                         </p>
                                     </label>
 
-                                    {preview.length >
-                                        0 && (
+                                    {preview.length > 0 && (
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                            {preview.map(
-                                                (
-                                                    src,
-                                                    i
-                                                ) => (
-                                                    <div
-                                                        key={
-                                                            src
-                                                        }
-                                                        className="relative rounded-2xl overflow-hidden"
-                                                    >
-                                                        <img
-                                                            src={
-                                                                src
-                                                            }
-                                                            alt=""
-                                                            className="w-full aspect-square object-cover"
-                                                        />
+                                            {preview.map((src, i) => (
+                                                <div
+                                                    key={src}
+                                                    className="relative rounded-2xl overflow-hidden"
+                                                >
+                                                    <img
+                                                        src={src}
+                                                        alt=""
+                                                        className="w-full aspect-square object-cover"
+                                                    />
 
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                removeImage(
-                                                                    i
-                                                                )
-                                                            }
-                                                            className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-xl"
-                                                        >
-                                                            ×
-                                                        </button>
-                                                    </div>
-                                                )
-                                            )}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeImage(i)}
+                                                        className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-xl"
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </div>
+                                            ))}
                                         </div>
                                     )}
 
                                     <div className="flex gap-4">
                                         <button
                                             type="button"
-                                            onClick={() =>
-                                                setStep(
-                                                    2
-                                                )
-                                            }
+                                            onClick={() => setStep(2)}
                                             className="flex-1 border border-gray-300 py-4 rounded-2xl"
                                         >
                                             ← Back
@@ -647,14 +440,10 @@ export default function CreateAuction() {
 
                                         <button
                                             type="submit"
-                                            disabled={
-                                                loading
-                                            }
+                                            disabled={loading}
                                             className="flex-1 bg-gradient-to-r from-orange-600 to-amber-600 text-white py-4 rounded-2xl"
                                         >
-                                            {loading
-                                                ? "Creating..."
-                                                : "Launch Auction"}
+                                            {loading ? "Creating..." : "Launch Auction"}
                                         </button>
                                     </div>
                                 </motion.div>
