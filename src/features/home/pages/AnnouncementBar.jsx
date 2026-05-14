@@ -19,7 +19,7 @@ export default function AnnouncementBar({ announcements = [] }) {
         <div className="relative overflow-hidden bg-[#0f1f5c] border-b border-blue-900/60 py-2 sm:py-2.5">
             {/* single centered group — icon + text + dots all move together */}
             <div className="flex items-center justify-center gap-2.5 sm:gap-3 px-4">
-                <Icon.Megaphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 text-blue-300" />
+                {/* <Icon.Megaphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 text-blue-300" /> */}
 
                 <div className="relative h-5 flex items-center w-[220px] sm:w-[380px] md:w-[520px]">
                     <AnimatePresence mode="wait">
@@ -36,7 +36,7 @@ export default function AnnouncementBar({ announcements = [] }) {
                     </AnimatePresence>
                 </div>
 
-                {items.length > 1 && (
+                {/* {items.length > 1 && (
                     <div className="flex items-center gap-1 shrink-0">
                         {items.map((_, i) => (
                             <button
@@ -50,7 +50,7 @@ export default function AnnouncementBar({ announcements = [] }) {
                             />
                         ))}
                     </div>
-                )}
+                )} */}
             </div>
         </div>
     );

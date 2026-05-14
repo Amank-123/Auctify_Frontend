@@ -594,53 +594,6 @@ export default function AuctionDetails() {
                             </div>
                         </motion.div>
 
-                        {status === "ended" && isWinner && winnerOrder && (
-                            <motion.div
-                                variants={itemVariant}
-                                className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-green-50 p-4 sm:p-5"
-                            >
-                                <div className="flex items-start justify-between gap-4">
-                                    <div className="min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <CheckCircle2
-                                                size={15}
-                                                className="text-emerald-600 shrink-0"
-                                            />
-                                            <p className="text-sm font-bold text-emerald-700 tracking-tight">
-                                                You Won This Auction!
-                                            </p>
-                                        </div>
-                                        <p className="text-xs text-emerald-600/80 leading-relaxed">
-                                            Your winning bid has been placed. View your order or
-                                            reach out to the seller.
-                                        </p>
-
-                                        <div className="mt-3.5 flex items-center gap-2 flex-wrap">
-                                            <button
-                                                onClick={() =>
-                                                    navigate(`/orders/${winnerOrder._id}`)
-                                                }
-                                                className="h-8 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors flex items-center gap-1.5"
-                                            >
-                                                <ShoppingBag size={13} />
-                                                View Order
-                                            </button>
-                                            <button
-                                                onClick={() => navigate("/chats")}
-                                                className="h-8 px-4 rounded-lg border border-emerald-200 bg-white text-emerald-700 text-xs font-semibold hover:bg-emerald-50 transition-colors flex items-center gap-1.5"
-                                            >
-                                                <MessageCircle size={13} />
-                                                Contact Seller
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div className="shrink-0 w-10 h-10 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center">
-                                        <Trophy size={18} className="text-emerald-600" />
-                                    </div>
-                                </div>
-                            </motion.div>
-                        )}
-
                         <motion.div variants={itemVariant}>
                             <SellerCard seller={auction.sellerId} />
                         </motion.div>
@@ -686,6 +639,49 @@ export default function AuctionDetails() {
                                 {copied ? "Copied!" : "Copy"}
                             </button>
                         </motion.div>
+                        {status === "ended" && isWinner && winnerOrder && (
+                            <motion.div
+                                variants={itemVariant}
+                                className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-green-50 p-4 sm:p-5"
+                            >
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <CheckCircle2
+                                                size={15}
+                                                className="text-emerald-600 shrink-0"
+                                            />
+                                            <p className="text-sm font-bold text-emerald-700 tracking-tight">
+                                                You Won This Auction!
+                                            </p>
+                                        </div>
+                                        <p className="text-xs text-emerald-600/80 leading-relaxed">
+                                            Your winning bid has been placed. View your order or
+                                            reach out to the seller.
+                                        </p>
+                                    </div>
+                                    <div className="shrink-0 w-10 h-10 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center">
+                                        <Trophy size={18} className="text-emerald-600" />
+                                    </div>
+                                </div>
+                                <div className="mt-3.5 flex flex-row items-center gap-2 ">
+                                    <button
+                                        onClick={() => navigate(`/orders/${winnerOrder._id}`)}
+                                        className="h-8 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors flex items-center gap-1.5"
+                                    >
+                                        <ShoppingBag size={13} />
+                                        View Order
+                                    </button>
+                                    <button
+                                        onClick={() => navigate("/chats")}
+                                        className="h-8 px-4 rounded-lg border border-emerald-200 bg-white text-emerald-700 text-xs font-semibold hover:bg-emerald-50 transition-colors flex items-center gap-1.5"
+                                    >
+                                        <MessageCircle size={13} />
+                                        Contact Seller
+                                    </button>
+                                </div>
+                            </motion.div>
+                        )}
                     </motion.div>
                 </div>
 
@@ -695,7 +691,7 @@ export default function AuctionDetails() {
                         <h2 className="text-lg sm:text-xl font-bold text-[#111827] mb-4 sm:mb-5">
                             Similar Auctions
                         </h2>
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                        <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                             {filteredRelated.map((a) => (
                                 <AuctionCard key={a._id} auction={a} />
                             ))}
