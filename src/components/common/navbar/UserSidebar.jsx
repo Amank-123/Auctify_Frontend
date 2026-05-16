@@ -326,7 +326,6 @@ export default function UserSidebar({ open, onClose, user }) {
                             </p>
                         </div>
                     </SidebarSection>
-
                     {/* WORKSPACE */}
                     <SidebarSection title="Workspace">
                         <SidebarNavItem to="/profile" onClick={onClose}>
@@ -378,15 +377,133 @@ export default function UserSidebar({ open, onClose, user }) {
                             Reset Password
                         </SidebarNavItem>
                     </SidebarSection>
-
-                    {/* AUCTIONS */}
+                    {/*  AUCTIONS  */}
                     <SidebarSection title={`My Auctions (${auctions.length})`}>
                         {loading ? (
                             <SidebarPlaceholder text="Loading..." />
                         ) : paginatedAuctions.length ? (
-                            <div className="space-y-2.5">
-                                {paginatedAuctions.map((a) => (
-                                    <AuctionItem key={a._id} auction={a} onClick={onClose} />
+                            <div className="space-y-2">
+                                {paginatedAuctions.map((auction) => (
+                                    <button
+                                        key={auction._id}
+                                        onClick={() => {
+                                            navigate(`/auction/${auction._id}`);
+                                            onClose();
+                                        }}
+                                        className="
+                        w-full
+
+                        flex items-center gap-3
+
+                        rounded-2xl
+                        border border-slate-200
+
+                        bg-white
+
+                        px-2.5 py-2
+
+                        hover:border-blue-200
+                        hover:bg-slate-50
+
+                        transition-all
+                    "
+                                    >
+                                        {/* IMAGE */}
+                                        <div
+                                            className="
+                            h-12 w-12
+                            shrink-0
+
+                            overflow-hidden
+                            rounded-xl
+
+                            bg-slate-100
+                            border border-slate-200
+                        "
+                                        >
+                                            <img
+                                                src={
+                                                    Array.isArray(auction?.media?.[0])
+                                                        ? auction?.media?.[0]?.[0]
+                                                        : auction?.media?.[0] || defaultUp
+                                                }
+                                                alt={auction?.name}
+                                                className="
+                                h-full w-full
+                                object-cover
+                            "
+                                            />
+                                        </div>
+
+                                        {/* CONTENT */}
+                                        <div className="flex-1 min-w-0 text-left">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <p
+                                                    className="
+                                    truncate
+
+                                    text-[13px]
+                                    font-semibold
+
+                                    text-slate-800
+                                "
+                                                >
+                                                    {auction?.name}
+                                                </p>
+
+                                                <span
+                                                    className={`
+                                    shrink-0
+
+                                    rounded-full
+
+                                    px-2 py-[3px]
+
+                                    text-[10px]
+                                    font-medium
+
+                                    ${
+                                        auction?.status === "active"
+                                            ? "bg-green-50 text-green-700"
+                                            : "bg-slate-100 text-slate-600"
+                                    }
+                                `}
+                                                >
+                                                    {auction?.status}
+                                                </span>
+                                            </div>
+
+                                            <div
+                                                className="
+                                mt-1
+
+                                flex items-center justify-between gap-2
+                            "
+                                            >
+                                                <p
+                                                    className="
+                                    truncate
+
+                                    text-[11px]
+                                    text-slate-500
+                                "
+                                                >
+                                                    {auction?.bidCount} bids
+                                                </p>
+
+                                                <p
+                                                    className="
+                                    text-[12px]
+                                    font-semibold
+
+                                    text-blue-700
+                                "
+                                                >
+                                                    ₹{auction?.currentHighestBid}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </button>
                                 ))}
 
                                 {hasMoreAuctions && (
@@ -397,15 +514,131 @@ export default function UserSidebar({ open, onClose, user }) {
                             <SidebarPlaceholder text="No auctions yet." />
                         )}
                     </SidebarSection>
-
                     {/* BIDS */}
                     <SidebarSection title={`My Bids (${bids.length})`}>
                         {loading ? (
                             <SidebarPlaceholder text="Loading..." />
                         ) : paginatedBids.length ? (
-                            <div className="space-y-2.5">
-                                {paginatedBids.map((b) => (
-                                    <BidItem key={b._id} bid={b} onClick={onClose} />
+                            <div className="space-y-2">
+                                {paginatedBids.map((bid) => (
+                                    <button
+                                        key={bid._id}
+                                        onClick={() => {
+                                            navigate(`/auction/${bid?.auctionId?._id}`);
+                                            onClose();
+                                        }}
+                                        className="
+                        w-full
+
+                        flex items-center gap-3
+
+                        rounded-2xl
+                        border border-slate-200
+
+                        bg-white
+
+                        px-2.5 py-2
+
+                        hover:border-emerald-200
+                        hover:bg-slate-50
+
+                        transition-all
+                    "
+                                    >
+                                        {/* IMAGE */}
+                                        <div
+                                            className="
+                            h-12 w-12
+                            shrink-0
+
+                            overflow-hidden
+                            rounded-xl
+
+                            bg-slate-100
+                            border border-slate-200
+                        "
+                                        >
+                                            <img
+                                                src={
+                                                    Array.isArray(bid?.auctionId?.media?.[0])
+                                                        ? bid?.auctionId?.media?.[0]?.[0]
+                                                        : bid?.auctionId?.media?.[0] || defaultUp
+                                                }
+                                                alt={bid?.auctionId?.name}
+                                                className="
+                                h-full w-full
+                                object-cover
+                            "
+                                            />
+                                        </div>
+
+                                        {/* CONTENT */}
+                                        <div className="flex-1 min-w-0 text-left">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <p
+                                                    className="
+                                    truncate
+
+                                    text-[13px]
+                                    font-semibold
+
+                                    text-slate-800
+                                "
+                                                >
+                                                    {bid?.auctionId?.name || "Auction"}
+                                                </p>
+
+                                                <span
+                                                    className={`
+                                    shrink-0
+
+                                    rounded-full
+
+                                    px-2 py-[3px]
+
+                                    text-[10px]
+                                    font-medium
+
+                                    ${
+                                        bid?.auctionId?.status === "active"
+                                            ? "bg-green-50 text-green-700"
+                                            : "bg-slate-100 text-slate-600"
+                                    }
+                                `}
+                                                >
+                                                    {bid?.auctionId?.status}
+                                                </span>
+                                            </div>
+
+                                            <div
+                                                className="
+                                mt-1
+
+                                flex items-center justify-between gap-2
+                            "
+                                            >
+                                                <p
+                                                    className="
+                                    text-[11px]
+                                    text-slate-500
+                                "
+                                                >
+                                                    Your Bid
+                                                </p>
+
+                                                <p
+                                                    className="
+                                    text-[12px]
+                                    font-semibold
+
+                                    text-emerald-700
+                                "
+                                                >
+                                                    ₹{bid?.amount}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </button>
                                 ))}
 
                                 {hasMoreBids && (
@@ -416,7 +649,6 @@ export default function UserSidebar({ open, onClose, user }) {
                             <SidebarPlaceholder text="No bids yet." />
                         )}
                     </SidebarSection>
-
                     {/* ERROR */}
                     {error && (
                         <div
