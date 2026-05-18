@@ -188,7 +188,7 @@ export default function ChatbotWidget() {
     const [inputFocused, setInputFocused] = useState(false);
     const [showQuick, setShowQuick] = useState(true);
     const [messages, setMessages] = useState([
-        { role: "assistant", content: "Hi! I'm Auctify AI. How can I help you ?" },
+        { role: "assistant", content: "Hi! I'm Auctify AI Assistant. How can I help you ?" },
     ]);
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
