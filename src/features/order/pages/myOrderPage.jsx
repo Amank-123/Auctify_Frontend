@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 
 import {
     Package,
@@ -14,13 +13,10 @@ import {
     XCircle,
     Search,
     SlidersHorizontal,
-    Download,
 } from "lucide-react";
 
 import { api } from "@/shared/services/axios";
 import { showError } from "@/shared/utils/toast";
-
-/* ───────────────── CONFIG ───────────────── */
 
 const PAYMENT_CFG = {
     pending: {
@@ -98,8 +94,6 @@ const ORDER_CFG = {
     },
 };
 
-/* ───────────────── BADGES ───────────────── */
-
 function PaymentBadge({ status }) {
     const c = PAYMENT_CFG[status] ?? PAYMENT_CFG.pending;
 
@@ -108,7 +102,6 @@ function PaymentBadge({ status }) {
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${c.classes}`}
         >
             <span className={`h-1.5 w-1.5 rounded-full ${c.dot}`} />
-
             {c.label}
         </span>
     );
@@ -124,13 +117,10 @@ function OrderBadge({ status }) {
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${c.classes}`}
         >
             <Icon size={10} />
-
             {c.label}
         </span>
     );
 }
-
-/* ───────────────── PAGE ───────────────── */
 
 export default function MyOrdersPage() {
     const navigate = useNavigate();
@@ -200,23 +190,14 @@ export default function MyOrdersPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100/70">
-            {/* PAGE */}
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+            <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-5 sm:py-10">
                 {/* HEADER */}
-                <div className="mb-8">
-                    <div
-                        className="
-                            flex flex-col lg:flex-row
-                            lg:items-start
-                            lg:justify-between
-
-                            gap-5
-                        "
-                    >
+                <div className="mb-6">
+                    <div className="flex flex-col gap-4">
                         <div>
                             <h1
                                 className="
-                                    text-3xl
+                                    text-[30px] sm:text-3xl
                                     font-black
                                     tracking-tight
                                     text-zinc-900
@@ -227,47 +208,26 @@ export default function MyOrdersPage() {
 
                             <p
                                 className="
-                                    mt-2
+                                    mt-1.5
                                     text-sm
                                     text-zinc-500
                                 "
                             >
-                                Track and manage all your auction orders.
+                                Track and manage your auction orders.
                             </p>
                         </div>
-
-                        <button
-                            className="
-                                inline-flex items-center
-                                justify-center gap-2
-
-                                h-11 px-5
-
-                                rounded-xl
-
-                                bg-blue-600
-                                hover:bg-blue-700
-
-                                text-sm font-semibold
-                                text-white
-
-                                shadow-sm
-
-                                transition-all
-                            "
-                        >
-                            <Download size={16} />
-                            Export Orders
-                        </button>
                     </div>
 
                     {/* TABS */}
                     <div
                         className="
-                            mt-6
+                            mt-5
 
-                            flex flex-wrap
-                            gap-3
+                            flex gap-2
+                            overflow-x-auto
+                            scrollbar-hide
+
+                            pb-1
                         "
                     >
                         {tabs.map((tab) => (
@@ -275,6 +235,8 @@ export default function MyOrdersPage() {
                                 key={tab.key}
                                 onClick={() => setActiveTab(tab.key)}
                                 className={`
+                                    shrink-0
+
                                     inline-flex items-center
                                     gap-2
 
@@ -282,14 +244,15 @@ export default function MyOrdersPage() {
 
                                     px-4 py-2.5
 
-                                    text-sm font-medium
+                                    text-[13px]
+                                    font-semibold
 
                                     transition-all
 
                                     ${
                                         activeTab === tab.key
                                             ? "bg-blue-600 text-white shadow-sm"
-                                            : "border border-zinc-200 bg-white/80 backdrop-blur-sm text-zinc-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                                            : "border border-zinc-200 bg-white text-zinc-700"
                                     }
                                 `}
                             >
@@ -299,15 +262,15 @@ export default function MyOrdersPage() {
                                     className={`
                                         rounded-full
 
-                                        px-2 py-0.5
+                                        px-1.5 py-0.5
 
-                                        text-[11px]
-                                        font-semibold
+                                        text-[10px]
+                                        font-bold
 
                                         ${
                                             activeTab === tab.key
                                                 ? "bg-white/20 text-white"
-                                                : "bg-zinc-100 text-zinc-600"
+                                                : "bg-zinc-100 text-zinc-500"
                                         }
                                     `}
                                 >
@@ -319,20 +282,10 @@ export default function MyOrdersPage() {
                 </div>
 
                 {/* SEARCH */}
-                <div
-                    className="
-                        mb-5
-
-                        flex flex-col
-                        sm:flex-row
-
-                        gap-3
-                    "
-                >
+                <div className="mb-4 flex flex-col gap-3">
                     <label
                         className="
-                            flex h-11 flex-1
-                            items-center gap-3
+                            flex h-11 items-center gap-3
 
                             rounded-2xl
 
@@ -372,8 +325,6 @@ export default function MyOrdersPage() {
 
                             border border-zinc-200
                             bg-white
-
-                            px-5
 
                             text-sm font-medium
                             text-zinc-600
@@ -458,8 +409,6 @@ export default function MyOrdersPage() {
     );
 }
 
-/* ───────────────── ORDER ROW ───────────────── */
-
 function OrderRow({ order, isLast, navigate }) {
     const auction = order?.auctionId;
 
@@ -470,233 +419,7 @@ function OrderRow({ order, isLast, navigate }) {
 
         const doc = new jsPDF();
 
-        const auction = order?.auctionId;
-        const buyer = order?.buyerId;
-        const seller = order?.sellerId;
-
-        const amount = new Intl.NumberFormat("en-IN", {
-            maximumFractionDigits: 0,
-        }).format(Number(order?.finalPrice || 0));
-
-        const pageWidth = doc.internal.pageSize.width;
-
-        /* ───────────────── COLORS ───────────────── */
-
-        const BLACK = [20, 20, 20];
-        const GRAY = [120, 120, 120];
-        const LIGHT = [240, 240, 240];
-        const BLUE = [37, 99, 235];
-
-        /* ───────────────── HEADER ───────────────── */
-
-        doc.setFont("times", "bold");
-
-        doc.setTextColor(...BLACK);
-
-        doc.setFontSize(24);
-
-        doc.text("Auctify", 16, 22);
-
-        doc.setFontSize(11);
-
-        doc.setFont("helvetica", "normal");
-
-        doc.setTextColor(...GRAY);
-
-        doc.text("Official Payment Receipt", 16, 30);
-
-        /* RIGHT */
-
-        doc.setFont("times", "bold");
-
-        doc.setTextColor(...BLACK);
-
-        doc.setFontSize(18);
-
-        doc.text("INVOICE", pageWidth - 16, 22, {
-            align: "right",
-        });
-
-        doc.setFontSize(10);
-
-        doc.setFont("helvetica", "normal");
-
-        doc.setTextColor(...GRAY);
-
-        doc.text(`#${order?._id?.slice(-8)}`, pageWidth - 16, 30, {
-            align: "right",
-        });
-
-        /* LINE */
-
-        doc.setDrawColor(...LIGHT);
-
-        doc.line(16, 38, 194, 38);
-
-        /* ───────────────── META ───────────────── */
-
-        doc.setTextColor(...BLACK);
-
-        doc.setFont("times", "bold");
-
-        doc.setFontSize(11);
-
-        doc.text("Date", 16, 50);
-
-        doc.setFont("helvetica", "normal");
-
-        doc.text(new Date(order?.createdAt).toLocaleDateString(), 40, 50);
-
-        doc.setFont("times", "bold");
-
-        doc.text("Payment", 110, 50);
-
-        doc.setFont("helvetica", "normal");
-
-        doc.text(order?.paymentStatus || "completed", 140, 50);
-
-        /* ───────────────── BILLING ───────────────── */
-
-        doc.setFont("times", "bold");
-
-        doc.setTextColor(...BLACK);
-
-        doc.setFontSize(12);
-
-        doc.text("Buyer Information", 16, 68);
-
-        doc.text("Seller Information", 110, 68);
-
-        doc.setFont("helvetica", "normal");
-
-        doc.setFontSize(10);
-
-        doc.setTextColor(...GRAY);
-
-        /* BUYER */
-
-        doc.text(`${buyer?.firstName || ""} ${buyer?.lastName || ""}`, 16, 78);
-
-        doc.text(buyer?.email || "", 16, 86);
-
-        doc.text(buyer?.address?.city || "", 16, 94);
-
-        /* SELLER */
-
-        doc.text(seller?.firstName || "", 110, 78);
-
-        doc.text(seller?.email || "", 110, 86);
-
-        /* ───────────────── TABLE HEADER ───────────────── */
-
-        doc.setFillColor(...BLACK);
-
-        doc.rect(16, 112, 178, 10, "F");
-
-        doc.setTextColor(255);
-
-        doc.setFont("times", "bold");
-
-        doc.setFontSize(10);
-
-        doc.text("Product", 20, 119);
-
-        doc.text("Category", 95, 119);
-
-        doc.text("Status", 140, 119);
-
-        doc.text("Amount", 182, 119, {
-            align: "right",
-        });
-
-        /* ───────────────── TABLE ROW ───────────────── */
-
-        doc.setDrawColor(...LIGHT);
-
-        doc.rect(16, 122, 178, 20);
-
-        doc.setTextColor(...BLACK);
-
-        doc.setFont("times", "bold");
-
-        doc.text(auction?.name || "Auction Product", 20, 132);
-
-        doc.setFont("helvetica", "normal");
-
-        doc.setTextColor(...GRAY);
-
-        const category =
-            typeof auction?.category === "object" ? auction?.category?.name : auction?.category;
-
-        doc.text(category || "General", 95, 132);
-
-        doc.text(order?.orderStatus || "Delivered", 140, 132);
-
-        doc.setTextColor(...BLACK);
-
-        doc.setFont("times", "bold");
-
-        doc.text(`Rs. ${amount}`, 182, 132, {
-            align: "right",
-        });
-
-        /* ───────────────── TOTALS ───────────────── */
-
-        let y = 162;
-
-        doc.setFont("helvetica", "normal");
-
-        doc.setTextColor(...GRAY);
-
-        doc.text("Subtotal", 130, y);
-
-        doc.text(`Rs. ${amount}`, 182, y, {
-            align: "right",
-        });
-
-        y += 10;
-
-        doc.text("Platform Fee", 130, y);
-
-        doc.text("Rs. 0", 182, y, {
-            align: "right",
-        });
-
-        y += 10;
-
-        doc.setDrawColor(...LIGHT);
-
-        doc.line(130, y, 182, y);
-
-        y += 10;
-
-        doc.setFont("times", "bold");
-
-        doc.setTextColor(...BLACK);
-
-        doc.setFontSize(13);
-
-        doc.text("Total", 130, y);
-
-        doc.setTextColor(...BLUE);
-
-        doc.text(`Rs. ${amount}`, 182, y, {
-            align: "right",
-        });
-
-        /* ───────────────── FOOTER ───────────────── */
-
-        doc.setFontSize(9);
-
-        doc.setFont("helvetica", "normal");
-
-        doc.setTextColor(...GRAY);
-
-        doc.text("This receipt confirms successful payment for your auction order.", 16, 260);
-
-        doc.text("Generated securely by Auctify.", 16, 268);
-
-        /* ───────────────── SAVE ───────────────── */
+        doc.text("Receipt", 20, 20);
 
         doc.save(`Invoice-${order?._id?.slice(-6)}.pdf`);
     };
@@ -715,7 +438,6 @@ function OrderRow({ order, isLast, navigate }) {
                 transition-all duration-300
 
                 hover:bg-zinc-50/80
-                hover:shadow-[0_4px_20px_rgba(0,0,0,0.03)]
 
                 ${!isLast ? "border-b border-zinc-100" : ""}
             `}
@@ -744,8 +466,6 @@ function OrderRow({ order, isLast, navigate }) {
 
                             bg-zinc-50
 
-                            shadow-sm
-
                             shrink-0
                         "
                     >
@@ -755,9 +475,6 @@ function OrderRow({ order, isLast, navigate }) {
                             className="
                                 h-full w-full
                                 object-cover
-
-                                transition duration-500
-                                group-hover:scale-105
                             "
                         />
                     </div>
@@ -801,31 +518,6 @@ function OrderRow({ order, isLast, navigate }) {
                                 {order?.sellerId?.firstName}
                             </span>
                         </div>
-
-                        <div className="mt-2 flex items-center gap-2">
-                            <span
-                                className="
-                                    rounded-full
-
-                                    bg-blue-50
-
-                                    px-2 py-1
-
-                                    text-[10px]
-                                    font-semibold
-
-                                    text-blue-700
-                                "
-                            >
-                                {typeof auction?.category === "object"
-                                    ? auction?.category?.name
-                                    : auction?.category}
-                            </span>
-
-                            <span className="text-[11px] text-zinc-400">
-                                {new Date(order.createdAt).toLocaleDateString()}
-                            </span>
-                        </div>
                     </div>
                 </div>
 
@@ -833,8 +525,6 @@ function OrderRow({ order, isLast, navigate }) {
                     <p className="text-[20px] font-black tracking-tight text-zinc-900">
                         ₹{order?.finalPrice?.toLocaleString("en-IN")}
                     </p>
-
-                    <p className="mt-1 text-[11px] text-zinc-400">Winning bid</p>
                 </div>
 
                 <PaymentBadge status={order?.paymentStatus} />
@@ -853,9 +543,7 @@ function OrderRow({ order, isLast, navigate }) {
 
                             rounded-xl
 
-                            bg-gradient-to-r
-                            from-blue-600
-                            to-blue-500
+                            bg-blue-600
 
                             text-[11px]
                             font-semibold
@@ -874,7 +562,7 @@ function OrderRow({ order, isLast, navigate }) {
 
                             border border-zinc-200
 
-                            bg-white/80
+                            bg-white
 
                             text-[11px]
                             font-semibold
@@ -888,124 +576,183 @@ function OrderRow({ order, isLast, navigate }) {
             </div>
 
             {/* MOBILE */}
-            <div className="lg:hidden p-4">
+            {/* MOBILE */}
+            <div className="lg:hidden p-3">
                 <div
                     className="
-                        rounded-2xl
-                        border border-zinc-200
+            rounded-[28px]
+            border border-zinc-200/80
+            bg-white
 
-                        bg-white
+            p-4
 
-                        shadow-sm
-
-                        p-4
-                    "
+            shadow-[0_8px_30px_rgba(0,0,0,0.04)]
+        "
                 >
-                    <div className="flex gap-3">
+                    {/* TOP */}
+                    <div className="flex items-start gap-3">
+                        {/* IMAGE */}
                         <div
                             className="
-                                h-[78px]
-                                w-[78px]
+                    h-[92px]
+                    w-[92px]
 
-                                shrink-0
+                    shrink-0
 
-                                overflow-hidden
+                    overflow-hidden
 
-                                rounded-xl
+                    rounded-2xl
 
-                                border border-zinc-100
-                            "
+                    bg-zinc-100
+                "
                         >
                             <img
                                 src={image}
                                 alt={auction?.name}
                                 className="
-                                    h-full w-full
-                                    object-cover
-                                "
+                        h-full
+                        w-full
+                        object-cover
+                    "
                             />
                         </div>
 
+                        {/* INFO */}
                         <div className="min-w-0 flex-1">
-                            <p
-                                className="
-                                    line-clamp-2
+                            <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                    <h3
+                                        className="
+                                truncate
 
-                                    text-[15px]
-                                    font-bold
+                                text-[17px]
+                                font-bold
 
-                                    leading-snug
+                                tracking-tight
+                                text-zinc-900
+                            "
+                                    >
+                                        {auction?.name}
+                                    </h3>
 
-                                    text-zinc-900
-                                "
-                            >
-                                {auction?.name}
-                            </p>
+                                    <p
+                                        className="
+                                mt-1
 
-                            <div className="mt-2 text-[11px] text-zinc-400 space-y-1">
-                                <p>
-                                    Seller:
-                                    {order?.sellerId?.firstName}
-                                </p>
+                                text-[12px]
+                                font-medium
 
-                                <p>
-                                    Order ID:
-                                    {order?._id?.slice(-6)}
-                                </p>
+                                text-zinc-400
+                            "
+                                    >
+                                        Seller • {order?.sellerId?.firstName}
+                                    </p>
+
+                                    <p
+                                        className="
+                                mt-0.5
+
+                                text-[11px]
+
+                                text-zinc-400
+                            "
+                                    >
+                                        #{order?._id?.slice(-6)}
+                                    </p>
+                                </div>
                             </div>
 
-                            <p className="mt-3 text-xl font-black tracking-tight text-zinc-900">
-                                ₹{order?.finalPrice?.toLocaleString("en-IN")}
-                            </p>
+                            {/* PRICE */}
+                            <div className="mt-4">
+                                <p
+                                    className="
+                            text-[32px]
+                            leading-none
+
+                            font-black
+                            tracking-tight
+
+                            text-zinc-900
+                        "
+                                >
+                                    ₹{order?.finalPrice?.toLocaleString("en-IN")}
+                                </p>
+
+                                <p
+                                    className="
+                            mt-1
+
+                            text-[11px]
+                            font-medium
+
+                            text-zinc-400
+                        "
+                                >
+                                    Winning Bid
+                                </p>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="mt-4 flex flex-wrap gap-2">
+                    {/* BADGES */}
+                    <div className="mt-5 flex flex-wrap gap-2">
                         <PaymentBadge status={order?.paymentStatus} />
 
                         <OrderBadge status={order?.orderStatus} />
                     </div>
 
-                    <div className="mt-4 grid grid-cols-2 gap-3">
+                    {/* ACTIONS */}
+                    <div className="mt-5 flex gap-3">
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-
                                 navigate(`/orders/${order?._id}`);
                             }}
                             className="
-                                h-10
+                    flex-1
 
-                                rounded-xl
+                    h-12
 
-                                bg-gradient-to-r
-                                from-blue-600
-                                to-blue-500
+                    rounded-2xl
 
-                                text-sm
-                                font-semibold
-                                text-white
-                            "
+                    bg-gradient-to-r
+                    from-blue-600
+                    to-blue-500
+
+                    text-[14px]
+                    font-semibold
+                    text-white
+
+                    shadow-[0_8px_20px_rgba(37,99,235,0.25)]
+
+                    active:scale-[0.98]
+                    transition-all
+                "
                         >
-                            View
+                            View Order
                         </button>
 
                         <button
                             onClick={downloadReceipt}
                             className="
-                                h-10
+                    flex-1
 
-                                rounded-xl
+                    h-12
 
-                                border border-zinc-200
+                    rounded-2xl
 
-                                bg-white
+                    border border-zinc-200
 
-                                text-sm
-                                font-semibold
+                    bg-zinc-50
 
-                                text-zinc-700
-                            "
+                    text-[14px]
+                    font-semibold
+
+                    text-zinc-700
+
+                    active:scale-[0.98]
+                    transition-all
+                "
                         >
                             Receipt
                         </button>

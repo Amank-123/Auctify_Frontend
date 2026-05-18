@@ -5,6 +5,7 @@ import { Toaster } from "react-hot-toast";
 // import { Analytics } from "@vercel/analytics/react";
 import { useEffect } from "react";
 import { syncServerTime } from "../shared/utils/timeSync.js";
+import ChatbotWidget from "../features/ChatAgent/ChatbotWidget.jsx";
 
 export const App = () => {
     useEffect(() => {
@@ -43,6 +44,7 @@ export const App = () => {
             <AuthProvider>
                 <RouterProvider router={router} />
             </AuthProvider>
+            <ChatbotWidget />
             {/* <Analytics /> */}
         </>
     );

@@ -13,6 +13,7 @@ import {
     Zap,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePageTitle } from "../../shared/utils/usePageTitle";
 
 export default function HowItWorksPage() {
     const navigate = useNavigate();

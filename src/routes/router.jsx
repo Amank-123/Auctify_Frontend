@@ -40,6 +40,7 @@ import ForgotOtpPage from "../features/auth/pages/ForgotOtpPage.jsx";
 import ResetForgotPasswordPage from "../features/auth/pages/ResetPasswordPage.jsx";
 import OrderDetailsPage from "../features/order/pages/orderPage.jsx";
 import MyOrdersPage from "../features/order/pages/myOrderPage.jsx";
+import KnowledgeBaseAdmin from "../features/admin/pages/KnowledgeBase.jsx";
 const router = createBrowserRouter([
     {
         path: "/",
@@ -142,6 +143,7 @@ const router = createBrowserRouter([
                     { path: "categories", element: <CategoryFormPage /> },
                     { path: "users", element: <UserPage /> },
                     { path: "banners", element: <BannerPage /> },
+                    { path: "AI_Assistant_knowledge-base", element: <KnowledgeBaseAdmin /> },
                 ],
             },
         ],
