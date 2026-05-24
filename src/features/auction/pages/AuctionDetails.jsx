@@ -585,6 +585,7 @@ export default function AuctionDetails() {
                                     bidCount={auction.bidCount}
                                     status={status}
                                     auctionId={auction._id}
+                                    sellerId={auction.sellerId?._id}
                                     endTime={endTime}
                                     startTime={startTime}
                                     highestBidder={bids[0]}

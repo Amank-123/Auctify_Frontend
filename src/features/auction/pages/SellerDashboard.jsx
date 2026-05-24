@@ -562,7 +562,7 @@ export default function SellerDashboard() {
     return (
         <div
             className="min-h-screen px-3 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10"
-            style={{ background: "#f9f8f6" }}
+            style={{ background: "#F8F8FF" }}
         >
             <div className="max-w-4xl mx-auto">
                 <motion.div
@@ -572,10 +572,11 @@ export default function SellerDashboard() {
                     className="flex items-center justify-between gap-3 sm:gap-4 mb-6 sm:mb-8"
                 >
                     <div>
-                        <h1 className="text-xl sm:text-2xl lg:text-[28px] font-black text-stone-900 tracking-tight">
+                        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                             Seller Orders
                         </h1>
-                        <p className="text-[12px] sm:text-[13px] text-stone-400 mt-0.5 sm:mt-1">
+
+                        <p className="text-[13px] sm:text-[14px] text-slate-600 mt-1">
                             Manage deliveries and OTP verification
                         </p>
                     </div>
@@ -584,91 +585,181 @@ export default function SellerDashboard() {
                         <motion.span
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.97 }}
-                            className="inline-flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-[13px] font-semibold px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all cursor-pointer whitespace-nowrap"
-                            style={{ background: "#1c1917", color: "#fafaf9" }}
+                            className="
+                        inline-flex items-center gap-2
+
+                        text-[14px] sm:text-[13px]
+                        font-semibold
+
+                        px-3.5 sm:px-4
+                        py-2.5
+
+                        rounded-xl
+
+                        transition-all
+                        cursor-pointer
+                        whitespace-nowrap
+
+                        shadow-md shadow-black/10
+                    "
+                            style={{
+                                background: "#111827",
+                                color: "#f8fafc",
+                            }}
                         >
-                            <Plus size={12} />
+                            <Plus size={13} />
+
                             <span className="hidden xs:inline">Create Auction</span>
+
                             <span className="xs:hidden">New</span>
-                            <ArrowUpRight size={11} className="opacity-50" />
                         </motion.span>
                     </Link>
                 </motion.div>
 
-                <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-5 sm:mb-6">
+                {/* STATS */}
+                <div className="grid grid-cols-3 gap-2.5 sm:gap-3 mb-5 sm:mb-6">
                     <StatCard
                         label="Total"
                         value={stats.total}
                         icon={ShoppingBag}
-                        accent="#3b82f6"
+                        accent="#2563eb"
                         delay={0.05}
                         loading={loading}
                     />
+
                     <StatCard
                         label="Confirmed"
                         value={stats.confirmed}
                         icon={BadgeCheck}
-                        accent="#f59e0b"
+                        accent="#fe172a"
                         delay={0.1}
                         loading={loading}
                     />
+
                     <StatCard
                         label="Delivered"
                         value={stats.delivered}
                         icon={Truck}
-                        accent="#10b981"
+                        accent="#059669"
                         delay={0.15}
                         loading={loading}
                     />
                 </div>
 
+                {/* SEARCH + FILTER */}
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.2 }}
-                    className="flex flex-col sm:flex-row gap-2 sm:gap-2.5 mb-4 sm:mb-5"
+                    className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 mb-4 sm:mb-5"
                 >
+                    {/* SEARCH */}
                     <div className="relative flex-1">
                         <Search
-                            size={13}
-                            className="absolute top-1/2 left-3 -translate-y-1/2 text-stone-300 pointer-events-none"
+                            size={14}
+                            className="
+                        absolute
+                        top-1/2 left-3
+
+                        -translate-y-1/2
+
+                        text-slate-500
+                        pointer-events-none
+                    "
                         />
+
                         <input
                             type="text"
                             placeholder="Search auction or buyer…"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full bg-white border rounded-xl pl-8 pr-4 py-2.5 text-[12px] sm:text-[13px] text-stone-800 placeholder-stone-300 focus:outline-none focus:border-stone-300 transition-colors"
+                            className="
+                        w-full
+
+                        bg-white
+
+                        border border-slate-200
+
+                        rounded-xl
+
+                        pl-9 pr-4
+                        py-2.5
+
+                        text-[13px] sm:text-[14px]
+
+                        text-slate-800
+                        placeholder-slate-400
+
+                        focus:outline-none
+                        focus:border-slate-400
+
+                        transition-all
+                    "
                             style={{
-                                border: "1px solid #e7e5e4",
-                                boxShadow: "0 1px 2px 0 rgba(0,0,0,0.03)",
+                                boxShadow: "0 4px 14px rgba(15,23,42,0.04)",
                             }}
                         />
                     </div>
 
+                    {/* FILTERS */}
                     <div
-                        className="flex gap-1 p-1 rounded-xl shrink-0 overflow-x-auto"
-                        style={{ background: "#fff", border: "1px solid #e7e5e4" }}
+                        className="
+                    flex gap-1
+
+                    p-1
+
+                    rounded-xl
+
+                    shrink-0
+                    overflow-x-auto
+
+                    bg-white
+
+                    border border-slate-200
+                "
+                        style={{
+                            boxShadow: "0 4px 14px rgba(15,23,42,0.04)",
+                        }}
                     >
                         {FILTERS.map(({ key, label, icon: Icon }) => (
                             <button
                                 key={key}
                                 onClick={() => setFilter(key)}
-                                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-[11px] sm:text-[12px] font-semibold transition-all duration-200 whitespace-nowrap"
+                                className="
+                            flex items-center gap-1.5
+
+                            px-3 py-2
+
+                            rounded-lg
+
+                            text-[12px] sm:text-[13px]
+                            font-semibold
+
+                            whitespace-nowrap
+
+                            transition-all duration-200
+                        "
                                 style={
                                     filter === key
-                                        ? { background: "#1c1917", color: "#fafaf9" }
-                                        : { color: "#78716c" }
+                                        ? {
+                                              background: "#111827",
+                                              color: "#f8fafc",
+                                              boxShadow: "0 4px 12px rgba(15,23,42,0.12)",
+                                          }
+                                        : {
+                                              color: "#475569",
+                                          }
                                 }
                             >
-                                <Icon size={10} />
+                                <Icon size={11} />
                                 {label}
                             </button>
                         ))}
                     </div>
                 </motion.div>
 
-                <div className="flex flex-col gap-2.5 sm:gap-3">
+                {/* LIST */}
+                <div className="flex flex-col gap-3">
                     {loading ? (
                         <>
                             <OrderSkeleton />
@@ -679,16 +770,60 @@ export default function SellerDashboard() {
                         <motion.div
                             initial={{ opacity: 0, scale: 0.98 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="bg-white rounded-2xl border p-12 sm:p-20 text-center"
-                            style={{ border: "1px solid #f5f5f4" }}
+                            className="
+                        bg-white
+
+                        rounded-2xl
+
+                        border border-slate-200
+
+                        p-12 sm:p-20
+
+                        text-center
+                    "
+                            style={{
+                                boxShadow: "0 10px 30px rgba(15,23,42,0.05)",
+                            }}
                         >
-                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-stone-50 border border-stone-100 flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                                <Package size={22} className="text-stone-300" />
+                            <div
+                                className="
+                            w-14 h-14
+
+                            rounded-2xl
+
+                            bg-slate-100
+                            border border-slate-200
+
+                            flex items-center justify-center
+
+                            mx-auto
+                            mb-4
+                        "
+                            >
+                                <Package size={24} className="text-slate-500" />
                             </div>
-                            <h3 className="text-[14px] sm:text-[16px] font-bold text-stone-700">
+
+                            <h3
+                                className="
+                            text-[16px] sm:text-[18px]
+
+                            font-bold
+
+                            text-slate-800
+                        "
+                            >
                                 No orders found
                             </h3>
-                            <p className="text-[12px] sm:text-[13px] text-stone-400 mt-1">
+
+                            <p
+                                className="
+                            text-[13px] sm:text-[14px]
+
+                            text-slate-600
+
+                            mt-1.5
+                        "
+                            >
                                 {search
                                     ? "Try a different search term."
                                     : "Orders appear here when buyers win your auctions."}
@@ -709,6 +844,7 @@ export default function SellerDashboard() {
                 </div>
             </div>
 
+            {/* OTP MODAL */}
             <AnimatePresence>
                 {otpModal && (
                     <OTPModal
