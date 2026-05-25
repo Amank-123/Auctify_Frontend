@@ -4,6 +4,66 @@ import { bidAPI } from "../auctionAPI";
 import { Countdown } from "./Countdown";
 import { Calendar, Gavel, Lock, Heart, Trophy, Info } from "lucide-react";
 import defaultDP from "@/assets/default.png";
+import { API_ENDPOINTS } from "../../../shared/constants/apiEndpoints";
+import { useAuth } from "../../../hooks/useAuth";
+import { showError } from "../../../shared/utils/toast";
+import { api } from "../../../shared/services/axios";
+
+function FavBtn({ auctionId, sellerId }) {
+    const { User, loading: authLoading } = useAuth();
+    const [loading, setLoading] = useState(false);
+    const [on, setOn] = useState(false);
+
+    useEffect(() => {
+        if (!auctionId || !User?._id) return;
+        (async () => {
+            try {
+                const { data } = await api.get(API_ENDPOINTS.User.FETCH_WATCHLIST);
+                setOn(data?.data?.some((item) => item?._id === auctionId));
+            } catch (e) {
+                console.error(e);
+            }
+        })();
+    }, [auctionId, User?._id]);
+
+    if (authLoading || !User?._id || User._id === sellerId) return null;
+
+    const toggle = async (e) => {
+        e.stopPropagation();
+        if (loading) return;
+        try {
+            setLoading(true);
+            await api.post(API_ENDPOINTS.User.TOGGLE_WATCHLIST(auctionId));
+            setOn((p) => !p);
+        } catch (err) {
+            console.error(err);
+            showError(err?.response?.data?.message || "Failed to update watchlist");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <button
+            onClick={toggle}
+            disabled={loading}
+            className={`w-full inline-flex items-center justify-center gap-2 h-11 px-4 rounded-xl border text-sm font-semibold transition-all duration-200 active:scale-[0.98] shadow-sm ${
+                on
+                    ? "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-200 hover:border-blue-300 shadow-blue-100"
+                    : "bg-blue-50 border-blue-100 text-blue-700 hover:bg-blue-100 hover:border-blue-200 hover:shadow-md"
+            } ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+        >
+            <Heart
+                size={17}
+                className={`transition-all duration-200 ${
+                    on ? "fill-blue-600 text-blue-600" : "text-blue-600"
+                }`}
+            />
+
+            <span>{on ? "Watchlisted" : "Add to Watchlist"}</span>
+        </button>
+    );
+}
 
 export function BidPanel({
     canBid,
@@ -11,6 +71,7 @@ export function BidPanel({
     bidCount,
     status,
     auctionId,
+    sellerId,
     endTime,
     startTime,
     highestBidder,
@@ -127,10 +188,7 @@ export function BidPanel({
                 </div>
 
                 <div className="px-4 pb-4">
-                    <button className="w-full h-12 rounded-xl border-2 border-[#2563EB] text-[#2563EB] font-semibold text-[15px] hover:bg-[#EFF6FF] transition flex items-center justify-center gap-2">
-                        <Heart size={18} />
-                        Add to Watchlist
-                    </button>
+                    <FavBtn auctionId={auctionId} sellerId={sellerId} />
                 </div>
             </div>
         );
@@ -241,11 +299,7 @@ export function BidPanel({
                     </div>
                 </div>
 
-                {/* <div className="px-4 pb-4">
-                    <button className="w-full h-12 rounded-xl border-2 border-slate-200 text-[#1F2937] font-semibold text-[15px] hover:bg-slate-50 transition flex items-center justify-center gap-2">
-                        <Heart size={18} /> Add to Watchlist
-                    </button>
-                </div> */}
+                <div className="px-4 pb-4"></div>
             </div>
         );
     }

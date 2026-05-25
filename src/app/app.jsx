@@ -21,7 +21,7 @@ export const App = () => {
     return (
         <>
             <Toaster
-                position="bottom-right"
+                position="top-right"
                 gutter={12}
                 containerClassName="mb-6"
                 toastOptions={{
@@ -44,7 +44,6 @@ export const App = () => {
             <AuthProvider>
                 <RouterProvider router={router} />
             </AuthProvider>
-            <ChatbotWidget />
             {/* <Analytics /> */}
         </>
     );

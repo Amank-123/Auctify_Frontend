@@ -125,7 +125,7 @@ export default function UserSidebar({ open, onClose, user }) {
             className={`
                 fixed inset-0 z-[60]
 
-                transition-all duration-300
+               transition-opacity duration-300
 
                 ${open ? "pointer-events-auto" : "pointer-events-none"}
             `}
@@ -167,14 +167,14 @@ export default function UserSidebar({ open, onClose, user }) {
                     will-change-transform
 
                     transition-transform
-                    duration-300
+                    duration-200
                     ease-out
 
                     ${open ? "translate-x-0" : "translate-x-full"}
                 `}
             >
                 {/* TOP ACCENT */}
-                <div
+                {/* <div
                     className="
                         h-[3px]
                         w-full
@@ -186,7 +186,7 @@ export default function UserSidebar({ open, onClose, user }) {
 
                         shrink-0
                     "
-                />
+                /> */}
 
                 {/* HEADER */}
                 <div
