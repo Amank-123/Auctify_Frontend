@@ -36,19 +36,6 @@ const TypingDots = () => (
     </div>
 );
 
-const FabDots = () => (
-    <div className="flex items-center gap-1">
-        {[0, 1, 2].map((i) => (
-            <motion.div
-                key={i}
-                className="w-[4.5px] h-[4.5px] rounded-full bg-white"
-                animate={{ y: [0, -4, 0], opacity: [0.6, 1, 0.6] }}
-                transition={{ duration: 1.3, repeat: Infinity, delay: i * 0.2, ease: "easeInOut" }}
-            />
-        ))}
-    </div>
-);
-
 const FabIcon = ({ isOpen }) => (
     <AnimatePresence mode="wait">
         <motion.span
@@ -180,15 +167,46 @@ function spawnParticles(fabRef) {
 
 const quickReplies = ["How does bidding work?", "List an item", "Track my order"];
 
+const MicIcon = ({ listening }) => (
+    <motion.svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        animate={listening ? { scale: [1, 1.15, 1] } : {}}
+        transition={{ duration: 1, repeat: listening ? Infinity : 0 }}
+    >
+        <path
+            d="M12 15C13.6569 15 15 13.6569 15 12V7C15 5.34315 13.6569 4 12 4C10.3431 4 9 5.34315 9 7V12C9 13.6569 10.3431 15 12 15Z"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+        <path
+            d="M19 12C19 15.866 15.866 19 12 19M12 19C8.13401 19 5 15.866 5 12M12 19V22"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+    </motion.svg>
+);
+
 export default function ChatbotWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(false);
+    const [listening, setListening] = useState(false);
+    const [hasSpeechSupport, setHasSpeechSupport] = useState(false);
+    const recognitionRef = useRef(null);
+    // Guards against duplicate API calls (e.g. rapid clicks or double-fire)
+    const isSendingRef = useRef(false);
     const [chatId] = useState(crypto.randomUUID());
     const [inputFocused, setInputFocused] = useState(false);
     const [showQuick, setShowQuick] = useState(true);
     const [messages, setMessages] = useState([
-        { role: "assistant", content: "Hi! I'm Auctify AI Assistant. How can I help you ?" },
+        { role: "assistant", content: "Hi! I'm Auctify AI Assistant. How can I help you?" },
     ]);
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
@@ -198,14 +216,11 @@ export default function ChatbotWidget() {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, loading]);
 
-    useEffect(() => {
-        if (isOpen) setTimeout(() => inputRef.current?.focus(), 280);
-    }, [isOpen]);
-
     const sendMessage = useCallback(
         async (text) => {
-            const msg = (text || message).trim();
-            if (!msg || loading) return;
+            const msg = (text !== undefined ? text : message).trim();
+            if (!msg || isSendingRef.current) return;
+            isSendingRef.current = true;
             setShowQuick(false);
             setMessages((prev) => [...prev, { role: "user", content: msg }]);
             setMessage("");
@@ -228,11 +243,121 @@ export default function ChatbotWidget() {
                 ]);
             }
             setLoading(false);
+            isSendingRef.current = false;
         },
-        [message, chatId, loading],
+        [chatId, message],
     );
 
-    const canSend = !!message.trim() && !loading;
+    // Tracks whether the user manually stopped (so onend doesn't restart)
+    const manualStopRef = useRef(false);
+    // Snapshot of input text before mic session starts — so new speech appends to it
+    const preSessionTextRef = useRef("");
+    // Always-current mirror of `message` state, readable inside recognition closures
+    const messageRef = useRef("");
+    // Silence detection timer — stops mic after 2.5s of no speech
+    const silenceTimerRef = useRef(null);
+
+    const resetSilenceTimer = (recognition) => {
+        clearTimeout(silenceTimerRef.current);
+        // If user hasn't spoken for 2.5s, treat it as done speaking
+        silenceTimerRef.current = setTimeout(() => {
+            manualStopRef.current = true;
+            recognition.stop();
+        }, 2500);
+    };
+
+    // Keep messageRef in sync so recognition closures always see latest value
+    useEffect(() => {
+        messageRef.current = message;
+    }, [message]);
+
+    // Speech recognition — continuous mode
+    // Stays alive through pauses; auto-stops only after 2.5s of true silence
+    useEffect(() => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) return;
+
+        setHasSpeechSupport(true);
+
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = "en-US";
+
+        recognition.onstart = () => {
+            manualStopRef.current = false;
+            // Snapshot whatever text is already in the input before we start appending
+            preSessionTextRef.current = messageRef.current;
+            setListening(true);
+        };
+
+        recognition.onresult = (event) => {
+            let finalSoFar = "";
+            let interim = "";
+            for (let i = 0; i < event.results.length; i++) {
+                const result = event.results[i];
+                if (result.isFinal) {
+                    finalSoFar += result[0].transcript;
+                } else {
+                    interim += result[0].transcript;
+                }
+            }
+            const base = preSessionTextRef.current;
+            const spoken = (finalSoFar + interim).trim();
+            // Append new speech to whatever was already typed/spoken before
+            setMessage(base ? base + " " + spoken : spoken);
+            // Reset silence timer every time speech is detected
+            resetSilenceTimer(recognition);
+        };
+
+        // onend: restart if not manually stopped (keeps alive through browser cuts)
+        recognition.onend = () => {
+            if (!manualStopRef.current) {
+                try {
+                    recognition.start();
+                } catch {
+                    /* ignore */
+                }
+            } else {
+                clearTimeout(silenceTimerRef.current);
+                setListening(false);
+                inputRef.current?.focus();
+            }
+        };
+
+        recognition.onerror = (e) => {
+            if (e.error === "no-speech") return;
+            clearTimeout(silenceTimerRef.current);
+            manualStopRef.current = true;
+            setListening(false);
+        };
+
+        recognitionRef.current = recognition;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // mount only
+
+    useEffect(() => {
+        if (isOpen) setTimeout(() => inputRef.current?.focus(), 280);
+    }, [isOpen]);
+
+    const handleMicClick = () => {
+        if (!recognitionRef.current) return;
+        if (listening) {
+            // User manually stops
+            clearTimeout(silenceTimerRef.current);
+            manualStopRef.current = true;
+            recognitionRef.current.stop();
+        } else {
+            // Don't clear message — user may have existing text they want to keep
+            try {
+                recognitionRef.current.start();
+            } catch {
+                // already started — ignore
+            }
+        }
+    };
+
+    const canSend = !!message.trim() && !loading && !listening;
 
     const handleFabClick = () => {
         if (!isOpen) spawnParticles(fabRef);
@@ -255,7 +380,6 @@ export default function ChatbotWidget() {
                         boxShadow: "0 4px 20px rgba(255,107,0,0.42), 0 1px 4px rgba(255,107,0,0.2)",
                     }}
                 >
-                    {/* Pulse ring */}
                     {!isOpen && (
                         <motion.div
                             className="absolute rounded-full pointer-events-none"
@@ -264,7 +388,6 @@ export default function ChatbotWidget() {
                             transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
                         />
                     )}
-                    {/* Second slower ring */}
                     {!isOpen && (
                         <motion.div
                             className="absolute rounded-full pointer-events-none"
@@ -348,7 +471,11 @@ export default function ChatbotWidget() {
                                         initial={{ opacity: 0, scale: 0.85, x: -10 }}
                                         animate={{ opacity: 1, scale: 1, x: 0 }}
                                         exit={{ opacity: 0, scale: 0.9 }}
-                                        transition={{ type: "spring", stiffness: 360, damping: 28 }}
+                                        transition={{
+                                            type: "spring",
+                                            stiffness: 360,
+                                            damping: 28,
+                                        }}
                                         className="flex"
                                     >
                                         <div
@@ -418,8 +545,33 @@ export default function ChatbotWidget() {
                                     onBlur={() => setInputFocused(false)}
                                     placeholder="Type a message…"
                                     className="flex-1 border-none bg-transparent text-[13.5px] text-[#1a1f2e] outline-none placeholder:text-[#b0b7c3]"
-                                    style={{ caretColor: ORANGE, fontFamily: "Inter, sans-serif" }}
+                                    style={{
+                                        caretColor: ORANGE,
+                                        fontFamily: "Inter, sans-serif",
+                                    }}
                                 />
+
+                                {/* FIX 3: Mic button — separate, only shown when speech is supported */}
+                                {hasSpeechSupport && (
+                                    <motion.button
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.88 }}
+                                        onClick={handleMicClick}
+                                        className="w-9 h-9 rounded-[11px] border-none flex items-center justify-center flex-shrink-0"
+                                        style={{
+                                            background: listening
+                                                ? "rgba(255,107,0,0.12)"
+                                                : "transparent",
+                                            color: listening ? ORANGE : "#9ca3af",
+                                            cursor: "pointer",
+                                        }}
+                                        title={listening ? "Stop listening" : "Voice input"}
+                                    >
+                                        <MicIcon listening={listening} />
+                                    </motion.button>
+                                )}
+
+                                {/* FIX 4: Send button — only the send icon, no mic inside */}
                                 <motion.button
                                     animate={{ background: canSend ? ORANGE : "#e9ebee" }}
                                     whileHover={canSend ? { scale: 1.13, rotate: -10 } : {}}
