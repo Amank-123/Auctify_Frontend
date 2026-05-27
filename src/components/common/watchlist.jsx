@@ -12,8 +12,8 @@ import {
     Loader2,
     ArrowRight,
     Sparkles,
-    Trash2,
 } from "lucide-react";
+
 import { motion, AnimatePresence } from "framer-motion";
 
 import { api } from "@/shared/services/axios";
@@ -21,14 +21,18 @@ import { API_ENDPOINTS } from "@/shared/constants/apiEndpoints";
 import { getCurrentTime } from "@/shared/utils/timeSync";
 
 /* ─────────────────────────────────────────────
-   COUNTDOWN HOOK  (identical to AuctionCard)
+   COUNTDOWN
 ───────────────────────────────────────────── */
 function useCountdown(target) {
     const calc = () => {
         if (!target) return null;
+
         const now = getCurrentTime();
+
         const diff = Math.max(0, Math.floor((new Date(target).getTime() - now) / 1000));
+
         if (diff === 0) return null;
+
         return {
             d: Math.floor(diff / 86400),
             h: Math.floor((diff % 86400) / 3600),
@@ -38,48 +42,64 @@ function useCountdown(target) {
             critical: diff < 60,
         };
     };
+
     const [t, setT] = useState(calc);
+
     useEffect(() => {
         if (!target) return;
+
         setT(calc());
-        const id = setInterval(() => setT(calc()), 1000);
+
+        const id = setInterval(() => {
+            setT(calc());
+        }, 1000);
+
         return () => clearInterval(id);
     }, [target]);
+
     return t;
 }
 
 /* ─────────────────────────────────────────────
-   TIMER CHIP  (identical to AuctionCard)
+   TIMER CHIP
 ───────────────────────────────────────────── */
 function TimerChip({ endTime, countdownEnd, auctionType }) {
     const target = auctionType === "short" ? countdownEnd : endTime;
+
     const t = useCountdown(target);
+
     if (!t) return null;
+
     const pad = (n) => String(n).padStart(2, "0");
+
     const str =
         t.d > 0 ? `${t.d}d ${pad(t.h)}h ${pad(t.m)}m` : `${pad(t.h)}:${pad(t.m)}:${pad(t.s)}`;
+
     return (
         <div
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-bold tabular-nums ${
-                t.critical
-                    ? "bg-red-600 text-white"
-                    : t.urgent
-                      ? "bg-orange-500 text-white"
-                      : "bg-slate-900/70 text-white backdrop-blur-md"
-            }`}
+            className={`
+                flex items-center gap-1.5
+                px-2 py-1 rounded-lg
+                text-[11px] font-bold
+                backdrop-blur-md
+                ${
+                    t.critical
+                        ? "bg-red-600 text-white"
+                        : t.urgent
+                          ? "bg-orange-500 text-white"
+                          : "bg-black/65 text-white"
+                }
+            `}
         >
-            {t.critical ? (
-                <Flame size={11} className="fill-white text-white" />
-            ) : (
-                <Clock size={11} strokeWidth={2.5} />
-            )}
+            {t.critical ? <Flame size={10} className="fill-white" /> : <Clock size={10} />}
+
             {str}
         </div>
     );
 }
 
 /* ─────────────────────────────────────────────
-   MEDIA RENDERER  (identical to AuctionCard)
+   MEDIA
 ───────────────────────────────────────────── */
 function MediaRenderer({ media, title }) {
     const [err, setErr] = useState(false);
@@ -87,24 +107,32 @@ function MediaRenderer({ media, title }) {
 
     const src = (() => {
         if (!media) return null;
+
         if (Array.isArray(media[0])) return media[0][0] ?? null;
+
         if (Array.isArray(media)) return media[0] ?? null;
+
         return media;
     })();
 
     useEffect(() => {
         if (!src) return;
+
         const ext = src.split("?")[0].split(".").pop().toLowerCase();
+
         setType(["mp4", "webm", "ogg", "mov"].includes(ext) ? "video" : "image");
     }, [src]);
 
     if (!src || err || !type) {
         return (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-100 to-slate-50 gap-2">
+            <div
+                className="
+                    w-full h-full
+                    flex items-center justify-center
+                    bg-slate-100
+                "
+            >
                 <Gavel size={28} className="text-slate-300" />
-                <span className="text-[10px] text-slate-400 font-semibold tracking-widest uppercase">
-                    No Preview
-                </span>
             </div>
         );
     }
@@ -114,16 +142,35 @@ function MediaRenderer({ media, title }) {
             <>
                 <video
                     src={src}
-                    className="w-full h-full object-cover"
+                    className="
+                        w-full h-full object-cover
+                    "
                     muted
                     loop
-                    playsInline
                     autoPlay
+                    playsInline
                     onError={() => setErr(true)}
                 />
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm border border-white/30 flex items-center justify-center">
-                        <Play size={14} className="fill-white text-white ml-0.5" />
+
+                <div
+                    className="
+                        absolute inset-0
+                        flex items-center justify-center
+                    "
+                >
+                    <div
+                        className="
+                            w-9 h-9 rounded-full
+                            bg-black/40
+                            flex items-center justify-center
+                        "
+                    >
+                        <Play
+                            size={14}
+                            className="
+                                fill-white text-white ml-0.5
+                            "
+                        />
                     </div>
                 </div>
             </>
@@ -134,79 +181,79 @@ function MediaRenderer({ media, title }) {
         <img
             src={src}
             alt={title}
-            className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+            className="
+                w-full h-full object-cover
+                transition-transform duration-500
+                group-hover:scale-105
+            "
             onError={() => setErr(true)}
         />
     );
 }
 
 /* ─────────────────────────────────────────────
-   STATUS BADGE  (identical to AuctionCard)
+   STATUS
 ───────────────────────────────────────────── */
 function StatusBadge({ status, auctionType }) {
-    const isShort = auctionType === "short";
     const base =
-        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold uppercase tracking-wide border";
+        "inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold uppercase border";
+
     const styles = {
         active: "bg-emerald-50 text-emerald-700 border-emerald-200",
-        draft: "bg-slate-100 text-slate-600 border-slate-200",
         ended: "bg-slate-100 text-slate-500 border-slate-200",
-        expired: "bg-red-50 text-red-700 border-red-200",
-        cancelled: "bg-red-50 text-red-700 border-red-200",
-        completed: "bg-blue-50 text-blue-700 border-blue-200",
-        payment_pending: "bg-amber-50 text-amber-700 border-amber-200",
-        failed: "bg-red-50 text-red-700 border-red-200",
+        draft: "bg-slate-100 text-slate-600 border-slate-200",
     };
-    const labels = {
-        active: "Live",
-        draft: "Upcoming",
-        ended: "Ended",
-        expired: "Expired",
-        cancelled: "Cancelled",
-        completed: "Completed",
-        payment_pending: "Pending",
-        failed: "Failed",
-    };
+
     return (
         <div className={`${base} ${styles[status] || styles.draft}`}>
-            {status === "active" && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
-            {labels[status] || "Unknown"}
-            {isShort && status === "active" && (
-                <span className="ml-1 text-[10px] font-medium text-amber-600 normal-case">
-                    • fast
-                </span>
+            {status === "active" && (
+                <span
+                    className="
+                        w-1.5 h-1.5 rounded-full
+                        bg-emerald-500
+                    "
+                />
             )}
+
+            {status}
         </div>
     );
 }
 
 /* ─────────────────────────────────────────────
-   REMOVE BUTTON  (replaces FavBtn — already saved)
+   REMOVE BUTTON
 ───────────────────────────────────────────── */
-function RemoveBtn({ onRemove, loading }) {
+function RemoveBtn({ onRemove }) {
     return (
         <button
             onClick={(e) => {
                 e.stopPropagation();
                 onRemove();
             }}
-            disabled={loading}
-            className={`
-                w-8 h-8 rounded-full flex items-center justify-center
-                border shadow transition-all duration-200 active:scale-90
-                bg-red-500 border-red-400
-                ${loading ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:scale-110 hover:bg-red-600"}
-            `}
+            className="
+                w-9 h-9 rounded-full
+                bg-red-500
+                flex items-center justify-center
+                shadow-md
+                transition-all duration-200
+                hover:scale-110
+                active:scale-90
+            "
         >
-            <Heart size={13} strokeWidth={2} className="fill-white text-white" />
+            <Heart
+                size={14}
+                className="
+                    fill-white text-white
+                "
+            />
         </button>
     );
 }
 
 /* ─────────────────────────────────────────────
-   WATCHLIST CARD  (AuctionCard layout, watchlist data)
+   CARD
 ───────────────────────────────────────────── */
-function WatchlistCard({ item, onRemove, isRemoving }) {
+function WatchlistCard({ item, onRemove }) {
     const navigate = useNavigate();
 
     const {
@@ -221,147 +268,257 @@ function WatchlistCard({ item, onRemove, isRemoving }) {
         auctionType = "long",
         category,
         media,
-        sellerId,
         endTime,
         countdownEnd,
     } = item ?? {};
 
-    const title = name || "Untitled Auction";
+    const title = name || "Untitled";
+
     const price =
         currentHighestBid > 0 ? currentHighestBid : currentBid > 0 ? currentBid : startPrice;
+
     const hasBids = currentHighestBid > 0 || currentBid > 0;
+
     const isLive = status === "active";
-    const showActive = isLive && hasBids;
 
     return (
-        <motion.article
-            layout
-            variants={{
-                hidden: { opacity: 0, y: 20, scale: 0.97 },
-                show: {
-                    opacity: 1,
-                    y: 0,
-                    scale: 1,
-                    transition: { type: "spring", stiffness: 300, damping: 28 },
-                },
-                exit: {
-                    opacity: 0,
-                    scale: 0.93,
-                    y: -8,
-                    transition: { duration: 0.2, ease: "easeIn" },
-                },
+        <motion.div
+            initial={{
+                opacity: 0,
+                scale: 0.95,
             }}
-            animate={isRemoving ? { opacity: 0.3, scale: 0.96 } : {}}
-            onClick={() => navigate(`/auction/${_id}`)}
-            className="
-                group relative w-full bg-white
-                rounded-xl overflow-hidden border border-slate-200
-                cursor-pointer select-none
-                transition-all duration-300 ease-out
-                hover:-translate-y-1 hover:shadow-md
-            "
+            animate={{
+                opacity: 1,
+                scale: 1,
+            }}
+            exit={{
+                opacity: 0,
+                scale: 0.8,
+            }}
+            transition={{
+                duration: 0.18,
+            }}
+            className="w-full"
         >
-            {/* MEDIA */}
-            <div className="relative aspect-video overflow-hidden bg-slate-100">
-                <MediaRenderer media={media} title={title} />
+            <div
+                onClick={() => navigate(`/auction/${_id}`)}
+                className="
+                    group bg-white
+                    rounded-2xl overflow-hidden
+                    border border-slate-200
+                    shadow-sm
+                    hover:shadow-md
+                    transition-all duration-300
+                    cursor-pointer
+                    h-full
+                    flex flex-col
+                "
+            >
+                {/* IMAGE */}
+                <div
+                    className="
+                        relative
+                        aspect-[16/10]
+                        overflow-hidden
+                        bg-slate-100
+                        shrink-0
+                    "
+                >
+                    <MediaRenderer media={media} title={title} />
 
-                {/* gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent pointer-events-none" />
+                    <div
+                        className="
+                            absolute inset-0
+                            bg-gradient-to-t
+                            from-black/40
+                            via-transparent
+                            to-transparent
+                        "
+                    />
 
-                {/* TOP ROW: status badge + remove btn */}
-                <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
-                    <StatusBadge status={status} auctionType={auctionType} />
-                    <RemoveBtn onRemove={() => onRemove(_id)} loading={isRemoving} />
-                </div>
+                    <div
+                        className="
+                            absolute top-3 left-3 right-3
+                            flex items-center justify-between
+                        "
+                    >
+                        <StatusBadge status={status} auctionType={auctionType} />
 
-                {/* TIMER — bottom right */}
-                <div className="absolute bottom-3 right-3 z-10">
+                        <RemoveBtn onRemove={() => onRemove(_id)} />
+                    </div>
+
                     {isLive && (
-                        <TimerChip
-                            endTime={endTime}
-                            countdownEnd={countdownEnd}
-                            auctionType={auctionType}
-                        />
+                        <div
+                            className="
+                                absolute bottom-3 right-3
+                            "
+                        >
+                            <TimerChip
+                                endTime={endTime}
+                                countdownEnd={countdownEnd}
+                                auctionType={auctionType}
+                            />
+                        </div>
                     )}
                 </div>
-            </div>
 
-            {/* BODY — exactly matching AuctionCard */}
-            <div className="px-4 pt-3 pb-4 flex flex-col gap-2">
-                {/* TITLE */}
-                <h3 className="text-[15px] font-semibold text-slate-900 leading-snug line-clamp-1">
-                    {title}
-                </h3>
+                {/* BODY */}
+                <div
+                    className="
+                        p-3 sm:p-4
+                        flex flex-col
+                        flex-1
+                    "
+                >
+                    <h3
+                        className="
+                            text-[14px] sm:text-[15px]
+                            font-bold
+                            text-slate-900
+                            line-clamp-1
+                        "
+                    >
+                        {title}
+                    </h3>
 
-                {/* DESCRIPTION */}
-                {description && (
-                    <p className="text-[13px] text-slate-500 leading-relaxed line-clamp-2">
-                        {description}
-                    </p>
-                )}
+                    {description && (
+                        <p
+                            className="
+                                mt-1
+                                text-[12px]
+                                text-slate-500
+                                line-clamp-2
+                                min-h-[32px]
+                            "
+                        >
+                            {description}
+                        </p>
+                    )}
 
-                <div className="h-px w-full bg-slate-200" />
+                    <div
+                        className="
+                            h-px bg-slate-200
+                            my-3
+                        "
+                    />
 
-                {/* PRICE + META */}
-                <div className="flex items-center justify-between gap-3">
-                    {/* LEFT — price */}
-                    <div className="flex flex-col min-w-0">
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                    {/* PRICE */}
+                    <div className="mt-auto">
+                        <span
+                            className="
+                                text-[10px]
+                                uppercase
+                                font-bold
+                                text-slate-400
+                            "
+                        >
                             {hasBids ? "Current Bid" : "Starting Bid"}
                         </span>
-                        <div className="flex items-baseline gap-1 mt-0.5">
-                            <span className="text-[13px] font-semibold text-slate-500">₹</span>
-                            <span className="text-[22px] font-bold text-slate-900 tracking-tight">
+
+                        <div
+                            className="
+                                flex items-baseline
+                                gap-1 mt-1
+                            "
+                        >
+                            <span
+                                className="
+                                    text-[14px]
+                                    font-bold
+                                "
+                            >
+                                ₹
+                            </span>
+
+                            <span
+                                className="
+                                    text-[22px]
+                                    font-extrabold
+                                    text-slate-900
+                                    leading-none
+                                "
+                            >
                                 {price.toLocaleString("en-IN")}
                             </span>
                         </div>
-                        {showActive && (
-                            <div className="flex items-center gap-1 mt-1">
-                                <TrendingUp size={11} className="text-emerald-500" />
-                                <span className="text-[11px] text-emerald-600 font-medium">
-                                    Active bidding
-                                </span>
-                            </div>
-                        )}
-                    </div>
 
-                    {/* RIGHT — bid count + category */}
-                    <div className="flex flex-col items-end gap-1.5">
-                        {bidCount > 0 && (
-                            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 border border-blue-200">
-                                <Users size={14} className="text-blue-600" />
-                                <span className="text-[12px] font-bold text-blue-700">
-                                    {bidCount}
-                                </span>
-                                <span className="text-[12px] text-blue-600 font-medium">
-                                    {bidCount === 1 ? "bid" : "bids"}
-                                </span>
-                            </div>
-                        )}
+                        {/* FOOTER */}
+                        <div
+                            className="
+                                flex items-center
+                                justify-between
+                                mt-3
+                                gap-2
+                            "
+                        >
+                            {bidCount > 0 ? (
+                                <div
+                                    className="
+                                        flex items-center
+                                        gap-1.5
+                                        px-2.5 py-1.5
+                                        rounded-lg
+                                        bg-blue-50
+                                        border border-blue-200
+                                        text-blue-700
+                                        text-[12px]
+                                        font-bold
+                                    "
+                                >
+                                    <Users size={12} />
+                                    {bidCount} {bidCount === 1 ? "bid" : "bids"}
+                                </div>
+                            ) : (
+                                <div />
+                            )}
 
-                        {category?.name && (
-                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200">
-                                <Tag size={12} className="text-orange-500" />
-                                <span className="text-[12px] font-medium text-orange-500 capitalize">
+                            {category?.name && (
+                                <div
+                                    className="
+                                        flex items-center
+                                        gap-1
+                                        text-orange-500
+                                        text-[11px]
+                                        font-semibold
+                                    "
+                                >
+                                    <Tag size={11} />
+
                                     {category.name.replace(/_/g, " ")}
-                                </span>
+                                </div>
+                            )}
+                        </div>
+
+                        {isLive && (
+                            <div
+                                className="
+                                    flex items-center
+                                    gap-1 mt-2
+                                    text-emerald-600
+                                    text-[11px]
+                                    font-semibold
+                                "
+                            >
+                                <TrendingUp size={11} />
+                                Active bidding
                             </div>
                         )}
                     </div>
                 </div>
             </div>
-        </motion.article>
+        </motion.div>
     );
 }
 
 /* ─────────────────────────────────────────────
-   MAIN PAGE
+   MAIN
 ───────────────────────────────────────────── */
 export default function Watchlist() {
     const navigate = useNavigate();
+
     const [loading, setLoading] = useState(true);
+
     const [items, setItems] = useState([]);
-    const [removingId, setRemovingId] = useState(null);
 
     useEffect(() => {
         fetchWatchlist();
@@ -370,7 +527,9 @@ export default function Watchlist() {
     const fetchWatchlist = async () => {
         try {
             setLoading(true);
+
             const res = await api.get(API_ENDPOINTS.User.FETCH_WATCHLIST);
+
             setItems(res?.data?.data || []);
         } catch (e) {
             console.error(e);
@@ -380,162 +539,222 @@ export default function Watchlist() {
         }
     };
 
+    /* REMOVE */
     const removeWatchlist = async (id) => {
+        const previousItems = items;
+
+        // instant remove
+        setItems((prev) => prev.filter((item) => item._id !== id));
+
         try {
-            setRemovingId(id);
             await api.post(API_ENDPOINTS.User.TOGGLE_WATCHLIST(id));
-            setTimeout(() => {
-                setItems((prev) => prev.filter((i) => i._id !== id));
-                setRemovingId(null);
-            }, 240);
         } catch (e) {
             console.error(e);
-            setRemovingId(null);
+
+            // rollback
+            setItems(previousItems);
         }
     };
 
     return (
-        <div className="min-h-screen bg-[#EEF2F8] px-4 sm:px-6 lg:px-10 py-8 sm:py-10">
-            <div className="max-w-screen-xl mx-auto">
-                {/* ── HEADER ── */}
-                <motion.div
-                    initial={{ opacity: 0, y: -16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.42, ease: "easeOut" }}
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-7"
+        <div
+            className="
+                min-h-screen
+                bg-[#EEF2F8]
+                px-4 sm:px-6 lg:px-10
+                py-8
+            "
+        >
+            <div className="max-w-[1400px] mx-auto">
+                {/* HEADER */}
+                <div
+                    className="
+                        flex flex-col
+                        sm:flex-row
+                        sm:items-center
+                        sm:justify-between
+                        gap-4
+                        mb-8
+                    "
                 >
-                    <div className="flex items-center gap-3">
-                        <div className="relative shrink-0">
-                            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-md shadow-blue-600/30">
-                                <Heart size={19} className="text-white fill-white" />
-                            </div>
-                            {!loading && items.length > 0 && (
-                                <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
-                                    <span className="relative inline-flex h-3 w-3 rounded-full bg-orange-500 border-2 border-white" />
-                                </span>
-                            )}
-                        </div>
-                        <div>
-                            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-                                Your{" "}
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-500">
-                                    Watchlist
-                                </span>
-                            </h1>
-                            <p className="text-slate-400 text-xs mt-0.5 font-medium">
-                                Auctions you're tracking
-                            </p>
-                        </div>
-                    </div>
-
-                    <AnimatePresence>
-                        {!loading && items.length > 0 && (
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.78 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.78 }}
-                                transition={{
-                                    delay: 0.28,
-                                    type: "spring",
-                                    stiffness: 320,
-                                    damping: 22,
-                                }}
-                                className="self-start sm:self-auto inline-flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow shadow-orange-400/30"
+                    <div>
+                        <h1
+                            className="
+                                text-3xl
+                                font-extrabold
+                                text-slate-900
+                            "
+                        >
+                            Your{" "}
+                            <span
+                                className="
+                                    text-blue-600
+                                "
                             >
-                                <Sparkles size={12} />
-                                {items.length} {items.length === 1 ? "Item" : "Items"} Saved
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </motion.div>
+                                Watchlist
+                            </span>
+                        </h1>
 
-                {/* divider */}
-                <motion.div
-                    initial={{ scaleX: 0, opacity: 0 }}
-                    animate={{ scaleX: 1, opacity: 1 }}
-                    transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }}
-                    className="h-px bg-gradient-to-r from-blue-200/60 via-slate-200 to-orange-200/60 mb-7 origin-left"
-                />
-
-                {/* ── LOADING ── */}
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center py-36 gap-4">
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-600/30">
-                            <Loader2 className="animate-spin text-white" size={26} />
-                        </div>
-                        <p className="text-slate-400 text-sm font-medium animate-pulse">
-                            Fetching your watchlist…
+                        <p
+                            className="
+                                text-slate-500
+                                mt-1
+                            "
+                        >
+                            Auctions you're tracking
                         </p>
                     </div>
-                ) : items.length === 0 ? (
-                    /* ── EMPTY ── */
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.96 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.36 }}
-                        className="bg-white rounded-2xl border border-slate-200 shadow-sm p-12 sm:p-20 text-center"
-                    >
-                        <motion.div
-                            initial={{ scale: 0, rotate: -12 }}
-                            animate={{ scale: 1, rotate: 0 }}
-                            transition={{ delay: 0.1, type: "spring", stiffness: 270, damping: 20 }}
-                            className="w-20 h-20 rounded-full bg-blue-50 border-2 border-blue-200 flex items-center justify-center mx-auto"
-                        >
-                            <Heart size={32} className="text-blue-400" />
-                        </motion.div>
-                        <h3 className="text-2xl font-extrabold text-slate-800 mt-5">
-                            Nothing saved yet
-                        </h3>
-                        <p className="text-slate-400 mt-2 text-sm max-w-xs mx-auto leading-relaxed">
-                            Tap the heart on any auction to save it here and never miss a bid.
-                        </p>
-                        <motion.button
-                            whileHover={{ scale: 1.04, y: -2 }}
-                            whileTap={{ scale: 0.97 }}
-                            onClick={() => navigate("/categories")}
-                            className="mt-7 inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/35 transition-shadow text-sm"
-                        >
-                            Explore Auctions <ArrowRight size={14} />
-                        </motion.button>
-                    </motion.div>
-                ) : (
-                    /* ── GRID — same columns as auction listing ── */
-                    <motion.div
-                        initial="hidden"
-                        animate="show"
-                        variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06 } } }}
-                        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-5"
-                    >
-                        <AnimatePresence mode="popLayout">
-                            {items.map((item) => (
-                                <WatchlistCard
-                                    key={item._id}
-                                    item={item}
-                                    onRemove={removeWatchlist}
-                                    isRemoving={removingId === item._id}
-                                />
-                            ))}
-                        </AnimatePresence>
-                    </motion.div>
-                )}
 
-                {/* bottom nudge */}
-                {!loading && items.length > 0 && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.55 }}
-                        className="flex justify-center mt-8"
-                    >
-                        <button
-                            onClick={() => navigate("/category")}
-                            className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-700 text-sm font-semibold hover:underline underline-offset-2 transition-colors"
+                    {!loading && items.length > 0 && (
+                        <div
+                            className="
+                                    inline-flex
+                                    items-center gap-2
+                                    bg-orange-500
+                                    text-white
+                                    px-4 py-2
+                                    rounded-full
+                                    font-bold
+                                    text-sm
+                                    w-fit
+                                "
                         >
                             <Sparkles size={13} />
-                            Discover more auctions
+                            {items.length} {items.length === 1 ? "Item" : "Items"} Saved
+                        </div>
+                    )}
+                </div>
+
+                {/* LOADING */}
+                {loading ? (
+                    <div
+                        className="
+                            flex items-center
+                            justify-center
+                            py-32
+                        "
+                    >
+                        <Loader2
+                            size={32}
+                            className="
+                                animate-spin
+                                text-blue-600
+                            "
+                        />
+                    </div>
+                ) : items.length === 0 ? (
+                    /* EMPTY */
+                    <div
+                        className="
+                            bg-white
+                            rounded-3xl
+                            border border-slate-200
+                            p-16
+                            text-center
+                        "
+                    >
+                        <div
+                            className="
+                                w-20 h-20
+                                rounded-full
+                                bg-blue-50
+                                flex items-center
+                                justify-center
+                                mx-auto
+                            "
+                        >
+                            <Heart
+                                size={34}
+                                className="
+                                    text-blue-400
+                                "
+                            />
+                        </div>
+
+                        <h2
+                            className="
+                                mt-6
+                                text-2xl
+                                font-extrabold
+                            "
+                        >
+                            Nothing saved yet
+                        </h2>
+
+                        <p
+                            className="
+                                mt-3
+                                text-slate-500
+                            "
+                        >
+                            Save auctions to your watchlist.
+                        </p>
+
+                        <button
+                            onClick={() => navigate("/categories")}
+                            className="
+                                mt-7
+                                inline-flex
+                                items-center gap-2
+                                bg-blue-600
+                                text-white
+                                px-6 py-3
+                                rounded-xl
+                                font-semibold
+                            "
+                        >
+                            Explore Auctions
+                            <ArrowRight size={16} />
                         </button>
-                    </motion.div>
+                    </div>
+                ) : (
+                    <>
+                        {/* GRID */}
+                        <div
+                            className="
+                                grid
+                                grid-cols-2
+                                sm:grid-cols-2
+                                md:grid-cols-3
+                                lg:grid-cols-4
+                                xl:grid-cols-5
+                                gap-4 sm:gap-5
+                                items-start
+                            "
+                        >
+                            <AnimatePresence initial={false}>
+                                {items.map((item) => (
+                                    <WatchlistCard
+                                        key={item._id}
+                                        item={item}
+                                        onRemove={removeWatchlist}
+                                    />
+                                ))}
+                            </AnimatePresence>
+                        </div>
+
+                        {/* FOOTER */}
+                        <div
+                            className="
+                                flex justify-center
+                                mt-10
+                            "
+                        >
+                            <button
+                                onClick={() => navigate("/category")}
+                                className="
+                                    inline-flex
+                                    items-center gap-2
+                                    text-blue-600
+                                    hover:text-blue-700
+                                    font-semibold
+                                "
+                            >
+                                <Sparkles size={14} />
+                                Discover more auctions
+                            </button>
+                        </div>
+                    </>
                 )}
             </div>
         </div>

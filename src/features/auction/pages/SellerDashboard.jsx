@@ -21,12 +21,13 @@ import {
     User2,
     DollarSign,
     Loader2,
-    ArrowUpRight,
     Check,
     AlertCircle,
 } from "lucide-react";
 import { showError, showSuccess } from "@/shared/utils/toast.js";
 import { api } from "@/shared/services/axios";
+
+// ─── Config ───────────────────────────────────────────────────────────────────
 
 const FILTERS = [
     { key: "all", label: "All", icon: ShoppingBag },
@@ -35,17 +36,15 @@ const FILTERS = [
 ];
 
 const STATUS_CONFIG = {
-    confirmed: { label: "Confirmed", dot: "#3b82f6", bg: "#eff6ff", text: "#1d4ed8" },
-    delivered: { label: "Delivered", dot: "#10b981", bg: "#ecfdf5", text: "#065f46" },
-    pending: { label: "Pending", dot: "#f59e0b", bg: "#fffbeb", text: "#92400e" },
-    default: { label: "Unknown", dot: "#94a3b8", bg: "#f8fafc", text: "#475569" },
+    confirmed: { label: "Confirmed", dot: "#3b82f6", bg: "#dbeafe", text: "#1d4ed8" },
+    delivered: { label: "Delivered", dot: "#10b981", bg: "#d1fae5", text: "#065f46" },
+    pending: { label: "Pending", dot: "#f59e0b", bg: "#fef3c7", text: "#92400e" },
+    default: { label: "Unknown", dot: "#94a3b8", bg: "#f1f5f9", text: "#475569" },
 };
 
 const getStatus = (s) => STATUS_CONFIG[s] || STATUS_CONFIG.pending;
-
 const fmt = (v) =>
     v != null ? new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(v) : "—";
-
 const fmtDate = (d) =>
     d
         ? new Date(d).toLocaleDateString("en-IN", {
@@ -55,137 +54,94 @@ const fmtDate = (d) =>
           })
         : "—";
 
-// Resolves the first usable image URL from any media shape:
-// string | string[] | string[][] | any nesting
 function resolveMediaSrc(media) {
     if (!media) return null;
     const flat = [media].flat(Infinity).filter((v) => typeof v === "string" && v.trim());
     return flat[0] ?? null;
 }
 
-function Skeleton({ className = "" }) {
-    return (
-        <div
-            className={`animate-pulse rounded-lg bg-stone-100 ${className}`}
-            style={{ animationDuration: "1.4s" }}
-        />
-    );
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function Sk({ className = "" }) {
+    return <div className={`animate-pulse rounded-lg bg-stone-100 ${className}`} />;
 }
 
 function OrderSkeleton() {
     return (
-        <div className="bg-white rounded-2xl border border-stone-100 p-4 sm:p-5 flex gap-3 sm:gap-4">
-            <Skeleton className="w-16 h-16 sm:w-24 sm:h-24 rounded-xl shrink-0" />
-            <div className="flex-1 space-y-3">
-                <div className="flex justify-between">
-                    <Skeleton className="h-4 sm:h-5 w-32 sm:w-48" />
-                    <Skeleton className="h-5 sm:h-6 w-16 sm:w-20 rounded-full" />
+        <div className="bg-white rounded-2xl border border-stone-100 p-4 space-y-3">
+            <div className="flex gap-3">
+                <Sk className="w-14 h-14 rounded-xl shrink-0" />
+                <div className="flex-1 space-y-2 pt-0.5">
+                    <Sk className="h-4 w-3/4" />
+                    <Sk className="h-3 w-1/3" />
+                    <Sk className="h-5 w-20 rounded-full" />
                 </div>
-                <Skeleton className="h-3 w-24" />
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 pt-1">
-                    {[...Array(4)].map((_, i) => (
-                        <div key={i} className="space-y-1">
-                            <Skeleton className="h-2.5 w-10 sm:w-12" />
-                            <Skeleton className="h-3.5 sm:h-4 w-14 sm:w-16" />
-                        </div>
-                    ))}
-                </div>
-                <div className="flex gap-2 pt-1">
-                    <Skeleton className="h-7 sm:h-8 w-20 sm:w-24 rounded-xl" />
-                    <Skeleton className="h-7 sm:h-8 w-20 sm:w-24 rounded-xl" />
-                </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+                {[...Array(3)].map((_, i) => (
+                    <Sk key={i} className="h-10 rounded-xl" />
+                ))}
             </div>
         </div>
     );
 }
 
-function StatCard({ label, value, icon: Icon, accent, delay, loading }) {
+// ─── Stat Card ────────────────────────────────────────────────────────────────
+
+function StatCard({ label, value, icon: Icon, bg, iconColor, loading }) {
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="bg-white rounded-2xl border border-stone-100 p-3 sm:p-5 flex items-center gap-2.5 sm:gap-4"
-            style={{ boxShadow: "0 1px 4px 0 rgba(0,0,0,0.04)" }}
+        <div
+            className="bg-white rounded-2xl border border-stone-100 p-3.5 flex flex-col gap-2.5"
+            style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}
         >
             <div
-                className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: accent + "18" }}
+                className="w-8 h-8 rounded-xl flex items-center justify-center"
+                style={{ background: bg }}
             >
-                <Icon size={15} style={{ color: accent }} />
+                <Icon size={15} style={{ color: iconColor }} />
             </div>
-            <div className="min-w-0">
-                <p className="text-[9px] sm:text-[11px] font-semibold uppercase tracking-widest text-stone-400 truncate">
+            <div>
+                {loading ? (
+                    <Sk className="h-6 w-8 mb-1" />
+                ) : (
+                    <p className="text-2xl font-black text-stone-900 leading-none">{value}</p>
+                )}
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-400 mt-1">
                     {label}
                 </p>
-                {loading ? (
-                    <Skeleton className="h-6 sm:h-7 w-8 mt-1" />
-                ) : (
-                    <p className="text-[22px] sm:text-[28px] font-black text-stone-900 leading-none mt-0.5">
-                        {value}
-                    </p>
-                )}
             </div>
-        </motion.div>
-    );
-}
-
-function InfoRow({ icon: Icon, label, value }) {
-    return (
-        <div className="flex flex-col gap-0.5 min-w-0">
-            <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-stone-400 font-bold flex items-center gap-1">
-                <Icon size={9} className="text-stone-300" />
-                {label}
-            </span>
-            <span className="text-[11px] sm:text-[13px] font-semibold text-stone-700 truncate">
-                {value || "—"}
-            </span>
         </div>
     );
 }
 
-function AuctionThumbnail({ media, name, delivered }) {
-    const [imgSrc, setImgSrc] = useState(() => resolveMediaSrc(media));
-    const [errored, setErrored] = useState(false);
+// ─── Pill badge ───────────────────────────────────────────────────────────────
 
-    // re-resolve if media prop changes
-    useEffect(() => {
-        setImgSrc(resolveMediaSrc(media));
-        setErrored(false);
-    }, [media]);
-
+function StatusPill({ status }) {
+    const s = getStatus(status);
     return (
-        <div className="relative shrink-0">
-            {imgSrc && !errored ? (
-                <img
-                    src={imgSrc}
-                    alt={name}
-                    className="w-16 h-16 sm:w-24 sm:h-24 rounded-xl object-cover"
-                    style={{ border: "1px solid #f5f5f4" }}
-                    onError={() => setErrored(true)}
-                />
-            ) : (
-                <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-xl bg-stone-100 flex items-center justify-center">
-                    <Package size={22} className="text-stone-300" />
-                </div>
-            )}
-            {delivered && (
-                <div className="absolute -top-1.5 -right-1.5 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center">
-                    <Check size={10} className="text-white" strokeWidth={3} />
-                </div>
-            )}
-        </div>
+        <span
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0"
+            style={{ background: s.bg, color: s.text }}
+        >
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: s.dot }} />
+            {s.label}
+        </span>
     );
 }
+
+// ─── Order Card ───────────────────────────────────────────────────────────────
 
 function OrderCard({ order, onSendOTP, onVerify }) {
     const [expanded, setExpanded] = useState(false);
     const [sending, setSending] = useState(false);
     const [sent, setSent] = useState(false);
 
-    const s = getStatus(order.orderStatus);
+    const [imgSrc, setImgSrc] = useState(() => resolveMediaSrc(order?.auctionId?.media));
+    const [imgErr, setImgErr] = useState(false);
+
     const delivered = order.orderStatus === "delivered";
     const canSendOTP = order.paymentStatus === "completed" && !delivered;
+
     const buyerName =
         `${order?.buyerId?.firstName || ""} ${order?.buyerId?.lastName || ""}`.trim() ||
         "Unknown buyer";
@@ -201,177 +157,205 @@ function OrderCard({ order, onSendOTP, onVerify }) {
     return (
         <motion.div
             layout
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
             className="bg-white rounded-2xl border border-stone-100 overflow-hidden"
-            style={{ boxShadow: "0 1px 4px 0 rgba(0,0,0,0.04)" }}
+            style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}
         >
+            {/* Delivered stripe */}
             {delivered && (
                 <div
-                    className="h-0.5 w-full"
+                    className="h-1 w-full"
                     style={{ background: "linear-gradient(90deg,#10b981,#34d399)" }}
                 />
             )}
 
-            <div className="flex gap-3 sm:gap-4 p-4 sm:p-5">
-                <AuctionThumbnail
-                    media={order?.auctionId?.media}
-                    name={order?.auctionId?.name}
-                    delivered={delivered}
-                />
+            <div className="p-4">
+                {/* ── Top row: image + title + status ── */}
+                <div className="flex items-start gap-3">
+                    {/* Thumbnail */}
+                    <div className="relative shrink-0">
+                        {imgSrc && !imgErr ? (
+                            <img
+                                src={imgSrc}
+                                alt={order?.auctionId?.name}
+                                className="w-14 h-14 rounded-xl object-cover border border-stone-100"
+                                onError={() => setImgErr(true)}
+                            />
+                        ) : (
+                            <div className="w-14 h-14 rounded-xl bg-stone-100 flex items-center justify-center">
+                                <Package size={20} className="text-stone-300" />
+                            </div>
+                        )}
+                        {delivered && (
+                            <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center">
+                                <Check size={9} className="text-white" strokeWidth={3} />
+                            </div>
+                        )}
+                    </div>
 
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                            <h2 className="text-[13px] sm:text-[15px] font-bold text-stone-900 leading-snug line-clamp-1">
+                    {/* Title block */}
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                            <h2 className="text-[14px] font-bold text-stone-900 leading-snug line-clamp-2 flex-1">
                                 {order?.auctionId?.name || "Untitled Auction"}
                             </h2>
-                            <p className="text-[11px] text-stone-400 mt-0.5 flex items-center gap-1">
-                                <User2 size={9} />
-                                {buyerName}
+                            <StatusPill status={order.orderStatus} />
+                        </div>
+                        <p className="text-[11px] text-stone-400 mt-1 flex items-center gap-1">
+                            <User2 size={9} className="shrink-0" />
+                            {buyerName}
+                        </p>
+                    </div>
+                </div>
+
+                {/* ── Info chips row ── */}
+                <div className="grid grid-cols-3 gap-1.5 mt-3">
+                    {[
+                        { icon: DollarSign, label: "Price", value: `₹${fmt(order.finalPrice)}` },
+                        { icon: CreditCard, label: "Payment", value: order.paymentStatus },
+                        { icon: Calendar, label: "Date", value: fmtDate(order.createdAt) },
+                    ].map(({ icon: Icon, label, value }) => (
+                        <div key={label} className="bg-stone-50 rounded-lg px-2 py-1.5 min-w-0">
+                            <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400 flex items-center gap-0.5 mb-0.5">
+                                <Icon size={8} className="shrink-0" />
+                                {label}
+                            </p>
+                            <p className="text-[11px] font-semibold text-stone-800 truncate">
+                                {value}
                             </p>
                         </div>
-                        <span
-                            className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-[11px] font-semibold shrink-0"
-                            style={{ background: s.bg, color: s.text }}
-                        >
-                            <span
-                                className="w-1.5 h-1.5 rounded-full"
-                                style={{ background: s.dot }}
-                            />
-                            {s.label}
-                        </span>
-                    </div>
+                    ))}
+                </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-3 gap-y-2.5 sm:gap-x-4 sm:gap-y-3 mt-3 sm:mt-4">
-                        <InfoRow
-                            icon={DollarSign}
-                            label="Final Price"
-                            value={`₹${fmt(order.finalPrice)}`}
-                        />
-                        <InfoRow icon={CreditCard} label="Payment" value={order.paymentStatus} />
-                        <InfoRow icon={MapPin} label="City" value={order?.shippingAddress?.city} />
-                        <InfoRow
-                            icon={Calendar}
-                            label="Order Date"
-                            value={fmtDate(order.createdAt)}
-                        />
-                    </div>
-
-                    <div className="flex items-center gap-1.5 sm:gap-2 mt-3 sm:mt-4 flex-wrap">
-                        {canSendOTP && (
-                            <button
-                                onClick={handleSendOTP}
-                                disabled={sending || sent}
-                                className="inline-flex items-center gap-1.5 text-[11px] sm:text-[12px] font-semibold px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
-                                style={{
-                                    background: sent ? "#ecfdf5" : "#1e40af",
-                                    color: sent ? "#065f46" : "#fff",
-                                    border: sent ? "1px solid #a7f3d0" : "1px solid transparent",
-                                }}
-                            >
-                                {sending ? (
-                                    <>
-                                        <Loader2 size={11} className="animate-spin" />
-                                        Sending…
-                                    </>
-                                ) : sent ? (
-                                    <>
-                                        <Check size={11} strokeWidth={2.5} />
-                                        OTP Sent
-                                    </>
-                                ) : (
-                                    <>
-                                        <Send size={11} />
-                                        Send OTP
-                                    </>
-                                )}
-                            </button>
-                        )}
-
-                        {!delivered && (
-                            <button
-                                onClick={() => onVerify(order._id)}
-                                className="inline-flex items-center gap-1.5 text-[11px] sm:text-[12px] font-semibold px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl transition-all duration-200"
-                                style={{
-                                    background: "#f0fdf4",
-                                    color: "#15803d",
-                                    border: "1px solid #bbf7d0",
-                                }}
-                            >
-                                <ShieldCheck size={11} />
-                                Verify OTP
-                            </button>
-                        )}
-
-                        {delivered && (
-                            <span
-                                className="inline-flex items-center gap-1.5 text-[11px] sm:text-[12px] font-semibold px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl"
-                                style={{
-                                    background: "#ecfdf5",
-                                    color: "#065f46",
-                                    border: "1px solid #a7f3d0",
-                                }}
-                            >
-                                <CheckCircle2 size={11} />
-                                Delivered
-                            </span>
-                        )}
-
+                {/* ── Action buttons ── */}
+                <div className="flex items-center gap-2 mt-3">
+                    {canSendOTP && (
                         <button
-                            onClick={() => setExpanded((p) => !p)}
-                            className="ml-auto inline-flex items-center gap-1 text-[11px] sm:text-[12px] text-stone-400 hover:text-stone-700 font-medium transition-colors"
+                            onClick={handleSendOTP}
+                            disabled={sending || sent}
+                            className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all duration-200 disabled:opacity-60"
+                            style={{
+                                background: sent ? "#ecfdf5" : "#1e40af",
+                                color: sent ? "#065f46" : "#fff",
+                                border: sent ? "1px solid #a7f3d0" : "none",
+                            }}
                         >
-                            <Eye size={11} />
-                            {expanded ? "Less" : "Details"}
-                            <motion.span
-                                animate={{ rotate: expanded ? 90 : 0 }}
-                                transition={{ duration: 0.18 }}
-                                className="flex"
-                            >
-                                <ChevronRight size={11} />
-                            </motion.span>
+                            {sending ? (
+                                <>
+                                    <Loader2 size={10} className="animate-spin" />
+                                    Sending…
+                                </>
+                            ) : sent ? (
+                                <>
+                                    <Check size={10} strokeWidth={2.5} />
+                                    OTP Sent
+                                </>
+                            ) : (
+                                <>
+                                    <Send size={10} />
+                                    Send OTP
+                                </>
+                            )}
                         </button>
-                    </div>
+                    )}
+
+                    {!delivered && (
+                        <button
+                            onClick={() => onVerify(order._id)}
+                            className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all duration-200"
+                            style={{
+                                background: "#f0fdf4",
+                                color: "#15803d",
+                                border: "1px solid #bbf7d0",
+                            }}
+                        >
+                            <ShieldCheck size={10} />
+                            Verify OTP
+                        </button>
+                    )}
+
+                    {delivered && (
+                        <span
+                            className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg"
+                            style={{
+                                background: "#ecfdf5",
+                                color: "#065f46",
+                                border: "1px solid #a7f3d0",
+                            }}
+                        >
+                            <CheckCircle2 size={10} />
+                            Delivered
+                        </span>
+                    )}
+
+                    {/* Details toggle */}
+                    <button
+                        onClick={() => setExpanded((p) => !p)}
+                        className="ml-auto flex items-center gap-0.5 text-[11px] text-stone-400 hover:text-stone-700 font-medium transition-colors"
+                    >
+                        <Eye size={11} />
+                        <motion.span
+                            animate={{ rotate: expanded ? 90 : 0 }}
+                            transition={{ duration: 0.18 }}
+                            className="flex"
+                        >
+                            <ChevronRight size={11} />
+                        </motion.span>
+                    </button>
                 </div>
             </div>
 
+            {/* ── Expanded details ── */}
             <AnimatePresence initial={false}>
                 {expanded && (
                     <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.22, ease: "easeInOut" }}
+                        transition={{ duration: 0.2, ease: "easeInOut" }}
                         className="overflow-hidden"
                     >
-                        <div
-                            className="mx-4 sm:mx-5 mb-4 sm:mb-5 pt-3 sm:pt-4 border-t grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4"
-                            style={{ borderColor: "#f5f5f4" }}
-                        >
-                            <InfoRow
-                                icon={Calendar}
-                                label="Auction Ends"
-                                value={fmtDate(order?.auctionId?.endTime)}
-                            />
-                            <InfoRow
-                                icon={MapPin}
-                                label="Full Address"
-                                value={[
-                                    order?.shippingAddress?.street,
-                                    order?.shippingAddress?.city,
-                                    order?.shippingAddress?.state,
-                                ]
-                                    .filter(Boolean)
-                                    .join(", ")}
-                            />
-                            <InfoRow
-                                icon={Gavel}
-                                label="Order ID"
-                                value={order._id?.slice(-8)?.toUpperCase()}
-                            />
+                        <div className="mx-4 mb-4 pt-3 border-t border-stone-100 grid grid-cols-1 gap-2.5">
+                            {[
+                                {
+                                    icon: Gavel,
+                                    label: "Order ID",
+                                    value: order._id?.slice(-8)?.toUpperCase(),
+                                },
+                                {
+                                    icon: Calendar,
+                                    label: "Auction Ends",
+                                    value: fmtDate(order?.auctionId?.endTime),
+                                },
+                                {
+                                    icon: MapPin,
+                                    label: "Address",
+                                    value: [
+                                        order?.shippingAddress?.street,
+                                        order?.shippingAddress?.city,
+                                        order?.shippingAddress?.state,
+                                    ]
+                                        .filter(Boolean)
+                                        .join(", "),
+                                },
+                            ].map(({ icon: Icon, label, value }) => (
+                                <div key={label} className="flex items-start gap-2">
+                                    <div className="w-6 h-6 rounded-lg bg-stone-100 flex items-center justify-center shrink-0 mt-0.5">
+                                        <Icon size={11} className="text-stone-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400">
+                                            {label}
+                                        </p>
+                                        <p className="text-[12px] font-semibold text-stone-700">
+                                            {value || "—"}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </motion.div>
                 )}
@@ -380,7 +364,9 @@ function OrderCard({ order, onSendOTP, onVerify }) {
     );
 }
 
-function OTPModal({ orderId, otp, setOtp, onVerify, onClose }) {
+// ─── OTP Modal ────────────────────────────────────────────────────────────────
+
+function OTPModal({ otp, setOtp, onVerify, onClose }) {
     const [verifying, setVerifying] = useState(false);
     const [error, setError] = useState("");
 
@@ -400,35 +386,38 @@ function OTPModal({ orderId, otp, setOtp, onVerify, onClose }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 sm:px-4 pb-4 sm:pb-0"
-            style={{ background: "rgba(0,0,0,0.35)", backdropFilter: "blur(4px)" }}
+            className="fixed inset-0 z-50 flex items-end justify-center px-3 pb-4"
+            style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(6px)" }}
             onClick={onClose}
         >
             <motion.div
-                initial={{ y: 40, opacity: 0 }}
+                initial={{ y: 60, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 40, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 300, damping: 28 }}
-                className="w-full max-w-sm bg-white rounded-3xl p-5 sm:p-6 relative"
-                style={{ boxShadow: "0 24px 64px -12px rgba(0,0,0,0.18)" }}
+                exit={{ y: 60, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 320, damping: 30 }}
+                className="w-full max-w-sm bg-white rounded-3xl p-5 relative"
+                style={{ boxShadow: "0 24px 64px -12px rgba(0,0,0,0.22)" }}
                 onClick={(e) => e.stopPropagation()}
             >
+                {/* Drag handle */}
+                <div className="w-10 h-1 bg-stone-200 rounded-full mx-auto mb-4" />
+
                 <button
                     onClick={onClose}
-                    className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 w-7 h-7 rounded-full bg-stone-100 hover:bg-stone-200 flex items-center justify-center transition-colors"
+                    className="absolute top-4 right-4 w-7 h-7 rounded-full bg-stone-100 hover:bg-stone-200 flex items-center justify-center transition-colors"
                 >
                     <X size={13} className="text-stone-500" />
                 </button>
 
-                <div className="flex items-center gap-3 mb-4 sm:mb-5">
+                <div className="flex items-center gap-3 mb-5">
                     <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
                         <ShieldCheck size={18} className="text-emerald-600" />
                     </div>
                     <div>
-                        <h2 className="text-[15px] sm:text-[16px] font-bold text-stone-900">
+                        <h2 className="text-[15px] font-bold text-stone-900">
                             Verify Delivery OTP
                         </h2>
-                        <p className="text-[11px] sm:text-[12px] text-stone-400">
+                        <p className="text-[11px] text-stone-400">
                             Enter the OTP shared by the buyer
                         </p>
                     </div>
@@ -438,7 +427,7 @@ function OTPModal({ orderId, otp, setOtp, onVerify, onClose }) {
                     <input
                         type="text"
                         inputMode="numeric"
-                        placeholder="• • • • • •"
+                        placeholder="· · · · · ·"
                         value={otp}
                         onChange={(e) => {
                             setOtp(e.target.value);
@@ -446,13 +435,12 @@ function OTPModal({ orderId, otp, setOtp, onVerify, onClose }) {
                         }}
                         maxLength={6}
                         autoFocus
-                        className="w-full rounded-xl border px-4 py-3 sm:py-3.5 text-xl font-bold text-stone-900 tracking-[0.35em] text-center transition-colors focus:outline-none"
+                        className="w-full rounded-xl border px-4 py-3.5 text-2xl font-bold text-stone-900 tracking-[0.4em] text-center focus:outline-none transition-colors"
                         style={{
                             borderColor: error ? "#fca5a5" : "#e7e5e4",
                             background: error ? "#fff5f5" : "#fafaf9",
                         }}
                     />
-
                     <AnimatePresence>
                         {error && (
                             <motion.p
@@ -466,29 +454,27 @@ function OTPModal({ orderId, otp, setOtp, onVerify, onClose }) {
                             </motion.p>
                         )}
                     </AnimatePresence>
-
                     <button
                         onClick={handleVerify}
                         disabled={verifying}
-                        className="w-full py-3 sm:py-3.5 rounded-xl font-bold text-[13px] text-white flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-70"
+                        className="w-full py-3.5 rounded-xl font-bold text-[14px] text-white flex items-center justify-center gap-2 transition-all disabled:opacity-70"
                         style={{ background: verifying ? "#6ee7b7" : "#059669" }}
                     >
                         {verifying ? (
                             <>
-                                <Loader2 size={14} className="animate-spin" />
+                                <Loader2 size={15} className="animate-spin" />
                                 Verifying…
                             </>
                         ) : (
                             <>
-                                <Check size={14} strokeWidth={2.5} />
+                                <Check size={15} strokeWidth={2.5} />
                                 Confirm Delivery
                             </>
                         )}
                     </button>
-
                     <button
                         onClick={onClose}
-                        className="w-full py-2.5 sm:py-3 rounded-xl text-[13px] font-medium text-stone-500 hover:text-stone-700 hover:bg-stone-50 transition-colors"
+                        className="w-full py-3 rounded-xl text-[13px] font-medium text-stone-500 hover:bg-stone-50 transition-colors"
                     >
                         Cancel
                     </button>
@@ -497,6 +483,8 @@ function OTPModal({ orderId, otp, setOtp, onVerify, onClose }) {
         </motion.div>
     );
 }
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SellerDashboard() {
     const [orders, setOrders] = useState([]);
@@ -560,206 +548,113 @@ export default function SellerDashboard() {
     };
 
     return (
-        <div
-            className="min-h-screen px-3 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10"
-            style={{ background: "#F8F8FF" }}
-        >
-            <div className="max-w-4xl mx-auto">
+        <div className="min-h-screen bg-[#F5F6FA] px-3.5 py-5 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
+            <div className="max-w-2xl mx-auto lg:max-w-4xl">
+                {/* ── Header ── */}
                 <motion.div
-                    initial={{ opacity: 0, y: -12 }}
+                    initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                    className="flex items-center justify-between gap-3 sm:gap-4 mb-6 sm:mb-8"
+                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                    className="flex items-center justify-between gap-3 mb-5 sm:mb-7"
                 >
                     <div>
-                        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                        <h1 className="text-[22px] sm:text-3xl font-black text-slate-900 tracking-tight">
                             Seller Orders
                         </h1>
-
-                        <p className="text-[13px] sm:text-[14px] text-slate-600 mt-1">
+                        <p className="text-[12px] sm:text-[13px] text-slate-500 mt-0.5">
                             Manage deliveries and OTP verification
                         </p>
                     </div>
-
                     <Link to="/auction/create">
                         <motion.span
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.97 }}
-                            className="
-                        inline-flex items-center gap-2
-
-                        text-[14px] sm:text-[13px]
-                        font-semibold
-
-                        px-3.5 sm:px-4
-                        py-2.5
-
-                        rounded-xl
-
-                        transition-all
-                        cursor-pointer
-                        whitespace-nowrap
-
-                        shadow-md shadow-black/10
-                    "
+                            className="inline-flex items-center gap-1.5 text-[12px] sm:text-[13px] font-semibold px-3.5 sm:px-4 py-2.5 rounded-xl cursor-pointer whitespace-nowrap"
                             style={{
                                 background: "#111827",
                                 color: "#f8fafc",
+                                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                             }}
                         >
                             <Plus size={13} />
-
-                            <span className="hidden xs:inline">Create Auction</span>
-
-                            <span className="xs:hidden">New</span>
+                            <span className="hidden sm:inline">Create Auction</span>
+                            <span className="sm:hidden">New</span>
                         </motion.span>
                     </Link>
                 </motion.div>
 
-                {/* STATS */}
-                <div className="grid grid-cols-3 gap-2.5 sm:gap-3 mb-5 sm:mb-6">
+                {/* ── Stats — full labels, no truncation ── */}
+                <div className="grid grid-cols-3 gap-2.5 sm:gap-3 mb-5">
                     <StatCard
                         label="Total"
                         value={stats.total}
                         icon={ShoppingBag}
-                        accent="#2563eb"
-                        delay={0.05}
+                        bg="#dbeafe"
+                        iconColor="#2563eb"
                         loading={loading}
                     />
-
                     <StatCard
                         label="Confirmed"
                         value={stats.confirmed}
                         icon={BadgeCheck}
-                        accent="#fe172a"
-                        delay={0.1}
+                        bg="#fee2e2"
+                        iconColor="#dc2626"
                         loading={loading}
                     />
-
                     <StatCard
                         label="Delivered"
                         value={stats.delivered}
                         icon={Truck}
-                        accent="#059669"
-                        delay={0.15}
+                        bg="#d1fae5"
+                        iconColor="#059669"
                         loading={loading}
                     />
                 </div>
 
-                {/* SEARCH + FILTER */}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 mb-4 sm:mb-5"
+                {/* ── Search bar ── */}
+                <div className="relative mb-3">
+                    <Search
+                        size={15}
+                        className="absolute top-1/2 left-3.5 -translate-y-1/2 text-slate-400 pointer-events-none"
+                    />
+                    <input
+                        type="text"
+                        placeholder="Search auction or buyer…"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-[13px] text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-400 transition-all"
+                        style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}
+                    />
+                </div>
+
+                {/* ── Filter tabs ── */}
+                <div
+                    className="flex gap-1 mb-5 p-1 bg-white rounded-xl border border-slate-100 w-fit"
+                    style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
                 >
-                    {/* SEARCH */}
-                    <div className="relative flex-1">
-                        <Search
-                            size={14}
-                            className="
-                        absolute
-                        top-1/2 left-3
+                    {FILTERS.map(({ key, label, icon: Icon }) => (
+                        <button
+                            key={key}
+                            onClick={() => setFilter(key)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200 whitespace-nowrap"
+                            style={
+                                filter === key
+                                    ? {
+                                          background: "#111827",
+                                          color: "#f8fafc",
+                                          boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
+                                      }
+                                    : { color: "#64748b" }
+                            }
+                        >
+                            <Icon size={10} />
+                            {label}
+                        </button>
+                    ))}
+                </div>
 
-                        -translate-y-1/2
-
-                        text-slate-500
-                        pointer-events-none
-                    "
-                        />
-
-                        <input
-                            type="text"
-                            placeholder="Search auction or buyer…"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="
-                        w-full
-
-                        bg-white
-
-                        border border-slate-200
-
-                        rounded-xl
-
-                        pl-9 pr-4
-                        py-2.5
-
-                        text-[13px] sm:text-[14px]
-
-                        text-slate-800
-                        placeholder-slate-400
-
-                        focus:outline-none
-                        focus:border-slate-400
-
-                        transition-all
-                    "
-                            style={{
-                                boxShadow: "0 4px 14px rgba(15,23,42,0.04)",
-                            }}
-                        />
-                    </div>
-
-                    {/* FILTERS */}
-                    <div
-                        className="
-                    flex gap-1
-
-                    p-1
-
-                    rounded-xl
-
-                    shrink-0
-                    overflow-x-auto
-
-                    bg-white
-
-                    border border-slate-200
-                "
-                        style={{
-                            boxShadow: "0 4px 14px rgba(15,23,42,0.04)",
-                        }}
-                    >
-                        {FILTERS.map(({ key, label, icon: Icon }) => (
-                            <button
-                                key={key}
-                                onClick={() => setFilter(key)}
-                                className="
-                            flex items-center gap-1.5
-
-                            px-3 py-2
-
-                            rounded-lg
-
-                            text-[12px] sm:text-[13px]
-                            font-semibold
-
-                            whitespace-nowrap
-
-                            transition-all duration-200
-                        "
-                                style={
-                                    filter === key
-                                        ? {
-                                              background: "#111827",
-                                              color: "#f8fafc",
-                                              boxShadow: "0 4px 12px rgba(15,23,42,0.12)",
-                                          }
-                                        : {
-                                              color: "#475569",
-                                          }
-                                }
-                            >
-                                <Icon size={11} />
-                                {label}
-                            </button>
-                        ))}
-                    </div>
-                </motion.div>
-
-                {/* LIST */}
-                <div className="flex flex-col gap-3">
+                {/* ── Order list ── */}
+                <div className="flex flex-col gap-2.5 sm:gap-3">
                     {loading ? (
                         <>
                             <OrderSkeleton />
@@ -770,60 +665,16 @@ export default function SellerDashboard() {
                         <motion.div
                             initial={{ opacity: 0, scale: 0.98 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="
-                        bg-white
-
-                        rounded-2xl
-
-                        border border-slate-200
-
-                        p-12 sm:p-20
-
-                        text-center
-                    "
-                            style={{
-                                boxShadow: "0 10px 30px rgba(15,23,42,0.05)",
-                            }}
+                            className="bg-white rounded-2xl border border-slate-100 p-12 text-center"
+                            style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}
                         >
-                            <div
-                                className="
-                            w-14 h-14
-
-                            rounded-2xl
-
-                            bg-slate-100
-                            border border-slate-200
-
-                            flex items-center justify-center
-
-                            mx-auto
-                            mb-4
-                        "
-                            >
-                                <Package size={24} className="text-slate-500" />
+                            <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3">
+                                <Package size={22} className="text-slate-400" />
                             </div>
-
-                            <h3
-                                className="
-                            text-[16px] sm:text-[18px]
-
-                            font-bold
-
-                            text-slate-800
-                        "
-                            >
+                            <h3 className="text-[15px] font-bold text-slate-800">
                                 No orders found
                             </h3>
-
-                            <p
-                                className="
-                            text-[13px] sm:text-[14px]
-
-                            text-slate-600
-
-                            mt-1.5
-                        "
-                            >
+                            <p className="text-[12px] text-slate-500 mt-1">
                                 {search
                                     ? "Try a different search term."
                                     : "Orders appear here when buyers win your auctions."}
@@ -844,11 +695,10 @@ export default function SellerDashboard() {
                 </div>
             </div>
 
-            {/* OTP MODAL */}
+            {/* ── OTP Modal ── */}
             <AnimatePresence>
                 {otpModal && (
                     <OTPModal
-                        orderId={otpModal}
                         otp={otp}
                         setOtp={setOtp}
                         onVerify={verifyOTP}

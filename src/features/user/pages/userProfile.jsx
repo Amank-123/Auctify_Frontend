@@ -5,15 +5,28 @@ import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/shared/services/axios";
 import { getMyAuctions, getMyBids, updateUserProfile } from "../userAPI";
 
-/* ── Font injection ─────────────────────────────────────────────── */
+/* ── Fonts ─────────────────────────────────────────────────────── */
 if (typeof document !== "undefined" && !document.getElementById("pf-fonts")) {
     const l = document.createElement("link");
     l.id = "pf-fonts";
     l.rel = "stylesheet";
     l.href =
-        "https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap";
+        "https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Inter:wght@400;500;600&display=swap";
     document.head.appendChild(l);
 }
+
+/* ── Tokens ─────────────────────────────────────────────────────── */
+const B = "#1A3BDB";
+const BDK = "#0F28CC";
+const BLT = "#EEF1FD";
+const BML = "#D6DCFA";
+const OR = "#FF6B2C";
+const OLT = "#FFF2EC";
+const GR = "#111827";
+const SB = "#6B7280";
+const BD = "#E8ECF8";
+const BG = "#F0F2FB";
+const WH = "#FFFFFF";
 
 const TABS = [
     { key: "profile", label: "Profile" },
@@ -22,10 +35,10 @@ const TABS = [
     { key: "auctions", label: "Auctions" },
 ];
 
-const BLUE = "#1A3BDB";
-const ORANGE = "#FF6B2C";
-const BLUE_LT = "#EEF1FD";
+const fmtDate = (d) =>
+    new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 
+/* ════════════════════════════════════════════════════════════════ */
 export default function ProfilePage() {
     const navigate = useNavigate();
     const { User, setUser, logout, Loading } = useAuth();
@@ -39,6 +52,7 @@ export default function ProfilePage() {
     const [profileFile, setProfileFile] = useState(null);
     const [preview, setPreview] = useState("");
     const [saved, setSaved] = useState(false);
+    const [delConfirm, setDelConfirm] = useState(false);
     const [form, setForm] = useState({
         firstName: "",
         lastName: "",
@@ -89,24 +103,21 @@ export default function ProfilePage() {
     }, []);
 
     const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         const fd = new FormData();
         Object.entries(form).forEach(([k, v]) => fd.append(k, v));
         if (profileFile) fd.append("profile", profileFile);
         try {
-            const res = await updateUserProfile(fd);
-            setUser(res.data.data);
+            const r = await updateUserProfile(fd);
+            setUser(r.data.data);
             setSaved(true);
             setTimeout(() => setSaved(false), 2500);
         } catch (e) {
             console.log(e);
         }
     };
-
     const handleDelete = async () => {
-        if (!window.confirm("Permanently delete your account?")) return;
         try {
             setDeleteLoading(true);
             await api.delete("/api/user/delete");
@@ -124,180 +135,138 @@ export default function ProfilePage() {
         () => `${User?.firstName || ""} ${User?.lastName || ""}`.trim() || User?.username,
         [User],
     );
-
     const counts = { orders: orders.length, bids: bids.length, auctions: auctions.length };
 
     if (Loading)
         return (
-            <div className="min-h-screen flex items-center justify-center bg-white">
-                <div className="w-8 h-8 rounded-full border-2 border-blue-100 border-t-blue-600 animate-spin" />
+            <div
+                style={{
+                    minHeight: "100vh",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                }}
+            >
+                <Spin />
             </div>
         );
 
     return (
-        <div className="min-h-screen bg-[#F5F7FF]" style={{ fontFamily: "Inter, sans-serif" }}>
-            {/* ── HERO BANNER ─────────────────────────────────────────── */}
-            <div
-                className="relative overflow-hidden"
-                style={{
-                    background: `linear-gradient(125deg, #0F28CC 0%, #1A3BDB 45%, #2347E8 100%)`,
-                }}
-            >
-                {/* Background shapes */}
-                <div className="absolute inset-0 pointer-events-none">
-                    {/* Large blurred circle top-right */}
+        <div style={{ fontFamily: "Inter,sans-serif", background: BG, minHeight: "100vh" }}>
+            <style>{`
+            #pf-body { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
+            @media (min-width: 640px) { #pf-body { padding-bottom: 0; } }
+            #pf-tabbar { display: flex; }
+            @media (min-width: 640px) { #pf-tabbar { display: none !important; } }
+            #pf-desktoptabs { display: none; }
+            @media (min-width: 640px) { #pf-desktoptabs { display: flex; } }
+        `}</style>
+            <div id="pf-body">
+                {/* ══ HERO ══════════════════════════════════════════════════ */}
+                <div
+                    style={{
+                        background: `linear-gradient(145deg, ${BDK} 0%, ${B} 55%, #2B4EF2 100%)`,
+                        paddingTop: "20px",
+                        paddingLeft: "20px",
+                        position: "relative",
+                        overflow: "hidden",
+                    }}
+                >
+                    {/* stat pills */}
                     <div
-                        className="absolute -top-24 -right-24 w-[420px] h-[420px] rounded-full"
-                        style={{ background: "rgba(255,255,255,0.05)", filter: "blur(2px)" }}
-                    />
-                    {/* Orange glow */}
-                    <div
-                        className="absolute right-[280px] top-6 w-[160px] h-[160px] rounded-full"
-                        style={{ background: `${ORANGE}22`, filter: "blur(40px)" }}
-                    />
-                    {/* Subtle mesh lines */}
-                    <svg
-                        className="absolute inset-0 w-full h-full opacity-[0.07]"
-                        preserveAspectRatio="none"
-                    >
-                        <defs>
-                            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                                <path
-                                    d="M 40 0 L 0 0 0 40"
-                                    fill="none"
-                                    stroke="white"
-                                    strokeWidth="0.5"
-                                />
-                            </pattern>
-                        </defs>
-                        <rect width="100%" height="100%" fill="url(#grid)" />
-                    </svg>
-                    {/* Bottom fade */}
-                    <div
-                        className="absolute bottom-0 left-0 right-0 h-16"
                         style={{
-                            background:
-                                "linear-gradient(to bottom, transparent, rgba(15,40,204,0.3))",
+                            display: "flex",
+                            gap: 8,
+                            marginBottom: 4,
+                            overflowX: "auto",
+                            scrollbarWidth: "none",
                         }}
-                    />
-                </div>
-
-                <div className="relative max-w-[1200px] mx-auto px-8 pt-10 pb-0">
-                    <div className="flex items-end gap-7">
-                        {/* Avatar */}
-                        <motion.div
-                            initial={{ scale: 0.75, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ duration: 0.55, ease: [0.34, 1.4, 0.64, 1] }}
-                            className="relative shrink-0 mb-1"
-                        >
+                    >
+                        {[
+                            { label: "Orders", val: counts.orders },
+                            { label: "Bids", val: counts.bids },
+                            { label: "Auctions", val: counts.auctions },
+                        ].map((s, i) => (
                             <div
-                                className="w-[108px] h-[108px] rounded-[20px] overflow-hidden shadow-2xl"
-                                style={{ border: "3px solid rgba(255,255,255,0.25)" }}
+                                key={i}
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    padding: "8px 20px",
+                                    borderRadius: 12,
+                                    background: "rgba(255,255,255,0.13)",
+                                    border: "1px solid rgba(255,255,255,0.16)",
+                                    flexShrink: 0,
+                                    backdropFilter: "blur(8px)",
+                                }}
                             >
-                                <img
-                                    src={preview || User?.profile || "/default.png"}
-                                    alt="avatar"
-                                    className="w-full h-full object-cover"
-                                />
-                            </div>
-                            {/* Orange online dot */}
-                            <span
-                                className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full shadow-lg"
-                                style={{ background: ORANGE, border: `2.5px solid #1A3BDB` }}
-                            />
-                        </motion.div>
-
-                        {/* Name block */}
-                        <motion.div
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.45, delay: 0.12 }}
-                            className="flex-1 pb-8"
-                        >
-                            <p
-                                className="text-[10.5px] tracking-[0.22em] uppercase font-semibold mb-1.5"
-                                style={{ color: "rgba(180,200,255,0.9)" }}
-                            >
-                                {User?.role}
-                            </p>
-                            <h1
-                                className="text-[36px] font-bold text-white leading-none mb-1.5"
-                                style={{ fontFamily: "Syne, sans-serif", letterSpacing: "-0.5px" }}
-                            >
-                                {displayName}
-                            </h1>
-                            <p
-                                className="text-[13.5px]"
-                                style={{ color: "rgba(180,200,255,0.85)" }}
-                            >
-                                {User?.email}
-                            </p>
-                        </motion.div>
-
-                        {/* Stat pills */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.45, delay: 0.2 }}
-                            className="flex gap-2 mb-8 shrink-0"
-                        >
-                            {[
-                                { label: "Orders", val: counts.orders },
-                                { label: "Bids", val: counts.bids },
-                                { label: "Auctions", val: counts.auctions },
-                            ].map((s, i) => (
-                                <div
-                                    key={i}
-                                    className="flex flex-col items-center justify-center px-7 py-3 rounded-2xl min-w-[88px]"
+                                <span
                                     style={{
-                                        background: "rgba(255,255,255,0.12)",
-                                        backdropFilter: "blur(12px)",
-                                        border: "1px solid rgba(255,255,255,0.15)",
+                                        fontFamily: "Syne,sans-serif",
+                                        fontSize: 22,
+                                        fontWeight: 700,
+                                        color: WH,
+                                        lineHeight: 1,
                                     }}
                                 >
-                                    <span
-                                        className="text-[28px] font-bold text-white leading-none"
-                                        style={{ fontFamily: "Syne, sans-serif" }}
-                                    >
-                                        {s.val}
-                                    </span>
-                                    <span
-                                        className="text-[11px] font-medium mt-1"
-                                        style={{ color: "rgba(180,200,255,0.85)" }}
-                                    >
-                                        {s.label}
-                                    </span>
-                                </div>
-                            ))}
-                        </motion.div>
+                                    {s.val}
+                                </span>
+                                <span
+                                    style={{
+                                        fontSize: 10,
+                                        fontWeight: 500,
+                                        color: "rgba(180,205,255,0.85)",
+                                        marginTop: 3,
+                                        letterSpacing: "0.05em",
+                                    }}
+                                >
+                                    {s.label}
+                                </span>
+                            </div>
+                        ))}
                     </div>
 
-                    {/* Tab bar — sits on bottom edge of hero */}
-                    <div className="flex gap-1 mt-1">
+                    {/* desktop tab bar (hidden mobile) */}
+                    <div id="pf-desktoptabs" style={{ gap: 4, marginTop: 12 }}>
                         {TABS.map((t, i) => {
-                            const active = tab === t.key;
+                            const a = tab === t.key;
                             return (
                                 <motion.button
                                     key={t.key}
                                     onClick={() => setTab(t.key)}
-                                    initial={{ opacity: 0, y: 6 }}
+                                    initial={{ opacity: 0, y: 5 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.25 + i * 0.05 }}
-                                    className="relative px-6 py-3 text-[14px] font-semibold transition-colors duration-150 rounded-t-xl"
+                                    transition={{ delay: 0.2 + i * 0.04 }}
                                     style={{
-                                        fontFamily: "Syne, sans-serif",
-                                        background: active ? "white" : "transparent",
-                                        color: active ? BLUE : "rgba(200,215,255,0.85)",
+                                        position: "relative",
+                                        padding: "10px 22px",
+                                        border: "none",
+                                        borderRadius: "10px 10px 0 0",
+                                        cursor: "pointer",
+                                        fontFamily: "Syne,sans-serif",
+                                        fontSize: 14,
+                                        fontWeight: 600,
+                                        background: a ? WH : "transparent",
+                                        color: a ? B : "rgba(200,215,255,0.85)",
+                                        transition: "all 0.15s",
                                     }}
                                 >
                                     {t.label}
-                                    {/* active indicator dot */}
-                                    {active && (
+                                    {a && (
                                         <motion.span
-                                            layoutId="tabDot"
-                                            className="absolute bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
-                                            style={{ background: BLUE }}
+                                            layoutId="dd"
+                                            style={{
+                                                position: "absolute",
+                                                bottom: 7,
+                                                left: "50%",
+                                                transform: "translateX(-50%)",
+                                                width: 4,
+                                                height: 4,
+                                                borderRadius: "50%",
+                                                background: B,
+                                                display: "block",
+                                            }}
                                         />
                                     )}
                                 </motion.button>
@@ -307,523 +276,1097 @@ export default function ProfilePage() {
                 </div>
             </div>
 
-            {/* ── PAGE BODY ────────────────────────────────────────────── */}
-            <div className="max-w-[1200px] mx-auto px-8 py-8">
+            {/* ══ CONTENT ══════════════════════════════════════════════ */}
+            <div style={{ maxWidth: 760, margin: "0 auto", padding: "14px 12px 0" }}>
                 <AnimatePresence mode="wait">
-                    {/* ── PROFILE TAB ─────────────────────────────── */}
+                    {/* ── PROFILE TAB ─────────────────────────────────── */}
                     {tab === "profile" && (
-                        <motion.div
-                            key="profile"
-                            initial={{ opacity: 0, y: 14 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -6 }}
-                            transition={{ duration: 0.28, ease: "easeOut" }}
-                            className="grid grid-cols-[300px_1fr] gap-6"
-                        >
-                            {/* Left column */}
-                            <div className="flex flex-col gap-5">
-                                {/* Avatar card */}
-                                <div className="bg-white rounded-2xl shadow-[0_2px_20px_rgba(26,59,219,0.07)] border border-blue-50 p-7 flex flex-col items-center text-center">
-                                    <div className="relative mb-5">
+                        <Fade key="profile">
+                            {/* single scrollable form card — no separate avatar card */}
+                            <div
+                                style={{
+                                    background: WH,
+                                    borderRadius: 20,
+                                    border: `1.5px solid ${BD}`,
+                                    boxShadow: "0 2px 16px rgba(26,59,219,0.07)",
+                                    overflow: "hidden",
+                                }}
+                            >
+                                {/* avatar section — horizontal compact */}
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 14,
+                                        padding: "16px 16px 14px",
+                                        borderBottom: `1.5px solid ${BD}`,
+                                    }}
+                                >
+                                    <div style={{ position: "relative", flexShrink: 0 }}>
                                         <img
                                             src={preview || User?.profile || "/default.png"}
                                             alt="avatar"
-                                            className="w-24 h-24 rounded-[18px] object-cover shadow-md"
-                                            style={{ border: `3px solid ${BLUE_LT}` }}
+                                            style={{
+                                                width: 60,
+                                                height: 60,
+                                                borderRadius: 14,
+                                                objectFit: "cover",
+                                                border: `2px solid ${BLT}`,
+                                            }}
                                         />
                                         <label
-                                            className="absolute -bottom-2 -right-2 w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer shadow-lg transition-transform hover:scale-110"
-                                            style={{ background: BLUE }}
+                                            style={{
+                                                position: "absolute",
+                                                bottom: -6,
+                                                right: -6,
+                                                width: 24,
+                                                height: 24,
+                                                borderRadius: 8,
+                                                background: B,
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                cursor: "pointer",
+                                                boxShadow: `0 3px 8px ${B}55`,
+                                            }}
                                         >
-                                            <svg
-                                                width="13"
-                                                height="13"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="white"
-                                                strokeWidth="2.5"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                            >
-                                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                                                <polyline points="17 8 12 3 7 8" />
-                                                <line x1="12" y1="3" x2="12" y2="15" />
-                                            </svg>
+                                            <IcUpload />
                                             <input
                                                 type="file"
                                                 accept="image/*"
-                                                className="hidden"
+                                                style={{ display: "none" }}
                                                 onChange={(e) => setProfileFile(e.target.files[0])}
                                             />
                                         </label>
                                     </div>
-                                    <h3
-                                        className="font-bold text-gray-900 text-[16px]"
-                                        style={{ fontFamily: "Syne,sans-serif" }}
-                                    >
-                                        {displayName}
-                                    </h3>
-                                    <p className="text-gray-400 text-[12.5px] mt-1">
-                                        {User?.email}
-                                    </p>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <p
+                                            style={{
+                                                fontFamily: "Syne,sans-serif",
+                                                fontWeight: 700,
+                                                fontSize: 15,
+                                                color: GR,
+                                                margin: 0,
+                                            }}
+                                        >
+                                            {displayName}
+                                        </p>
+                                        <p style={{ fontSize: 12, color: SB, marginTop: 2 }}>
+                                            {User?.email}
+                                        </p>
+                                    </div>
                                     <span
-                                        className="mt-3 inline-block text-[11px] font-semibold px-3.5 py-1 rounded-full capitalize"
-                                        style={{ background: BLUE_LT, color: BLUE }}
+                                        style={{
+                                            fontSize: 11,
+                                            fontWeight: 600,
+                                            padding: "4px 12px",
+                                            borderRadius: 20,
+                                            background: BLT,
+                                            color: B,
+                                            textTransform: "capitalize",
+                                            flexShrink: 0,
+                                        }}
                                     >
                                         {User?.role}
                                     </span>
-                                    <p className="mt-4 text-[11px] text-gray-300">
-                                        JPG or PNG, max 5 MB
-                                    </p>
                                 </div>
 
-                                {/* Danger zone card */}
-                                <div className="bg-white rounded-2xl shadow-[0_2px_20px_rgba(26,59,219,0.04)] border border-red-100 p-5">
-                                    <p className="text-[10.5px] font-bold uppercase tracking-[0.15em] text-red-400 mb-2">
-                                        Danger Zone
-                                    </p>
-                                    <p className="text-[12.5px] text-gray-400 leading-relaxed mb-4">
-                                        Deleting your account is permanent and cannot be undone.
-                                    </p>
-                                    <button
-                                        onClick={handleDelete}
-                                        disabled={deleteLoading}
-                                        className="w-full h-10 rounded-xl text-[13px] font-semibold border transition-all duration-200 hover:bg-red-500 hover:text-white hover:border-red-500"
-                                        style={{ borderColor: "#fca5a5", color: "#ef4444" }}
-                                    >
-                                        {deleteLoading ? "Deleting…" : "Delete Account"}
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Right — form */}
-                            <div className="bg-white rounded-2xl shadow-[0_2px_20px_rgba(26,59,219,0.07)] border border-blue-50 p-8">
-                                {/* Section title */}
-                                <div className="flex items-center gap-3 mb-7">
-                                    <div
-                                        className="w-1 h-7 rounded-full"
-                                        style={{ background: BLUE }}
-                                    />
-                                    <h2
-                                        className="text-[21px] font-bold text-gray-900"
-                                        style={{ fontFamily: "Syne,sans-serif" }}
+                                {/* form body */}
+                                <form onSubmit={handleSubmit} style={{ padding: "16px" }}>
+                                    <p
+                                        style={{
+                                            fontSize: 10,
+                                            fontWeight: 700,
+                                            letterSpacing: "0.18em",
+                                            textTransform: "uppercase",
+                                            color: SB,
+                                            marginBottom: 14,
+                                        }}
                                     >
                                         Personal Information
-                                    </h2>
-                                </div>
+                                    </p>
 
-                                <form onSubmit={handleSubmit} className="space-y-5">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <FField
+                                    <div
+                                        style={{
+                                            display: "grid",
+                                            gridTemplateColumns: "1fr 1fr",
+                                            gap: 10,
+                                            marginBottom: 10,
+                                        }}
+                                    >
+                                        <Fld
                                             label="First Name"
                                             name="firstName"
                                             value={form.firstName}
                                             onChange={handleChange}
                                         />
-                                        <FField
+                                        <Fld
                                             label="Last Name"
                                             name="lastName"
                                             value={form.lastName}
                                             onChange={handleChange}
                                         />
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <FField
+                                    <div
+                                        style={{
+                                            display: "grid",
+                                            gridTemplateColumns: "1fr 1fr",
+                                            gap: 10,
+                                            marginBottom: 10,
+                                        }}
+                                    >
+                                        <Fld
                                             label="Username"
                                             name="username"
                                             value={form.username}
                                             onChange={handleChange}
                                         />
-                                        <FField
-                                            label="Email Address"
+                                        <Fld
+                                            label="Email"
                                             name="email"
                                             value={form.email}
                                             onChange={handleChange}
                                             type="email"
                                         />
                                     </div>
-                                    <div>
-                                        <label className="block text-[11px] font-semibold uppercase tracking-[0.13em] text-gray-400 mb-2">
-                                            Bio
-                                        </label>
+                                    <div style={{ marginBottom: 16 }}>
+                                        <label style={lbStyle}>Bio</label>
                                         <textarea
                                             name="bio"
                                             value={form.bio}
                                             onChange={handleChange}
-                                            rows={4}
-                                            placeholder="Write something about yourself…"
-                                            className="w-full rounded-xl px-4 py-3 text-[14px] text-gray-800 placeholder:text-gray-300 resize-none transition-all duration-150 outline-none"
+                                            rows={3}
+                                            placeholder="Something about you…"
                                             style={{
-                                                fontFamily: "Inter,sans-serif",
-                                                border: "1.5px solid #E8ECF8",
+                                                width: "100%",
+                                                borderRadius: 10,
+                                                padding: "10px 12px",
+                                                fontSize: 14,
+                                                color: GR,
+                                                border: `1.5px solid ${BD}`,
                                                 background: "#FAFBFF",
+                                                resize: "none",
+                                                outline: "none",
+                                                fontFamily: "Inter,sans-serif",
+                                                boxSizing: "border-box",
+                                                transition: "border-color 0.15s,box-shadow 0.15s",
                                             }}
                                             onFocus={(e) => {
-                                                e.target.style.borderColor = BLUE;
-                                                e.target.style.boxShadow = `0 0 0 3px ${BLUE}18`;
+                                                e.target.style.borderColor = B;
+                                                e.target.style.boxShadow = `0 0 0 3px ${B}18`;
                                             }}
                                             onBlur={(e) => {
-                                                e.target.style.borderColor = "#E8ECF8";
+                                                e.target.style.borderColor = BD;
                                                 e.target.style.boxShadow = "none";
                                             }}
                                         />
                                     </div>
 
-                                    <div className="flex items-center gap-4 pt-1">
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 10,
+                                        }}
+                                    >
                                         <button
                                             type="submit"
-                                            className="h-11 px-8 text-white text-[14px] font-semibold rounded-xl transition-all duration-200"
                                             style={{
+                                                height: 42,
+                                                padding: "0 24px",
+                                                borderRadius: 11,
+                                                border: "none",
+                                                background: B,
+                                                color: WH,
+                                                fontSize: 14,
+                                                fontWeight: 600,
                                                 fontFamily: "Syne,sans-serif",
-                                                background: BLUE,
-                                                boxShadow: `0 4px 16px ${BLUE}45`,
+                                                cursor: "pointer",
+                                                boxShadow: `0 4px 14px ${B}40`,
+                                                flexShrink: 0,
                                             }}
-                                            onMouseEnter={(e) =>
-                                                (e.currentTarget.style.transform =
-                                                    "translateY(-1px)")
-                                            }
-                                            onMouseLeave={(e) =>
-                                                (e.currentTarget.style.transform = "translateY(0)")
-                                            }
                                         >
                                             Save Changes
                                         </button>
                                         <AnimatePresence>
                                             {saved && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, x: -8 }}
+                                                <motion.span
+                                                    initial={{ opacity: 0, x: -6 }}
                                                     animate={{ opacity: 1, x: 0 }}
                                                     exit={{ opacity: 0 }}
-                                                    className="flex items-center gap-2"
+                                                    style={{
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: 6,
+                                                        fontSize: 13,
+                                                        fontWeight: 500,
+                                                        color: "#059669",
+                                                    }}
                                                 >
-                                                    <span className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-[11px] font-bold">
+                                                    <span
+                                                        style={{
+                                                            width: 18,
+                                                            height: 18,
+                                                            borderRadius: "50%",
+                                                            background: "#D1FAE5",
+                                                            display: "flex",
+                                                            alignItems: "center",
+                                                            justifyContent: "center",
+                                                            fontSize: 10,
+                                                            fontWeight: 700,
+                                                        }}
+                                                    >
                                                         ✓
                                                     </span>
-                                                    <span className="text-[13px] font-medium text-emerald-600">
-                                                        Changes saved
-                                                    </span>
-                                                </motion.div>
+                                                    Saved!
+                                                </motion.span>
                                             )}
                                         </AnimatePresence>
                                     </div>
                                 </form>
+
+                                {/* danger zone — inline at bottom */}
+                                <div
+                                    style={{
+                                        margin: "0 16px 16px",
+                                        padding: "12px 14px",
+                                        borderRadius: 12,
+                                        background: "#FFF8F8",
+                                        border: "1.5px solid #FFE4E4",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "space-between",
+                                            gap: 12,
+                                            flexWrap: "wrap",
+                                        }}
+                                    >
+                                        <div>
+                                            <p
+                                                style={{
+                                                    fontSize: 10,
+                                                    fontWeight: 700,
+                                                    letterSpacing: "0.15em",
+                                                    textTransform: "uppercase",
+                                                    color: "#F87171",
+                                                    marginBottom: 3,
+                                                }}
+                                            >
+                                                Danger Zone
+                                            </p>
+                                            <p
+                                                style={{
+                                                    fontSize: 12,
+                                                    color: SB,
+                                                    lineHeight: 1.5,
+                                                }}
+                                            >
+                                                This action is permanent and cannot be undone.
+                                            </p>
+                                        </div>
+                                        {!delConfirm ? (
+                                            <button
+                                                onClick={() => setDelConfirm(true)}
+                                                style={{
+                                                    height: 36,
+                                                    padding: "0 16px",
+                                                    borderRadius: 9,
+                                                    border: "1.5px solid #FCA5A5",
+                                                    background: "transparent",
+                                                    color: "#EF4444",
+                                                    fontSize: 12,
+                                                    fontWeight: 600,
+                                                    cursor: "pointer",
+                                                    flexShrink: 0,
+                                                }}
+                                            >
+                                                Delete Account
+                                            </button>
+                                        ) : (
+                                            <div style={{ display: "flex", gap: 8 }}>
+                                                <button
+                                                    onClick={() => setDelConfirm(false)}
+                                                    style={{
+                                                        height: 36,
+                                                        padding: "0 14px",
+                                                        borderRadius: 9,
+                                                        border: `1.5px solid ${BD}`,
+                                                        background: WH,
+                                                        color: SB,
+                                                        fontSize: 12,
+                                                        fontWeight: 600,
+                                                        cursor: "pointer",
+                                                    }}
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    onClick={handleDelete}
+                                                    disabled={deleteLoading}
+                                                    style={{
+                                                        height: 36,
+                                                        padding: "0 14px",
+                                                        borderRadius: 9,
+                                                        border: "none",
+                                                        background: "#EF4444",
+                                                        color: WH,
+                                                        fontSize: 12,
+                                                        fontWeight: 600,
+                                                        cursor: "pointer",
+                                                    }}
+                                                >
+                                                    {deleteLoading ? "…" : "Confirm"}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
-                        </motion.div>
+                        </Fade>
                     )}
 
-                    {/* ── ORDERS TAB ──────────────────────────────── */}
+                    {/* ── ORDERS TAB ──────────────────────────────────── */}
                     {tab === "orders" && (
-                        <motion.div
-                            key="orders"
-                            initial={{ opacity: 0, y: 14 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -6 }}
-                            transition={{ duration: 0.28, ease: "easeOut" }}
-                        >
-                            <TabRows
-                                title="Orders"
-                                count={orders.length}
-                                loadingData={loadingData}
-                                empty="No orders yet"
-                            >
-                                {orders.map((o, i) => (
-                                    <ItemRow
-                                        key={o._id}
-                                        index={i}
-                                        image={o?.auctionId?.media?.[0]}
-                                        title={o?.auctionId?.name}
-                                        tag={o.orderStatus}
-                                        tagVariant="blue"
-                                        fields={[
-                                            { label: "Final Price", value: `₹${o.finalPrice}` },
-                                            { label: "Payment", value: o.paymentStatus },
-                                            {
-                                                label: "Seller",
-                                                value:
+                        <Fade key="orders">
+                            <SecHead title="Orders" count={counts.orders} />
+                            {loadingData ? (
+                                <Skel />
+                            ) : counts.orders === 0 ? (
+                                <Empty icon="🛍" label="No orders yet" />
+                            ) : (
+                                <List>
+                                    {orders.map((o, i) => (
+                                        <ACard
+                                            key={o._id}
+                                            index={i}
+                                            image={o?.auctionId?.media?.[0]}
+                                            title={o?.auctionId?.name}
+                                            badge={o.orderStatus}
+                                            badgeColor="blue"
+                                            rows={[
+                                                ["Final Price", `₹${o.finalPrice}`],
+                                                ["Payment", o.paymentStatus],
+                                                [
+                                                    "Seller",
                                                     o?.sellerId?.username ||
-                                                    o?.sellerId?.email ||
-                                                    "N/A",
-                                            },
-                                        ]}
-                                        cta="View Order"
-                                        onClick={() => navigate(`/orders/${o._id}`)}
-                                    />
-                                ))}
-                            </TabRows>
-                        </motion.div>
+                                                        o?.sellerId?.email ||
+                                                        "N/A",
+                                                ],
+                                            ]}
+                                            cta="View Order"
+                                            onClick={() => navigate(`/orders/${o._id}`)}
+                                        />
+                                    ))}
+                                </List>
+                            )}
+                        </Fade>
                     )}
 
-                    {/* ── BIDS TAB ────────────────────────────────── */}
+                    {/* ── BIDS TAB ────────────────────────────────────── */}
                     {tab === "bids" && (
-                        <motion.div
-                            key="bids"
-                            initial={{ opacity: 0, y: 14 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -6 }}
-                            transition={{ duration: 0.28, ease: "easeOut" }}
-                        >
-                            <TabRows
-                                title="My Bids"
-                                count={bids.length}
-                                loadingData={loadingData}
-                                empty="No bids placed yet"
-                            >
-                                {bids.map((b, i) => (
-                                    <ItemRow
-                                        key={b._id}
-                                        index={i}
-                                        image={b?.auctionId?.media?.[0]}
-                                        title={b?.auctionId?.name}
-                                        tag={b?.auctionId?.status}
-                                        tagVariant="orange"
-                                        fields={[
-                                            { label: "Your Bid", value: `₹${b.amount}` },
-                                            {
-                                                label: "Highest Bid",
-                                                value: `₹${b?.auctionId?.currentHighestBid || 0}`,
-                                            },
-                                            {
-                                                label: "Ends",
-                                                value: b?.auctionId?.endTime
-                                                    ? new Date(
-                                                          b.auctionId.endTime,
-                                                      ).toLocaleDateString()
-                                                    : "N/A",
-                                            },
-                                        ]}
-                                        cta="View Auction"
-                                        onClick={() => navigate(`/auction/${b?.auctionId?._id}`)}
-                                    />
-                                ))}
-                            </TabRows>
-                        </motion.div>
+                        <Fade key="bids">
+                            <SecHead title="My Bids" count={counts.bids} />
+                            {loadingData ? (
+                                <Skel />
+                            ) : counts.bids === 0 ? (
+                                <Empty icon="📈" label="No bids placed yet" />
+                            ) : (
+                                <List>
+                                    {bids.map((b, i) => {
+                                        const leading =
+                                            b.amount >= (b?.auctionId?.currentHighestBid || 0);
+                                        return (
+                                            <ACard
+                                                key={b._id}
+                                                index={i}
+                                                image={b?.auctionId?.media?.[0]}
+                                                title={b?.auctionId?.name}
+                                                badge={b?.auctionId?.status}
+                                                badgeColor="orange"
+                                                extraBadge={
+                                                    leading
+                                                        ? {
+                                                              label: "Leading ↑",
+                                                              bg: "#D1FAE5",
+                                                              color: "#059669",
+                                                          }
+                                                        : null
+                                                }
+                                                rows={[
+                                                    ["Your Bid", `₹${b.amount}`],
+                                                    [
+                                                        "Highest",
+                                                        `₹${b?.auctionId?.currentHighestBid || 0}`,
+                                                    ],
+                                                    [
+                                                        "Ends",
+                                                        b?.auctionId?.endTime
+                                                            ? fmtDate(b.auctionId.endTime)
+                                                            : "N/A",
+                                                    ],
+                                                ]}
+                                                cta="View Auction"
+                                                onClick={() =>
+                                                    navigate(`/auction/${b?.auctionId?._id}`)
+                                                }
+                                            />
+                                        );
+                                    })}
+                                </List>
+                            )}
+                        </Fade>
                     )}
 
-                    {/* ── AUCTIONS TAB ────────────────────────────── */}
+                    {/* ── AUCTIONS TAB ────────────────────────────────── */}
                     {tab === "auctions" && (
-                        <motion.div
-                            key="auctions"
-                            initial={{ opacity: 0, y: 14 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -6 }}
-                            transition={{ duration: 0.28, ease: "easeOut" }}
-                        >
-                            <TabRows
-                                title="My Auctions"
-                                count={auctions.length}
-                                loadingData={loadingData}
-                                empty="No auctions created"
-                            >
-                                {auctions.map((a, i) => (
-                                    <ItemRow
-                                        key={a._id}
-                                        index={i}
-                                        image={a?.media?.[0]}
-                                        title={a?.name}
-                                        tag={a.status}
-                                        tagVariant="blue"
-                                        fields={[
-                                            { label: "Starting Price", value: `₹${a.startPrice}` },
-                                            {
-                                                label: "Highest Bid",
-                                                value: `₹${a.currentHighestBid || 0}`,
-                                            },
-                                            {
-                                                label: "Ends",
-                                                value: a?.endTime
-                                                    ? new Date(a.endTime).toLocaleDateString()
-                                                    : "N/A",
-                                            },
-                                        ]}
-                                        cta="Manage"
-                                        onClick={() => navigate(`/auction/${a._id}`)}
-                                    />
-                                ))}
-                            </TabRows>
-                        </motion.div>
+                        <Fade key="auctions">
+                            <SecHead title="My Auctions" count={counts.auctions} />
+                            {loadingData ? (
+                                <Skel />
+                            ) : counts.auctions === 0 ? (
+                                <Empty icon="🏷" label="No auctions created" />
+                            ) : (
+                                <List>
+                                    {auctions.map((a, i) => (
+                                        <ACard
+                                            key={a._id}
+                                            index={i}
+                                            image={a?.media?.[0]}
+                                            title={a?.name}
+                                            badge={a.status}
+                                            badgeColor="blue"
+                                            rows={[
+                                                ["Start Price", `₹${a.startPrice}`],
+                                                ["Highest Bid", `₹${a.currentHighestBid || 0}`],
+                                                ["Ends", a?.endTime ? fmtDate(a.endTime) : "N/A"],
+                                            ]}
+                                            cta="Manage"
+                                            onClick={() => navigate(`/auction/${a._id}`)}
+                                        />
+                                    ))}
+                                </List>
+                            )}
+                        </Fade>
                     )}
                 </AnimatePresence>
+            </div>
+
+            {/* ══ MOBILE BOTTOM TAB BAR — truly fixed, no Tailwind ════ */}
+            <div
+                id="pf-tabbar"
+                style={{
+                    position: "fixed",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    zIndex: 9999,
+                    background: WH,
+                    borderTop: `1px solid ${BD}`,
+                    boxShadow: "0 -4px 20px rgba(26,59,219,0.09)",
+                    paddingBottom: "env(safe-area-inset-bottom)",
+                }}
+            >
+                {TABS.map((t) => {
+                    const a = tab === t.key;
+                    return (
+                        <button
+                            key={t.key}
+                            onClick={() => setTab(t.key)}
+                            style={{
+                                flex: 1,
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: 4,
+                                padding: "10px 4px",
+                                border: "none",
+                                background: "transparent",
+                                cursor: "pointer",
+                                minHeight: 56,
+                                WebkitTapHighlightColor: "transparent",
+                                position: "relative",
+                            }}
+                        >
+                            {a && (
+                                <motion.div
+                                    layoutId="mbl"
+                                    style={{
+                                        position: "absolute",
+                                        top: 0,
+                                        left: "20%",
+                                        right: "20%",
+                                        height: 2.5,
+                                        borderRadius: 2,
+                                        background: B,
+                                    }}
+                                />
+                            )}
+                            <TabIco name={t.key} active={a} />
+                            <span
+                                style={{
+                                    fontSize: 10,
+                                    fontWeight: a ? 600 : 500,
+                                    color: a ? B : "#9CA3AF",
+                                    letterSpacing: "0.01em",
+                                }}
+                            >
+                                {t.label}
+                            </span>
+                        </button>
+                    );
+                })}
             </div>
         </div>
     );
 }
 
-/* ─── Components ─────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════
+   ACTION CARD — different layout mobile vs desktop
+═══════════════════════════════════════════════════════════════════ */
+function ACard({ index, image, title, badge, badgeColor, extraBadge, rows, cta, onClick }) {
+    const [hov, setHov] = useState(false);
 
-function FField({ label, name, value, onChange, type = "text" }) {
-    const [focused, setFocused] = useState(false);
+    const badgeStyle =
+        badgeColor === "orange" ? { background: OLT, color: OR } : { background: BLT, color: B };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, delay: index * 0.04 }}
+            onClick={onClick}
+            onMouseEnter={() => setHov(true)}
+            onMouseLeave={() => setHov(false)}
+            style={{
+                background: WH,
+                borderRadius: 16,
+                overflow: "hidden",
+                border: `1.5px solid ${hov ? `${B}28` : BD}`,
+                boxShadow: hov ? "0 6px 24px rgba(26,59,219,0.1)" : "0 1px 4px rgba(0,0,0,0.04)",
+                cursor: "pointer",
+                transition: "all 0.18s",
+                transform: hov ? "translateY(-1px)" : "none",
+            }}
+        >
+            {/* ── Mobile: card layout ── */}
+            <div className="sm:hidden">
+                <div style={{ display: "flex", gap: 12, padding: "12px 12px 10px" }}>
+                    {/* thumb */}
+                    <div
+                        style={{
+                            width: 56,
+                            height: 56,
+                            borderRadius: 12,
+                            overflow: "hidden",
+                            flexShrink: 0,
+                            background: BLT,
+                        }}
+                    >
+                        {image ? (
+                            <img
+                                src={image}
+                                alt={title}
+                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            />
+                        ) : (
+                            <div
+                                style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    background: `linear-gradient(135deg,${BLT},${BML})`,
+                                }}
+                            />
+                        )}
+                    </div>
+                    {/* title + badges */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <p
+                            style={{
+                                fontFamily: "Syne,sans-serif",
+                                fontWeight: 700,
+                                fontSize: 14,
+                                color: GR,
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                marginBottom: 6,
+                            }}
+                        >
+                            {title || "Untitled"}
+                        </p>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                            {badge && (
+                                <span
+                                    style={{
+                                        fontSize: 10,
+                                        fontWeight: 700,
+                                        padding: "2px 9px",
+                                        borderRadius: 20,
+                                        textTransform: "capitalize",
+                                        ...badgeStyle,
+                                    }}
+                                >
+                                    {badge}
+                                </span>
+                            )}
+                            {extraBadge && (
+                                <span
+                                    style={{
+                                        fontSize: 10,
+                                        fontWeight: 700,
+                                        padding: "2px 9px",
+                                        borderRadius: 20,
+                                        background: extraBadge.bg,
+                                        color: extraBadge.color,
+                                    }}
+                                >
+                                    {extraBadge.label}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                    {/* arrow */}
+                    <div
+                        style={{
+                            flexShrink: 0,
+                            width: 30,
+                            height: 30,
+                            borderRadius: 9,
+                            background: hov ? B : BLT,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            transition: "background 0.15s",
+                            alignSelf: "center",
+                        }}
+                    >
+                        <IcArr color={hov ? WH : B} />
+                    </div>
+                </div>
+
+                {/* stats row */}
+                <div style={{ display: "flex", borderTop: `1px solid ${BD}` }}>
+                    {rows.map(([lbl, val], i) => (
+                        <div
+                            key={i}
+                            style={{
+                                flex: 1,
+                                padding: "8px 0 8px 12px",
+                                borderRight: i < rows.length - 1 ? `1px solid ${BD}` : "none",
+                            }}
+                        >
+                            <p
+                                style={{
+                                    fontSize: 9,
+                                    fontWeight: 600,
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.1em",
+                                    color: SB,
+                                    marginBottom: 2,
+                                }}
+                            >
+                                {lbl}
+                            </p>
+                            <p
+                                style={{
+                                    fontSize: 12.5,
+                                    fontWeight: 600,
+                                    color: GR,
+                                    textTransform: "capitalize",
+                                }}
+                            >
+                                {val}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* ── Desktop: row layout ── */}
+            <div className="hidden sm:flex" style={{ alignItems: "center", gap: 14, padding: 14 }}>
+                <div
+                    style={{
+                        width: 68,
+                        height: 68,
+                        borderRadius: 12,
+                        overflow: "hidden",
+                        flexShrink: 0,
+                        background: BLT,
+                    }}
+                >
+                    {image ? (
+                        <img
+                            src={image}
+                            alt={title}
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                    ) : (
+                        <div
+                            style={{
+                                width: "100%",
+                                height: "100%",
+                                background: `linear-gradient(135deg,${BLT},${BML})`,
+                            }}
+                        />
+                    )}
+                </div>
+                <div style={{ flexShrink: 0, width: 150 }}>
+                    <p
+                        style={{
+                            fontFamily: "Syne,sans-serif",
+                            fontWeight: 600,
+                            fontSize: 14,
+                            color: GR,
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            marginBottom: 6,
+                        }}
+                    >
+                        {title || "Untitled"}
+                    </p>
+                    <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                        {badge && (
+                            <span
+                                style={{
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    padding: "2px 9px",
+                                    borderRadius: 20,
+                                    textTransform: "capitalize",
+                                    ...badgeStyle,
+                                }}
+                            >
+                                {badge}
+                            </span>
+                        )}
+                        {extraBadge && (
+                            <span
+                                style={{
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    padding: "2px 9px",
+                                    borderRadius: 20,
+                                    background: extraBadge.bg,
+                                    color: extraBadge.color,
+                                }}
+                            >
+                                {extraBadge.label}
+                            </span>
+                        )}
+                    </div>
+                </div>
+                <div style={{ width: 1, height: 40, background: BD, flexShrink: 0 }} />
+                <div
+                    style={{
+                        flex: 1,
+                        display: "grid",
+                        gridTemplateColumns: "repeat(3,1fr)",
+                        gap: "0 8px",
+                    }}
+                >
+                    {rows.map(([lbl, val], i) => (
+                        <div key={i}>
+                            <p
+                                style={{
+                                    fontSize: 10,
+                                    fontWeight: 600,
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.1em",
+                                    color: SB,
+                                    marginBottom: 2,
+                                }}
+                            >
+                                {lbl}
+                            </p>
+                            <p
+                                style={{
+                                    fontSize: 13,
+                                    fontWeight: 600,
+                                    color: GR,
+                                    textTransform: "capitalize",
+                                }}
+                            >
+                                {val}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+                <div
+                    style={{
+                        flexShrink: 0,
+                        width: 34,
+                        height: 34,
+                        borderRadius: 10,
+                        background: hov ? B : BLT,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        transition: "background 0.15s",
+                    }}
+                >
+                    <IcArr color={hov ? WH : B} />
+                </div>
+            </div>
+        </motion.div>
+    );
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SMALL REUSABLES
+═══════════════════════════════════════════════════════════════════ */
+const lbStyle = {
+    display: "block",
+    fontSize: 10,
+    fontWeight: 600,
+    letterSpacing: "0.13em",
+    textTransform: "uppercase",
+    color: SB,
+    marginBottom: 6,
+};
+
+function Fld({ label, name, value, onChange, type = "text" }) {
+    const [f, setF] = useState(false);
     return (
         <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-[0.13em] text-gray-400 mb-2">
-                {label}
-            </label>
+            <label style={lbStyle}>{label}</label>
             <input
                 type={type}
                 name={name}
                 value={value}
                 onChange={onChange}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
+                onFocus={() => setF(true)}
+                onBlur={() => setF(false)}
                 style={{
-                    fontFamily: "Inter,sans-serif",
-                    border: `1.5px solid ${focused ? BLUE : "#E8ECF8"}`,
-                    boxShadow: focused ? `0 0 0 3px ${BLUE}18` : "none",
+                    height: 42,
+                    width: "100%",
+                    borderRadius: 10,
+                    padding: "0 12px",
+                    fontSize: 16,
+                    color: GR,
+                    border: `1.5px solid ${f ? B : BD}`,
+                    boxShadow: f ? `0 0 0 3px ${B}18` : "none",
                     background: "#FAFBFF",
-                    transition: "border-color 0.15s, box-shadow 0.15s",
+                    outline: "none",
+                    fontFamily: "Inter,sans-serif",
+                    boxSizing: "border-box",
+                    transition: "border-color 0.15s,box-shadow 0.15s",
                 }}
-                className="h-11 w-full rounded-xl px-4 text-[14px] text-gray-800 outline-none"
             />
         </div>
     );
 }
 
-function TabRows({ title, count, loadingData, empty, children }) {
-    return (
-        <div>
-            <div className="flex items-center gap-3 mb-6">
-                <h2
-                    className="text-[26px] font-bold text-gray-900"
-                    style={{ fontFamily: "Syne,sans-serif" }}
-                >
-                    {title}
-                </h2>
-                <span
-                    className="text-[12px] font-bold px-2.5 py-0.5 rounded-full text-white"
-                    style={{ background: BLUE }}
-                >
-                    {count}
-                </span>
-            </div>
-
-            {loadingData ? (
-                <div className="space-y-3">
-                    {[1, 2, 3].map((i) => (
-                        <div
-                            key={i}
-                            className="h-[100px] rounded-2xl bg-white animate-pulse"
-                            style={{ border: "1.5px solid #E8ECF8" }}
-                        />
-                    ))}
-                </div>
-            ) : count === 0 ? (
-                <div
-                    className="py-24 text-center rounded-2xl bg-white"
-                    style={{ border: "2px dashed #D6DCFA" }}
-                >
-                    <div
-                        className="w-12 h-12 rounded-2xl mx-auto mb-4"
-                        style={{ background: BLUE_LT }}
-                    />
-                    <p className="text-gray-400 text-[14px]">{empty}</p>
-                </div>
-            ) : (
-                <div className="space-y-3">{children}</div>
-            )}
-        </div>
-    );
-}
-
-function ItemRow({ index, image, title, tag, tagVariant, fields, cta, onClick }) {
-    const [hovered, setHovered] = useState(false);
-
-    const tagStyle =
-        tagVariant === "orange"
-            ? { background: "#FFF2EC", color: ORANGE }
-            : { background: BLUE_LT, color: BLUE };
-
+function Fade({ children }) {
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.22, delay: index * 0.045, ease: "easeOut" }}
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-            onClick={onClick}
-            className="group flex items-center gap-5 p-4 rounded-2xl bg-white cursor-pointer transition-all duration-200"
-            style={{
-                border: `1.5px solid ${hovered ? `${BLUE}30` : "#EEF0FA"}`,
-                boxShadow: hovered ? `0 8px 32px ${BLUE}12` : "0 1px 6px rgba(0,0,0,0.04)",
-                transform: hovered ? "translateX(4px)" : "translateX(0)",
-            }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.22 }}
         >
-            {/* Thumbnail */}
-            <div
-                className="w-[76px] h-[76px] rounded-xl overflow-hidden shrink-0"
-                style={{ background: BLUE_LT }}
-            >
-                {image ? (
-                    <img
-                        src={image}
-                        alt={title}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                ) : (
-                    <div
-                        className="w-full h-full"
-                        style={{
-                            background: `linear-gradient(135deg, ${BLUE_LT} 0%, #D6DCFA 100%)`,
-                        }}
-                    />
-                )}
-            </div>
-
-            {/* Title + badge */}
-            <div className="shrink-0 w-44">
-                <p
-                    className="text-[14.5px] font-semibold text-gray-900 truncate leading-snug"
-                    style={{ fontFamily: "Syne,sans-serif" }}
-                >
-                    {title || "Untitled"}
-                </p>
-                {tag && (
-                    <span
-                        className="inline-block mt-1.5 text-[10.5px] font-semibold px-2.5 py-0.5 rounded-full capitalize"
-                        style={tagStyle}
-                    >
-                        {tag}
-                    </span>
-                )}
-            </div>
-
-            {/* Separator */}
-            <div className="w-px h-10 shrink-0 rounded-full" style={{ background: "#EEF0FA" }} />
-
-            {/* Data fields */}
-            <div className="flex-1 grid grid-cols-3 gap-3">
-                {fields.map((f, i) => (
-                    <div key={i}>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-gray-400 mb-0.5">
-                            {f.label}
-                        </p>
-                        <p className="text-[13.5px] font-semibold text-gray-800 capitalize">
-                            {f.value}
-                        </p>
-                    </div>
-                ))}
-            </div>
-
-            {/* Arrow button */}
-            <div
-                className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200"
-                style={{
-                    background: hovered ? BLUE : "#F0F2FA",
-                }}
-            >
-                <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke={hovered ? "white" : "#9CA3AF"}
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    style={{ transition: "stroke 0.2s" }}
-                >
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                    <polyline points="12 5 19 12 12 19" />
-                </svg>
-            </div>
+            {children}
         </motion.div>
     );
+}
+
+function SecHead({ title, count }) {
+    return (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <h2
+                style={{
+                    fontFamily: "Syne,sans-serif",
+                    fontSize: 18,
+                    fontWeight: 700,
+                    color: GR,
+                    margin: 0,
+                }}
+            >
+                {title}
+            </h2>
+            <span
+                style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    padding: "2px 9px",
+                    borderRadius: 20,
+                    background: B,
+                    color: WH,
+                }}
+            >
+                {count}
+            </span>
+        </div>
+    );
+}
+
+function List({ children }) {
+    return <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{children}</div>;
+}
+
+function Skel() {
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {[1, 2, 3].map((i) => (
+                <div
+                    key={i}
+                    style={{
+                        height: 90,
+                        borderRadius: 16,
+                        background: WH,
+                        border: `1.5px solid ${BD}`,
+                        opacity: 0.6,
+                        animation: "pu 1.4s ease-in-out infinite",
+                    }}
+                >
+                    <style>{`@keyframes pu{0%,100%{opacity:.6}50%{opacity:.3}}`}</style>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function Empty({ icon, label }) {
+    return (
+        <div
+            style={{
+                textAlign: "center",
+                padding: "44px 20px",
+                background: WH,
+                borderRadius: 18,
+                border: `2px dashed ${BML}`,
+            }}
+        >
+            <div style={{ fontSize: 32, marginBottom: 10 }}>{icon}</div>
+            <p style={{ fontSize: 14, color: SB }}>{label}</p>
+        </div>
+    );
+}
+
+function Spin() {
+    return (
+        <div
+            style={{
+                width: 28,
+                height: 28,
+                borderRadius: "50%",
+                border: `2px solid ${BLT}`,
+                borderTopColor: B,
+                animation: "sp 0.7s linear infinite",
+            }}
+        >
+            <style>{`@keyframes sp{to{transform:rotate(360deg)}}`}</style>
+        </div>
+    );
+}
+
+/* ── Icons ─────────────────────────────────────────────────────── */
+function IcArr({ color = B }) {
+    return (
+        <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke={color}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <line x1="5" y1="12" x2="19" y2="12" />
+            <polyline points="12 5 19 12 12 19" />
+        </svg>
+    );
+}
+function IcUpload() {
+    return (
+        <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="white"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+        </svg>
+    );
+}
+function TabIco({ name, active }) {
+    const c = active ? B : "#9CA3AF";
+    const sw = 1.9;
+    if (name === "profile")
+        return (
+            <svg
+                width="21"
+                height="21"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={c}
+                strokeWidth={sw}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            >
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+            </svg>
+        );
+    if (name === "orders")
+        return (
+            <svg
+                width="21"
+                height="21"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={c}
+                strokeWidth={sw}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            >
+                <rect x="4" y="3" width="16" height="18" rx="2" />
+                <path d="M9 8h6M9 12h6M9 16h4" />
+            </svg>
+        );
+    if (name === "bids")
+        return (
+            <svg
+                width="21"
+                height="21"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={c}
+                strokeWidth={sw}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            >
+                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+                <polyline points="16 7 22 7 22 13" />
+            </svg>
+        );
+    if (name === "auctions")
+        return (
+            <svg
+                width="21"
+                height="21"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={c}
+                strokeWidth={sw}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            >
+                <path d="M15 3l6 6-10 10-6-6z" />
+                <path d="M3 21l4-4" />
+                <line x1="9.5" y1="9.5" x2="14.5" y2="14.5" />
+            </svg>
+        );
+    return null;
 }
