@@ -231,225 +231,443 @@ function OrderCard({ order, navigate }) {
     const auction = order?.auctionId;
     const image = auction?.media?.[0]?.[0] ?? auction?.media?.[0] ?? "/placeholder.png";
 
-    const downloadReceipt = (e) => {
-        e.stopPropagation();
-
-        const doc = new jsPDF({
-            unit: "pt",
-            format: "a4",
-        });
-
-        const auction = order?.auctionId;
-
-        const pageWidth = doc.internal.pageSize.getWidth();
-
-        const primary = "#2563eb";
-        const dark = "#18181b";
-        const gray = "#71717a";
-        const light = "#f8fafc";
-        const border = "#e4e4e7";
-
-        // FORMAT CURRENCY
-        const formatCurrency = (amount) => {
-            return `₹${Number(amount || 0).toLocaleString("en-IN")}`;
-        };
-
-        // PAGE BACKGROUND
-        doc.setFillColor(255, 255, 255);
-
-        doc.rect(0, 0, pageWidth, 842, "F");
-
-        // HEADER
-        doc.setFillColor(37, 99, 235);
-
-        doc.rect(0, 0, pageWidth, 72, "F");
-
-        // BRAND
-        doc.setTextColor(255, 255, 255);
-
-        doc.setFont("helvetica", "bold");
-
-        doc.setFontSize(24);
-
-        doc.text("Auctify", 40, 45);
-
-        doc.setFont("helvetica", "normal");
-
-        doc.setFontSize(11);
-
-        doc.text("Order Invoice", 40, 62);
-
-        // TITLE
-        doc.setTextColor(dark);
-
-        doc.setFont("helvetica", "bold");
-
-        doc.setFontSize(24);
-
-        doc.text("INVOICE", 40, 125);
-
-        // META SECTION
-        const metaY = 165;
-
-        doc.setFontSize(10);
-
-        doc.setTextColor(gray);
-
-        doc.setFont("helvetica", "bold");
-
-        doc.text("Invoice ID", 40, metaY);
-
-        doc.text("Date", 290, metaY);
-
-        doc.text("Status", 430, metaY);
-
-        // VALUES
-        doc.setTextColor(dark);
-
-        doc.setFont("helvetica", "normal");
-
-        doc.text(`INV-${order?._id?.slice(-6)}`, 40, metaY + 24);
-
-        doc.text(new Date().toLocaleDateString(), 290, metaY + 24);
-
-        doc.text(order?.paymentStatus || "pending", 430, metaY + 24);
-
-        // DIVIDER
-        doc.setDrawColor(border);
-
-        doc.line(40, 215, 555, 215);
-
-        // ORDER DETAILS
-        doc.setFont("helvetica", "bold");
-
-        doc.setFontSize(16);
-
-        doc.setTextColor(dark);
-
-        doc.text("Order Details", 40, 255);
-
-        // DETAILS CARD
-        doc.setFillColor(248, 250, 252);
-
-        doc.roundedRect(40, 275, 515, 120, 10, 10, "F");
-
-        const leftX = 60;
-
-        const rightX = 310;
-
-        // LABELS
-        doc.setFontSize(10);
-
-        doc.setTextColor(gray);
-
-        doc.setFont("helvetica", "bold");
-
-        doc.text("Product", leftX, 310);
-
-        doc.text("Seller", leftX, 350);
-
-        doc.text("Order Status", rightX, 310);
-
-        doc.text("Payment Status", rightX, 350);
-
-        // VALUES
-        doc.setTextColor(dark);
-
-        doc.setFont("helvetica", "normal");
-
-        doc.setFontSize(11);
-
-        doc.text(auction?.name || "Auction Product", leftX, 330);
-
-        doc.text(order?.sellerId?.firstName || "Unknown", leftX, 370);
-
-        doc.text(order?.orderStatus || "processing", rightX, 330);
-
-        doc.text(order?.paymentStatus || "completed", rightX, 370);
-
-        // PAYMENT SUMMARY
-        doc.setFont("helvetica", "bold");
-
-        doc.setFontSize(16);
-
-        doc.text("Payment Summary", 40, 455);
-
-        // TABLE WRAPPER
-        doc.setDrawColor(229, 231, 235);
-
-        doc.roundedRect(40, 480, 515, 120, 8, 8);
-
-        // TABLE HEADER
-        doc.setFillColor(248, 250, 252);
-
-        doc.roundedRect(40, 480, 515, 36, 8, 8, "F");
-
-        doc.setFontSize(11);
-
-        doc.setTextColor(gray);
-
-        doc.setFont("helvetica", "bold");
-
-        doc.text("Description", 60, 503);
-
-        doc.text("Amount", 500, 503, {
-            align: "right",
-        });
-
-        // HEADER DIVIDER
-        doc.line(40, 516, 555, 516);
-
-        // ITEM ROW
-        doc.setTextColor(dark);
-
-        doc.setFont("helvetica", "normal");
-
-        doc.text(auction?.name || "Auction Product", 60, 550);
-
-        // IMPORTANT FONT FIX
-        doc.setFont("courier", "bold");
-
-        doc.text(formatCurrency(order?.finalPrice), 500, 550, {
-            align: "right",
-        });
-
-        // TOTAL DIVIDER
-        doc.line(40, 575, 555, 575);
-
-        // TOTAL LABEL
-        doc.setFont("helvetica", "bold");
-
-        doc.setFontSize(13);
-
-        doc.setTextColor(dark);
-
-        doc.text("Total", 400, 610);
-
-        // TOTAL AMOUNT
-        doc.setFont("courier", "bold");
-
-        doc.setFontSize(24);
-
-        doc.setTextColor(primary);
-
-        doc.text(formatCurrency(order?.finalPrice), 555, 612, {
-            align: "right",
-        });
-
-        // FOOTER
-        doc.setFont("helvetica", "normal");
-
-        doc.setFontSize(10);
-
-        doc.setTextColor(gray);
-
-        doc.text("Thank you for choosing Auctify.", 40, 770);
-
-        doc.text("This is a digitally generated invoice.", 40, 788);
-
-        // SAVE
-        doc.save(`Invoice-${order?._id?.slice(-6)}.pdf`);
+  const downloadReceipt = (e) => {
+    e.stopPropagation();
+
+    const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "pt",
+        format: "a4",
+    });
+
+    // =========================
+    // DATA
+    // =========================
+    const auction = order?.auctionId;
+    const buyer = order?.buyerId;
+    const shipping = buyer?.address || {};
+
+    // =========================
+    // COLORS
+    // =========================
+    const C = {
+        primary:    [30,  64,  175],   // indigo-800
+        accent:     [99,  102, 241],   // indigo-500
+        dark:       [15,  23,  42],    // slate-900
+        bodyText:   [51,  65,  85],    // slate-700
+        muted:      [100, 116, 139],   // slate-500
+        border:     [226, 232, 240],   // slate-200
+        surface:    [248, 250, 252],   // slate-50
+        white:      [255, 255, 255],
+        successBg:  [220, 252, 231],
+        successFg:  [22,  163,  74],
+        amberBg:    [254, 243, 199],
+        amberFg:    [146,  64,  14],
     };
+
+    // =========================
+    // HELPERS
+    // =========================
+    const setFill   = (rgb) => doc.setFillColor(...rgb);
+    const setStroke = (rgb) => doc.setDrawColor(...rgb);
+    const setColor  = (rgb) => doc.setTextColor(...rgb);
+
+    const formatCurrency = (amount) =>
+        `Rs. ${Number(amount || 0).toLocaleString("en-IN", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        })}`;
+
+    const formatAddress = () =>
+        [
+            shipping?.street,
+            [shipping?.city, shipping?.state].filter(Boolean).join(", "),
+            [shipping?.country, shipping?.pin].filter(Boolean).join(" "),
+        ]
+            .filter(Boolean)
+            .join("\n");
+
+    // Rounded rect helper (stroke + optional fill)
+    const rrect = (x, y, w, h, r, style = "F") =>
+        doc.roundedRect(x, y, w, h, r, r, style);
+
+    // Right-aligned text helper
+    const textRight = (text, rightEdge, y) => {
+        const tw = doc.getTextWidth(String(text));
+        doc.text(String(text), rightEdge - tw, y);
+    };
+
+    // =========================
+    // LAYOUT CONSTANTS
+    // =========================
+    const PW = doc.internal.pageSize.getWidth();   // 595.28
+    const PH = doc.internal.pageSize.getHeight();  // 841.89
+    const ML = 48;   // margin left
+    const MR = 48;   // margin right
+    const CW = PW - ML - MR;  // content width  ≈ 499.28
+    const RE = ML + CW;       // right edge      ≈ 547.28
+
+    // =========================
+    // WHITE BACKGROUND
+    // =========================
+    setFill(C.white);
+    doc.rect(0, 0, PW, PH, "F");
+
+    // =========================
+    // HEADER BAND
+    // =========================
+    const HEADER_H = 100;
+    setFill(C.primary);
+    doc.rect(0, 0, PW, HEADER_H, "F");
+
+    // Subtle accent stripe at top
+    setFill(C.accent);
+    doc.rect(0, 0, PW, 5, "F");
+
+    // Brand name
+    setColor(C.white);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(26);
+    doc.text("Auctify", ML, 52);
+
+    // Tagline
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    setColor([180, 198, 252]);   // muted-white
+    doc.text("Online Auction Platform", ML, 68);
+
+    // "INVOICE" label — right aligned
+    setColor(C.white);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(30);
+    textRight("INVOICE", RE, 58);
+
+    // Invoice number below — right aligned
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    setColor([180, 198, 252]);
+    textRight(`#INV-${order?._id?.slice(-6)?.toUpperCase()}`, RE, 75);
+
+    // =========================
+    // META ROW (3 cards)
+    // =========================
+    const META_Y    = 118;
+    const META_H    = 64;
+    const META_GAP  = 12;
+    const META_W    = (CW - META_GAP * 2) / 3;
+
+    const metaCards = [
+        {
+            icon:  "📅",
+            label: "Invoice Date",
+            value: new Date().toLocaleDateString("en-IN", {
+                day: "2-digit", month: "short", year: "numeric",
+            }),
+        },
+        {
+            icon:  "🔖",
+            label: "Order ID",
+            value: `#${order?._id?.slice(-8)?.toUpperCase()}`,
+        },
+        {
+            icon:  "💳",
+            label: "Payment",
+            value: order?.paymentStatus || "Completed",
+            badge: true,
+            badgeBg: C.successBg,
+            badgeFg: C.successFg,
+        },
+    ];
+
+    metaCards.forEach((card, i) => {
+        const cx = ML + i * (META_W + META_GAP);
+
+        // Card background
+        setFill(C.surface);
+        setStroke(C.border);
+        rrect(cx, META_Y, META_W, META_H, 8, "FD");
+
+        // Label
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        setColor(C.muted);
+        doc.text(card.label.toUpperCase(), cx + 14, META_Y + 20);
+
+        // Value
+        if (card.badge) {
+            const bw = doc.getTextWidth(card.value) + 20;
+            setFill(card.badgeBg);
+            rrect(cx + 14, META_Y + 30, bw, 22, 6, "F");
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(10);
+            setColor(card.badgeFg);
+            doc.text(card.value, cx + 24, META_Y + 45);
+        } else {
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(12);
+            setColor(C.dark);
+            doc.text(card.value, cx + 14, META_Y + 48);
+        }
+    });
+
+    // =========================
+    // BILLING SECTION
+    // =========================
+    const BILL_Y = META_Y + META_H + 24;
+
+    // Bill To — left column
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    setColor(C.muted);
+    doc.text("BILL TO", ML, BILL_Y);
+
+    const buyerName = [buyer?.firstName, buyer?.lastName].filter(Boolean).join(" ") || "Customer";
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    setColor(C.dark);
+    doc.text(buyerName, ML, BILL_Y + 18);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    setColor(C.bodyText);
+    const addrLines = formatAddress().split("\n").filter(Boolean);
+    addrLines.forEach((line, idx) => {
+        doc.text(line, ML, BILL_Y + 34 + idx * 14);
+    });
+
+    // Sold By — right column
+    const SB_X = ML + CW * 0.55;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    setColor(C.muted);
+    doc.text("SOLD BY", SB_X, BILL_Y);
+
+    const sellerName = [
+        order?.sellerId?.firstName,
+        order?.sellerId?.lastName,
+    ].filter(Boolean).join(" ") || "Seller";
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    setColor(C.dark);
+    doc.text(sellerName, SB_X, BILL_Y + 18);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    setColor(C.bodyText);
+    doc.text("Auctify Verified Seller", SB_X, BILL_Y + 32);
+
+    // Divider
+    const DIV_Y = BILL_Y + 62;
+    setStroke(C.border);
+    doc.setLineWidth(0.5);
+    doc.line(ML, DIV_Y, RE, DIV_Y);
+
+    // =========================
+    // ITEM TABLE
+    // =========================
+    const TBL_Y    = DIV_Y + 20;
+    const COL = {
+        desc:   ML,
+        qty:    ML + CW * 0.50,
+        unit:   ML + CW * 0.63,
+        total:  RE - 10,   // 10pt inset so text never clips at edge
+    };
+
+    // Table header background
+    setFill(C.primary);
+    rrect(ML, TBL_Y, CW, 32, 6, "F");
+
+    // Header labels
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    setColor(C.white);
+    doc.text("DESCRIPTION",        COL.desc  + 10, TBL_Y + 20);
+    doc.text("QTY",                COL.qty,         TBL_Y + 20);
+    doc.text("UNIT PRICE",         COL.unit,         TBL_Y + 20);
+    textRight("TOTAL",             COL.total,        TBL_Y + 20);
+
+    // Item row
+    const ROW_Y = TBL_Y + 32;
+    const ROW_H = 44;
+
+    // alternating row bg (only one item here, but pattern is ready)
+    setFill(C.surface);
+    doc.rect(ML, ROW_Y, CW, ROW_H, "F");
+
+    // Row bottom border
+    setStroke(C.border);
+    doc.setLineWidth(0.5);
+    doc.line(ML, ROW_Y + ROW_H, RE, ROW_Y + ROW_H);
+
+    const productName = auction?.name || "Auction Product";
+    const finalPrice  = order?.finalPrice || 0;
+
+    // Product name — two lines if long
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    setColor(C.dark);
+    const nameLines = doc.splitTextToSize(productName, CW * 0.46);
+    doc.text(nameLines, COL.desc + 10, ROW_Y + 16);
+
+    // Auction badge below name
+    const badgeLabel = "Auction Item";
+    setFill(C.amberBg);
+    const badgeW = doc.getTextWidth(badgeLabel) + 14;
+    rrect(COL.desc + 10, ROW_Y + 26, badgeW, 14, 3, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    setColor(C.amberFg);
+    doc.text(badgeLabel, COL.desc + 17, ROW_Y + 36);
+
+    // Qty
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    setColor(C.bodyText);
+    doc.text("1", COL.qty, ROW_Y + 26);
+
+    // Unit price
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    setColor(C.bodyText);
+    doc.text(formatCurrency(finalPrice), COL.unit, ROW_Y + 26);
+
+    // Total — right aligned
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    setColor(C.dark);
+    textRight(formatCurrency(finalPrice), COL.total, ROW_Y + 26);
+
+    // =========================
+    // TOTALS BLOCK
+    // =========================
+    const TOT_Y    = ROW_Y + ROW_H + 16;
+    const TOT_LW   = CW * 0.48;        // slightly wider label block
+    const TOT_X    = RE - TOT_LW - 10; // aligned with COL.total inset
+    const TOT_RE   = RE - 10;          // consistent right edge
+
+    const totals = [
+        { label: "Subtotal",                        value: formatCurrency(finalPrice) },
+        { label: "Platform Fee (0%)",               value: formatCurrency(0) },
+        { label: "Shipping",                        value: "Not included (seller-managed)" },
+    ];
+
+    let ty = TOT_Y;
+    totals.forEach((row) => {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10.5);
+        setColor(C.muted);
+        doc.text(row.label, TOT_X, ty);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10.5);
+        setColor(C.bodyText);
+        textRight(row.value, TOT_RE, ty);
+
+        ty += 18;
+    });
+
+    // Grand total separator
+    ty += 6;
+    setStroke(C.primary);
+    doc.setLineWidth(1.2);
+    doc.line(TOT_X, ty, TOT_RE, ty);
+    ty += 18;
+
+    // Grand total row
+    setFill(C.primary);
+    rrect(TOT_X - 14, ty - 14, TOT_LW + 24, 30, 6, "F");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    setColor(C.white);
+    doc.text("TOTAL AMOUNT", TOT_X - 4, ty + 6);
+    textRight(formatCurrency(finalPrice), TOT_RE - 4, ty + 6);
+
+    // =========================
+    // ORDER STATUS SECTION
+    // =========================
+    const STATUS_Y = ty + 40;
+
+    setFill(C.surface);
+    setStroke(C.border);
+    rrect(ML, STATUS_Y, CW, 54, 8, "FD");
+
+    const statuses = [
+        { label: "Order Status",   value: order?.orderStatus   || "Delivered"  },
+        { label: "Payment Status", value: order?.paymentStatus || "Completed"  },
+        { label: "Auction",        value: auction?.name         || "—"          },
+    ];
+
+    const statColW = CW / statuses.length;
+    statuses.forEach((s, i) => {
+        const sx = ML + i * statColW + 18;
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        setColor(C.muted);
+        doc.text(s.label.toUpperCase(), sx, STATUS_Y + 18);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        setColor(C.dark);
+        doc.text(s.value, sx, STATUS_Y + 36);
+
+        // Vertical divider between columns
+        if (i < statuses.length - 1) {
+            setStroke(C.border);
+            doc.setLineWidth(0.5);
+            doc.line(ML + (i + 1) * statColW, STATUS_Y + 10, ML + (i + 1) * statColW, STATUS_Y + 44);
+        }
+    });
+
+    // =========================
+    // NOTES / TERMS
+    // =========================
+    const NOTE_Y = STATUS_Y + 72;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    setColor(C.muted);
+    doc.text("NOTES", ML, NOTE_Y);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    setColor(C.muted);
+    doc.text(
+        "This is a computer-generated invoice and does not require a signature.\nFor support, visit help.auctify.com or email support@auctify.com.",
+        ML,
+        NOTE_Y + 14,
+        { lineHeightFactor: 1.5 }
+    );
+
+    // =========================
+    // FOOTER BAND
+    // =========================
+    const FOOTER_H = 40;
+    const FOOTER_Y = PH - FOOTER_H;
+
+    setFill(C.primary);
+    doc.rect(0, FOOTER_Y, PW, FOOTER_H, "F");
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    setColor([180, 198, 252]);
+    doc.text("Thank you for choosing Auctify — where every bid is a win.", ML, FOOTER_Y + 16);
+    textRight("auctify.com", RE, FOOTER_Y + 16);
+
+    setColor([100, 120, 200]);
+    doc.setFontSize(8);
+    doc.text(
+        `Invoice generated on ${new Date().toLocaleString("en-IN")}`,
+        ML,
+        FOOTER_Y + 30
+    );
+    textRight(`Page 1 of 1`, RE, FOOTER_Y + 30);
+
+    // =========================
+    // SAVE
+    // =========================
+    doc.save(`Auctify-Invoice-${order?._id?.slice(-6)?.toUpperCase()}.pdf`);
+};
 
     return (
         <motion.div
