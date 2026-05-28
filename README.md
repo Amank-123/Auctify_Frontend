@@ -28,7 +28,6 @@ Auctify Frontend is a React 19 + Vite 7 web application for live auctions, bid s
 | React Router DOM 7   | Client-side routing             |
 | Axios                | API client and request handling |
 | Socket.IO Client     | Real-time communication         |
-| TanStack React Query | Server-state caching and sync   |
 | Framer Motion        | UI animations and transitions   |
 | Recharts             | Data visualization              |
 | jsPDF                | PDF generation                  |
