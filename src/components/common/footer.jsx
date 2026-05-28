@@ -35,7 +35,7 @@ const SocialBtn = ({ children }) => (
 const Footer = () => {
     return (
         <footer className="bg-[#F8F8FF] border-t border-[#E5E7EB]">
-            <div className="max-w-[1400px] mx-auto px-6 py-12">
+            <div className="max-w-[1400px] mx-auto px-6 pt-12 pb-6">
                 {/* TOP */}
                 <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-12 md:gap-20">
                     {/* LEFT */}
@@ -73,10 +73,10 @@ const Footer = () => {
                         <motion.div variants={fadeUp(0.05)} initial="hidden" whileInView="visible">
                             <ColHead>Product</ColHead>
                             <ul className="space-y-2">
-                                <FooterLink to="/auctions">Live Auctions</FooterLink>
-                                <FooterLink to="/categories">Categories</FooterLink>
-                                <FooterLink to="/create-auction">Create Auction</FooterLink>
-                                <FooterLink to="/dashboard">Dashboard</FooterLink>
+                                {/* <FooterLink to="/auctions">Live Auctions</FooterLink> */}
+                                <FooterLink to="/category">Categories</FooterLink>
+                                <FooterLink to="/auction/create">Create Auction</FooterLink>
+                                <FooterLink to="/auction/sell">Dashboard</FooterLink>
                             </ul>
                         </motion.div>
 
@@ -84,10 +84,10 @@ const Footer = () => {
                         <motion.div variants={fadeUp(0.1)} initial="hidden" whileInView="visible">
                             <ColHead>Sell</ColHead>
                             <ul className="space-y-2">
-                                <FooterLink to="/seller-guide">How to Sell</FooterLink>
-                                <FooterLink to="/my-auctions">My Listings</FooterLink>
-                                <FooterLink to="/analytics">Analytics</FooterLink>
-                                <FooterLink to="/fees">Fees & Payments</FooterLink>
+                                <FooterLink to="/how-it-works">How to Sell</FooterLink>
+                                <FooterLink to="/profile">My Listings</FooterLink>
+                                {/* <FooterLink to="/analytics">Analytics</FooterLink> */}
+                                <FooterLink to="/orders">Fees & Payments</FooterLink>
                             </ul>
                         </motion.div>
 
@@ -96,9 +96,9 @@ const Footer = () => {
                             <ColHead>Account</ColHead>
                             <ul className="space-y-2">
                                 <FooterLink to="/profile">Profile</FooterLink>
-                                <FooterLink to="/bids">My Bids</FooterLink>
+                                {/* <FooterLink to="/bids">My Bids</FooterLink> */}
                                 <FooterLink to="/watchlist">Watchlist</FooterLink>
-                                <FooterLink to="/login">Sign In</FooterLink>
+                                <FooterLink to="/auth/login">Sign In</FooterLink>
                             </ul>
                         </motion.div>
 
@@ -116,7 +116,7 @@ const Footer = () => {
                 </div>
 
                 {/* DIVIDER */}
-                <hr className="mt-10 border-[#E5E7EB]" />
+                <hr className="mt-8 border-[#E5E7EB]" />
 
                 {/* BOTTOM */}
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-[14px] text-[#6B7280] mt-6">

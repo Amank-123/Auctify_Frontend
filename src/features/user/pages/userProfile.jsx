@@ -642,7 +642,7 @@ export default function ProfilePage() {
                                         <ACard
                                             key={o._id}
                                             index={i}
-                                            image={o?.auctionId?.media?.[0]}
+                                            image={o?.auctionId?.media?.flat()[0]}
                                             title={o?.auctionId?.name}
                                             badge={o.orderStatus}
                                             badgeColor="blue"
@@ -734,7 +734,7 @@ export default function ProfilePage() {
                                         <ACard
                                             key={a._id}
                                             index={i}
-                                            image={a?.media?.[0]}
+                                            image={a?.media?.flat()[0]}
                                             title={a?.name}
                                             badge={a.status}
                                             badgeColor="blue"

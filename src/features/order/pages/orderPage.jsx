@@ -443,7 +443,7 @@ export default function OrderDetailsPage() {
                     </button>
                     <ChevronRight size={13} className="text-gray-400" />
                     <span className="hidden text-sm text-gray-500 sm:inline">Order Details</span>
-                    <span className="ml-auto font-mono text-xs text-gray-400">#{orderId}</span>
+                    <span className="ml-auto text-xs text-gray-400">#{orderId}</span>
                 </div>
             </header>
 
@@ -765,7 +765,7 @@ export default function OrderDetailsPage() {
                             <div className="divide-y divide-gray-100">
                                 <div className="flex items-center justify-between px-5 py-3 text-sm">
                                     <span className="text-gray-500">Order ID</span>
-                                    <span className="font-mono text-xs font-semibold tracking-wider text-gray-900">
+                                    <span className=" text-xs font-semibold tracking-wider text-gray-900">
                                         #{orderId}
                                     </span>
                                 </div>

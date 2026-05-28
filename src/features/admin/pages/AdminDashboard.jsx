@@ -145,7 +145,7 @@ function LiveClock() {
 
     return (
         <div className="hidden text-right sm:block">
-            <p className="font-mono text-sm font-semibold tracking-wider text-slate-700">
+            <p className=" text-sm font-semibold tracking-wider text-slate-700">
                 {time.toLocaleTimeString("en-US", {
                     hour12: false,
                 })}

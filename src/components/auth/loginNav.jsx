@@ -15,7 +15,7 @@ export default function LoginNavbar() {
     }, []);
 
     return (
-        <nav className="absolute w-full  top-0 z-50 transition-all duration-300 ">
+        <nav className="sticky w-full  top-0 z-50 transition-all duration-300 ">
             <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-20 py-3 md:py-2 flex items-center justify-between">
                 {/* LOGO */}
                 <Link to="/" className="flex items-center">
