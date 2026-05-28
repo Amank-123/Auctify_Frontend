@@ -2,243 +2,180 @@
 
 ## Real-Time Auction Platform Frontend
 
-Auctify Frontend is a modern real-time auction platform interface built using React 19, Vite 7, Tailwind CSS 4, and Socket.IO. The application provides a responsive and interactive user experience for live auctions, real-time bidding, private messaging, and secure authentication workflows.
+Auctify Frontend is a React 19 + Vite 7 web application for live auctions, bid synchronization, seller dashboards, chat-based room interactions, authenticated user flows, and reporting views. The UI is built for responsive, real-time auction experiences with modern React patterns and Vite-powered development.
 
 ---
 
-# Features
+## Key Features
 
-## Authentication System
-
-- JWT-based authentication
-- Google OAuth login
-- GitHub OAuth login
-- Protected routes
-- Persistent sessions
-
----
-
-## Real-Time Auction Features
-
-- Live bidding system
-- Instant auction updates
-- Real-time bid synchronization
-- Dynamic auction countdowns
-- Live auction status tracking
+- JWT-based authentication with protected routes and persistent sessions
+- Google OAuth sign-in from the auth pages
+- Real-time auction updates, live bidding, countdowns, and bid status tracking
+- Seller auction creation, seller dashboard, watchlist, order flows, and admin views
+- Seller-buyer chat rooms powered through Socket.IO-backed UI flows
+- Responsive mobile-first layout with Framer Motion animations, toast notifications, charts, and PDF generation
+- SPA routing for homepage, explore, categories, auth, auction detail, chat, and policy pages
 
 ---
 
-## Real-Time Chat System
+## Tech Stack
 
-- Seller-buyer private messaging
-- Socket.IO powered chat
-- Real-time room synchronization
-- Instant message delivery
-
----
-
-## UI / UX Features
-
-- Fully responsive design
-- Mobile-first architecture
-- Smooth animations using Framer Motion
-- Interactive UI components
-- Toast notifications
-- Optimistic UI updates
-- Modern dark theme interface
+| Technology           | Purpose                         |
+| -------------------- | ------------------------------- |
+| React 19             | Frontend library                |
+| Vite 7               | Build tool and dev server       |
+| Tailwind CSS 4       | Styling and utility classes     |
+| React Router DOM 7   | Client-side routing             |
+| Axios                | API client and request handling |
+| Socket.IO Client     | Real-time communication         |
+| TanStack React Query | Server-state caching and sync   |
+| Framer Motion        | UI animations and transitions   |
+| Recharts             | Data visualization              |
+| jsPDF                | PDF generation                  |
 
 ---
 
-## Analytics & Reporting
-
-- PDF generation using jsPDF
-- Auction reports
-- Invoice generation
-- Interactive charts using Recharts
-
----
-
-# Tech Stack
-
-## Core Technologies
-
-| Technology           | Purpose                 |
-| -------------------- | ----------------------- |
-| React 19             | Frontend Library        |
-| Vite 7               | Build Tool              |
-| Tailwind CSS 4       | Styling                 |
-| React Router DOM 7   | Routing                 |
-| Axios                | API Requests            |
-| Socket.IO Client     | Real-time Communication |
-| TanStack React Query | Server State Management |
-| Framer Motion        | Animations              |
-| Recharts             | Data Visualization      |
-| jsPDF                | PDF Generation          |
-
----
-
-# Project Structure
+## Project Structure
 
 ```bash
 src/
 ├── app/
 ├── assets/
 ├── components/
+│   ├── auth/
+│   ├── common/
+│   └── navbar/
 ├── context/
 ├── features/
+│   ├── admin/
+│   ├── auction/
+│   ├── auth/
+│   ├── ChatAgent/
+│   ├── home/
+│   ├── order/
+│   ├── policies/
+│   ├── setting/
+│   └── user/
 ├── hooks/
 ├── layouts/
 ├── routes/
 ├── shared/
+│   ├── constants/
+│   ├── services/
+│   └── utils/
 ├── index.css
 └── main.jsx
 ```
 
----
-
-# Architecture Highlights
-
-## Feature-Based Frontend Structure
-
-The project follows a modular and scalable architecture using feature separation for better maintainability.
+The app uses a feature-based organization, plus shared services and utility layers for API handling, sockets, notifications, and reusable UI helpers.
 
 ---
 
-## Real-Time Communication
+## Architecture Highlights
 
-Socket.IO is used for:
-
-- Live bidding
-- Real-time chat
-- Auction synchronization
-- Event broadcasting
-
----
-
-## State Management
-
-TanStack React Query is used for:
-
-- API caching
-- Server state synchronization
-- Optimistic updates
-- Request management
+- Feature-first folder structure for maintainable scaling
+- Shared API layer powered by Axios with interceptor-based auth handling
+- Real-time communication through Socket.IO for live auction and chat updates
+- React Query for server state, caching, and async data synchronization
+- Vite path aliasing via `@` for clean imports
+- Vercel rewrites configured in `vercel.json` for single-page app navigation
 
 ---
 
-# Performance Optimizations
+## Environment Variables
 
-- Lazy rendering
-- Optimistic UI updates
-- Efficient socket listeners
-- Component reusability
-- Memoization strategies
-- Fast Vite bundling
-- Minimal re-renders
+Create a `.env` file in the project root, or start from the checked-in example file:
 
-Because users expect instant updates while simultaneously opening 37 browser tabs and blaming the frontend for physics.
-
----
-
-# Environment Variables
-
-Create a `.env` file in the root directory.
-
-```env
-VITE_API_BASE_URL=your_backend_url
+```bash
+cp .env.example .env
 ```
 
+Then define the backend URL used by the frontend:
+
+```env
+VITE_API_BASE_URL=https://your-backend-url.com
+```
+
+The repository includes `.env.example` with an example value, and the Axios client reads `VITE_API_BASE_URL` at runtime.
+
 ---
 
-# Installation
+## Installation
 
-## Clone the Repository
+### Clone the repository
 
 ```bash
 git clone <repository_url>
+cd Auctify_Frontend
 ```
 
----
-
-## Navigate to Frontend Directory
-
-```bash
-cd auctify-frontend
-```
-
----
-
-## Install Dependencies
+### Install dependencies
 
 ```bash
 npm install
 ```
 
----
+### Configure environment
 
-## Start Development Server
+```bash
+cp .env.example .env
+```
+
+Update `VITE_API_BASE_URL` to match your backend endpoint before starting the app.
+
+### Start the development server
 
 ```bash
 npm run dev
 ```
 
+The default Vite dev server runs locally and supports hot reloading for frontend development.
+
 ---
 
-# Build for Production
+## Build and Preview
+
+### Production build
 
 ```bash
 npm run build
 ```
 
----
+### Preview production bundle
 
-# Key Engineering Concepts Used
-
-- Real-Time Systems
-- Event-Driven Communication
-- Socket-Based Architecture
-- Responsive UI Engineering
-- Optimistic Rendering
-- API State Synchronization
-- Component-Based Architecture
-- OAuth Authentication Flow
-- Secure Route Handling
-- Modular Frontend Design
+```bash
+npm run preview
+```
 
 ---
 
-# Deployment
+## Verification
 
-Frontend deployment is optimized for:
+Local verification completed in this workspace:
 
-- Vercel
-- Netlify
-- Static hosting platforms
+- `npm run build` ✅ passes and generates production assets in `dist/`
 
----
-
-# Future Improvements
-
-- Push notifications
-- AI-powered recommendations
-- Multi-language support
-- Advanced analytics dashboard
-- PWA support
-- Offline caching
+The build confirmation is important because the frontend relies on Vite compression, asset handling, and SPA routing.
 
 ---
 
-# Author
+## Deployment
 
-## Aman Kumar & Gautam Singh
-
-Full Stack Developer focused on building scalable real-time web applications using modern frontend and backend technologies.
+This frontend is intended for static hosting and Vercel deployment, with SPA rewrite support configured in `vercel.json`.
 
 ---
 
-# Final Note
+## Future Improvements
 
-Auctify Frontend was built to simulate a production-grade real-time auction ecosystem with scalable architecture, modern UI systems, and live synchronization capabilities.
+- Push notifications for bids, watchlist changes, and auction reminders
+- AI-assisted recommendations and auction insights
+- Multi-language support and accessibility enhancements
+- PWA capabilities and offline-friendly caching
 
-Which is software-engineering language for:
-“multiple people aggressively clicking bid buttons while the UI tries not to collapse into existential despair.”
+---
+
+## Authors
+
+Aman Kumar & Gautam Singh
+
+Full Stack Developers focused on building scalable real-time auction experiences with modern React, API integration, and live UI workflows.
