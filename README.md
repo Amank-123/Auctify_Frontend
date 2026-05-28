@@ -105,7 +105,7 @@ The repository includes `.env.example` with an example value, and the Axios clie
 ### Clone the repository
 
 ```bash
-git clone <repository_url>
+git clone https://github.com/Amank-123/Auctify_Frontend.git
 cd Auctify_Frontend
 ```
 
