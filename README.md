@@ -15,6 +15,7 @@ Auctify Frontend is a React 19 + Vite 7 web application for live auctions, bid s
 - Seller-buyer chat rooms powered through Socket.IO-backed UI flows
 - Responsive mobile-first layout with Framer Motion animations, toast notifications, charts, and PDF generation
 - SPA routing for homepage, explore, categories, auth, auction detail, chat, and policy pages
+- AI-powered support assistant with Retrieval-Augmented Generation (RAG), contextual query understanding, voice input support, and dynamic PDF-based knowledge retrieval
 
 ---
 
@@ -31,7 +32,6 @@ Auctify Frontend is a React 19 + Vite 7 web application for live auctions, bid s
 | Framer Motion        | UI animations and transitions   |
 | Recharts             | Data visualization              |
 | jsPDF                | PDF generation                  |
-
 ---
 
 ## Project Structure
@@ -80,6 +80,49 @@ The app uses a feature-based organization, plus shared services and utility laye
 - Vercel rewrites configured in `vercel.json` for single-page app navigation
 
 ---
+
+## AI Assistant Architecture
+
+The platform includes an AI-powered support assistant designed specifically for Auctify workflows and marketplace guidance.
+
+### Features
+
+- Conversational support for buyers, sellers, and administrators
+- Retrieval-Augmented Generation (RAG) architecture
+- Dynamic PDF knowledge-base ingestion
+- Semantic search using Pinecone vector database
+- Context-aware query rewriting and follow-up understanding
+- Voice-to-text interaction support
+- Real-time chatbot widget integrated into the platform
+
+### AI Stack
+
+| Technology            | Purpose                          |
+| --------------------- | -------------------------------- |
+| FastAPI               | AI service backend               |
+| LangChain             | RAG orchestration                |
+| Pinecone              | Vector database                  |
+| Groq API              | LLM inference                    |
+| HuggingFace Embeddings| Semantic embeddings              |
+| PyMuPDF               | PDF parsing and ingestion        |
+
+### Workflow
+
+```text
+User Query
+    ↓
+Query Cleaning
+    ↓
+Context Rewriting
+    ↓
+Vector Retrieval (Pinecone)
+    ↓
+Relevant Knowledge
+    ↓
+LLM Response
+    ↓
+Chat Widget Response
+```
 
 ## Environment Variables
 
