@@ -27,7 +27,7 @@ export default function ForgotPasswordPage() {
                 throw new Error(res.data?.message || "Failed to send OTP");
             }
         } catch (err) {
-            showError(err?.response?.data?.message || err.message);
+            showError(err?.response?.data?.message || "An error occurred while sending OTP");
         } finally {
             setLoading(false);
         }

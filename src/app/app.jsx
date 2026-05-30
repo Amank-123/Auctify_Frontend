@@ -21,7 +21,7 @@ export const App = () => {
     return (
         <>
             <Toaster
-                position="top-right"
+                position="bottom-center"
                 gutter={12}
                 containerClassName="mb-6"
                 toastOptions={{

@@ -46,15 +46,24 @@ export default function LoginPage() {
         try {
             setLoading(true);
             const res = await login(form);
-            console.log("Response form login page: ", res);
+
             if (res.data?.success) {
                 navigate("/auth/success");
-                showSuccess(res.data?.data.message || "User logged in successfully");
+                showSuccess(res.data?.message || "User logged in successfully");
             } else {
                 throw new Error(res.data?.message || "Login failed");
             }
         } catch (err) {
-            showError(`${err}`);
+            if (err.response?.data?.message === "EMAIL_NOT_VERIFIED") {
+                navigate("/auth/otp", {
+                    state: {
+                        email: form.email,
+                        newUser: false,
+                    },
+                });
+            } else {
+                showError(err?.response?.data?.message || "An error occurred during login");
+            }
         } finally {
             setLoading(false);
         }
@@ -65,38 +74,93 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#F8F8FF] flex items-center justify-center px-4">
-            <div className="absolute w-[600px] h-[300px] bg-[#2563EB]/20 rounded-full blur-[120px] -top-32 -left-32" />
-            <div className="absolute w-[500px] h-[500px] bg-[#C2410C]/20 rounded-full blur-[120px] bottom-0 right-0" />
+        <div className="h-full bg-[#F8F8FF] px-4 py-4 lg:py-6 flex items-center">
+            {/* Background Blobs */}
+            <div className="pointer-events-none absolute top-0 left-0 h-[280px] w-[280px] sm:h-[450px] sm:w-[450px] bg-[#2563EB]/15 rounded-full blur-[120px]" />
 
-            <div className="w-full max-w-6xl z-30 grid lg:grid-cols-2 bg-white rounded-3xl shadow-xl overflow-hidden">
-                {/* LEFT - FORM */}
-                <div className="p-8 sm:p-12 flex flex-col justify-center">
-                    {/* <img src={logo} alt="auctify" className="w-45 pb-4" /> */}
-                    <h1 className="text-3xl font-bold text-[#1F2937] mb-2">Welcome back</h1>
-                    <p className="text-[#6B7280] mb-6">Enter your credentials to continue</p>
+            <div className="pointer-events-none absolute bottom-0 right-0 h-[280px] w-[280px] sm:h-[400px] sm:w-[400px] bg-[#C2410C]/15 rounded-full blur-[120px]" />
 
-                    {/* GOOGLE LOGIN */}
+            <div
+                className="
+                relative z-20
+                mx-auto
+                w-full
+                max-w-6xl
+
+                overflow-hidden
+
+                rounded-[28px]
+
+                border border-slate-200/70
+
+                bg-white/90
+                backdrop-blur-xl
+
+                shadow-[0_20px_60px_rgba(15,23,42,0.08)]
+
+                grid
+                lg:grid-cols-2
+            "
+            >
+                {/* LEFT SIDE */}
+                <div
+                    className="
+                    flex flex-col justify-center
+
+                    p-5
+                    sm:p-7
+                    md:p-8
+                    lg:p-10
+                "
+                >
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#111827] mb-2">
+                        Welcome back
+                    </h1>
+
+                    <p className="text-sm text-[#6B7280] mb-6">
+                        Enter your credentials to continue
+                    </p>
+
+                    {/* Google Login */}
                     <button
                         onClick={handleGoogleLogin}
-                        className="w-full flex items-center justify-center gap-3 border cursor-pointer border-[#E5E7EB] py-3 rounded-xl hover:bg-gray-50 transition"
+                        className="
+                        w-full
+                        flex items-center justify-center gap-3
+
+                        rounded-xl
+                        border border-slate-200
+
+                        bg-white
+
+                        py-3
+                        px-4
+
+                        hover:bg-slate-50
+
+                        transition-all
+                        cursor-pointer
+                    "
                     >
                         <img
                             src="https://www.svgrepo.com/show/475656/google-color.svg"
                             alt="google"
                             className="w-5 h-5"
                         />
-                        <span className="text-sm font-medium">Continue with Google</span>
+
+                        <span className="text-sm font-medium text-slate-700">
+                            Continue with Google
+                        </span>
                     </button>
 
-                    {/* DIVIDER */}
-                    <div className="flex items-center gap-3 my-6">
-                        <div className="flex-1 h-px bg-[#E5E7EB]" />
-                        <span className="text-xs text-[#6B7280]">OR</span>
-                        <div className="flex-1 h-px bg-[#E5E7EB]" />
+                    {/* Divider */}
+                    <div className="flex items-center gap-3 my-5">
+                        <div className="h-px flex-1 bg-slate-200" />
+                        <span className="text-xs font-medium text-slate-500">OR</span>
+                        <div className="h-px flex-1 bg-slate-200" />
                     </div>
 
-                    {/* FORM */}
+                    {/* Form */}
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <input
                             type="email"
@@ -105,7 +169,24 @@ export default function LoginPage() {
                             value={form.email}
                             onChange={handleChange}
                             required
-                            className="w-full px-4 py-3 rounded-xl bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2563EB] transition"
+                            className="
+                            w-full
+                            rounded-xl
+
+                            border border-slate-200
+                            bg-white
+
+                            px-4 py-3
+
+                            text-sm
+
+                            focus:outline-none
+                            focus:ring-4
+                            focus:ring-[#2563EB]/10
+                            focus:border-[#2563EB]
+
+                            transition-all
+                        "
                         />
 
                         <input
@@ -115,7 +196,24 @@ export default function LoginPage() {
                             value={form.password}
                             onChange={handleChange}
                             required
-                            className="w-full px-4 py-3 rounded-xl bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2563EB] transition"
+                            className="
+                            w-full
+                            rounded-xl
+
+                            border border-slate-200
+                            bg-white
+
+                            px-4 py-3
+
+                            text-sm
+
+                            focus:outline-none
+                            focus:ring-4
+                            focus:ring-[#2563EB]/10
+                            focus:border-[#2563EB]
+
+                            transition-all
+                        "
                         />
 
                         <div className="text-right">
@@ -130,38 +228,96 @@ export default function LoginPage() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-3 rounded-xl cursor-pointer bg-[#C2410C] text-white font-semibold hover:opacity-90 transition"
+                            className="
+                            w-full
+
+                            rounded-xl
+
+                            bg-[#C2410C]
+
+                            py-3
+
+                            text-white
+                            font-semibold
+
+                            shadow-sm
+
+                            hover:bg-[#9A3412]
+
+                            transition-all
+                            cursor-pointer
+                        "
                         >
                             {loading ? "Signing in..." : "Sign In"}
                         </button>
                     </form>
 
-                    <p className="text-sm text-center mt-6 text-[#6B7280]">
-                        Don’t have an account?{" "}
-                        <Link to="/auth/register" className="text-[#2563EB] font-medium">
+                    <p className="mt-5 text-center text-sm text-[#6B7280]">
+                        Don't have an account?{" "}
+                        <Link to="/auth/register" className="font-semibold text-[#2563EB]">
                             Sign up
                         </Link>
                     </p>
                 </div>
-                {/* RIGHT - VISUAL */}
-                <div className="hidden lg:flex relative overflow-hidden items-center justify-center">
-                    {/* Background gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#2563EB]/10 via-white to-[#C2410C]/10" />
 
-                    {/* Animated blobs */}
+                {/* RIGHT SIDE */}
+                <div
+                    className="
+                    hidden lg:flex
+
+                    relative
+                    overflow-hidden
+
+                    items-center
+                    justify-center
+
+                    min-h-[580px]
+                    xl:min-h-[620px]
+
+                    bg-gradient-to-br
+                    from-[#F8FAFF]
+                    via-white
+                    to-[#EEF4FF]
+                "
+                >
                     <motion.div
                         animate={{ y: [0, -30, 0], x: [0, 20, 0] }}
-                        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-                        className="absolute w-80 h-80 bg-[#2563EB]/20 rounded-full blur-3xl top-10 right-10"
+                        transition={{
+                            duration: 8,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                        }}
+                        className="
+                        absolute
+                        top-10 right-10
+
+                        h-72 w-72
+
+                        rounded-full
+                        bg-[#2563EB]/15
+                        blur-3xl
+                    "
                     />
 
                     <motion.div
                         animate={{ y: [0, 30, 0], x: [0, -20, 0] }}
-                        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-                        className="absolute w-72 h-72 bg-[#C2410C]/20 rounded-full blur-3xl bottom-10 left-10"
+                        transition={{
+                            duration: 10,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                        }}
+                        className="
+                        absolute
+                        bottom-10 left-10
+
+                        h-72 w-72
+
+                        rounded-full
+                        bg-[#C2410C]/15
+                        blur-3xl
+                    "
                     />
 
-                    {/* 🔥 BUBBLES */}
                     {slogans.map((text, i) => {
                         const b = bubbleDataRef.current[i];
 
@@ -184,34 +340,57 @@ export default function LoginPage() {
                                     ease: "easeOut",
                                     repeat: Infinity,
                                 }}
-                                className="absolute text-sm px-4 py-2 z-20 rounded-full 
-            bg-white/60 backdrop-blur-md shadow-md 
-            text-gray-700 whitespace-nowrap"
+                                className="
+                                absolute
+                                z-20
+
+                                rounded-full
+
+                                bg-white/70
+                                backdrop-blur-md
+
+                                px-3 py-1.5
+
+                                text-xs
+                                text-slate-700
+
+                                shadow-md
+                                whitespace-nowrap
+                            "
                             >
                                 {text}
                             </motion.div>
                         );
                     })}
 
-                    {/* Main image */}
                     <motion.img
                         src={loginImage}
                         alt="auction"
-                        initial={{ opacity: 0, scale: 0.9 }}
+                        initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.6 }}
-                        className="relative z-30 w-[420px]"
+                        className="
+                        relative z-30
+
+                        w-[280px]
+                        xl:w-[360px]
+                        2xl:w-[420px]
+
+                        max-w-full
+                    "
                     />
 
-                    {/* Headline */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.6 }}
-                        className="absolute bottom-10 left-10"
+                        className="absolute bottom-10 left-10 z-30"
                     >
                         <h2 className="text-xl font-semibold text-[#1F2937]">Bid. Win. Repeat.</h2>
-                        <p className="text-sm text-[#6B7280]">Real-time auctions. No friction.</p>
+
+                        <p className="mt-2 text-sm text-[#6B7280]">
+                            Real-time auctions. No friction.
+                        </p>
                     </motion.div>
                 </div>
             </div>

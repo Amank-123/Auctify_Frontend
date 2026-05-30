@@ -70,7 +70,7 @@ export default function SignupPage() {
 
             const res = await register(payload);
             navigate("/auth/otp", {
-                state: { email: form.email },
+                state: { email: form.email, newUser: true },
             });
         } catch (err) {
             showError(err.response?.data?.message || "Registration failed");
@@ -84,27 +84,60 @@ export default function SignupPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#F8F8FF] flex items-center justify-center px-4">
-            <div className="absolute w-[600px] h-[600px] bg-[#2563EB]/20 rounded-full blur-[120px] -top-32 -left-32" />
-            <div className="absolute w-[500px] h-[500px] bg-[#C2410C]/20 rounded-full blur-[120px] bottom-0 right-0" />
+        <div className="min-h-screen bg-[#F8F8FF] flex items-center justify-center px-4 py-4 sm:py-4 relative overflow-hidden">
+            {/* Background blobs */}
+            <div className="absolute w-[250px] h-[250px] sm:w-[450px] sm:h-[450px] lg:w-[600px] lg:h-[600px] bg-[#2563EB]/20 rounded-full blur-[120px] -top-32 -left-32" />
 
-            <div className="w-full max-w-6xl z-20 grid lg:grid-cols-2 bg-white rounded-3xl shadow-xl overflow-hidden">
+            <div className="absolute w-[250px] h-[250px] sm:w-[400px] sm:h-[400px] lg:w-[500px] lg:h-[500px] bg-[#C2410C]/20 rounded-full blur-[120px] bottom-0 right-0" />
+
+            <div
+                className="
+                w-full
+                max-w-6xl
+                z-20
+
+                grid
+                xl:grid-cols-2
+
+                bg-white
+                rounded-3xl
+                shadow-xl
+                overflow-hidden
+            "
+            >
                 {/* LEFT - FORM */}
-                <div className="p-8 sm:p-12 flex flex-col justify-center">
-                    {/* <img src={logo} alt="auctify" className="w-45 pb-4" /> */}
-                    <h1 className="text-3xl font-bold text-[#1F2937] mb-2">Create account</h1>
-                    <p className="text-[#6B7280] mb-6">Start bidding and winning today</p>
+                <div className="p-5 sm:p-8 lg:p-10 xl:p-12 flex flex-col justify-center">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-[#1F2937] mb-2">
+                        Create account
+                    </h1>
+
+                    <p className="text-sm sm:text-base text-[#6B7280] mb-6">
+                        Start bidding and winning today
+                    </p>
 
                     {/* GOOGLE LOGIN */}
                     <button
                         onClick={handleGoogleLogin}
-                        className="w-full flex items-center justify-center gap-3 border cursor-pointer border-[#E5E7EB] py-3 rounded-xl hover:bg-gray-50 transition"
+                        className="
+                        w-full
+                        flex items-center justify-center gap-3
+
+                        border border-[#E5E7EB]
+                        py-3
+
+                        rounded-xl
+                        cursor-pointer
+
+                        hover:bg-gray-50
+                        transition
+                    "
                     >
                         <img
                             src="https://www.svgrepo.com/show/475656/google-color.svg"
                             alt="google"
                             className="w-5 h-5"
                         />
+
                         <span className="text-sm font-medium">Continue with Google</span>
                     </button>
 
@@ -117,7 +150,6 @@ export default function SignupPage() {
 
                     {/* FORM */}
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Username - required by backend */}
                         <input
                             type="text"
                             name="username"
@@ -125,26 +157,63 @@ export default function SignupPage() {
                             value={form.username}
                             onChange={handleChange}
                             required
-                            className="w-full px-4 py-3 rounded-xl bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2563EB] transition"
+                            className="
+                            w-full
+                            px-4 py-3
+
+                            rounded-xl
+                            bg-gray-100
+
+                            focus:outline-none
+                            focus:ring-2
+                            focus:ring-[#2563EB]
+
+                            transition
+                        "
                         />
 
-                        {/* Name Row - optional in backend */}
-                        <div className="flex gap-3">
+                        {/* Responsive Name Row */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <input
                                 type="text"
                                 name="firstName"
                                 placeholder="First name (optional)"
                                 value={form.firstName}
                                 onChange={handleChange}
-                                className="w-1/2 px-4 py-3 rounded-xl bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2563EB] transition"
+                                className="
+                                w-full
+                                px-4 py-3
+
+                                rounded-xl
+                                bg-gray-100
+
+                                focus:outline-none
+                                focus:ring-2
+                                focus:ring-[#2563EB]
+
+                                transition
+                            "
                             />
+
                             <input
                                 type="text"
                                 name="lastName"
                                 placeholder="Last name (optional)"
                                 value={form.lastName}
                                 onChange={handleChange}
-                                className="w-1/2 px-4 py-3 rounded-xl bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2563EB] transition"
+                                className="
+                                w-full
+                                px-4 py-3
+
+                                rounded-xl
+                                bg-gray-100
+
+                                focus:outline-none
+                                focus:ring-2
+                                focus:ring-[#2563EB]
+
+                                transition
+                            "
                             />
                         </div>
 
@@ -185,7 +254,8 @@ export default function SignupPage() {
                                 required
                                 className="mt-1 accent-[#C2410C]"
                             />
-                            <label htmlFor="terms" className="text-sm text-[#6B7280]">
+
+                            <label htmlFor="terms" className="text-xs sm:text-sm text-[#6B7280]">
                                 I agree to the{" "}
                                 <Link to="/terms" className="text-[#2563EB] hover:underline">
                                     Terms of Service
@@ -200,7 +270,21 @@ export default function SignupPage() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-3 rounded-xl cursor-pointer bg-[#C2410C] text-white font-semibold hover:opacity-90 transition"
+                            className="
+                            w-full
+                            py-3
+
+                            rounded-xl
+
+                            cursor-pointer
+
+                            bg-[#C2410C]
+                            text-white
+                            font-semibold
+
+                            hover:opacity-90
+                            transition
+                        "
                         >
                             {loading ? "Creating account..." : "Create Account"}
                         </button>
@@ -215,24 +299,60 @@ export default function SignupPage() {
                 </div>
 
                 {/* RIGHT - VISUAL */}
-                <div className="hidden lg:flex relative overflow-hidden items-center justify-center">
-                    {/* Background gradient */}
+                <div
+                    className="
+                    hidden
+                    xl:flex
+
+                    relative
+                    overflow-hidden
+
+                    items-center
+                    justify-center
+                "
+                >
                     <div className="absolute inset-0 bg-gradient-to-br from-[#2563EB]/10 via-white to-[#C2410C]/10" />
 
-                    {/* Animated blobs */}
                     <motion.div
                         animate={{ y: [0, -30, 0], x: [0, 20, 0] }}
-                        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-                        className="absolute w-80 h-80 bg-[#2563EB]/20 rounded-full blur-3xl top-10 right-10"
+                        transition={{
+                            duration: 8,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                        }}
+                        className="
+                        absolute
+                        w-72 h-72
+                        xl:w-80 xl:h-80
+
+                        bg-[#2563EB]/20
+                        rounded-full
+                        blur-3xl
+
+                        top-10 right-10
+                    "
                     />
 
                     <motion.div
                         animate={{ y: [0, 30, 0], x: [0, -20, 0] }}
-                        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-                        className="absolute w-72 h-72 bg-[#C2410C]/20 rounded-full blur-3xl bottom-10 left-10"
+                        transition={{
+                            duration: 10,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                        }}
+                        className="
+                        absolute
+                        w-64 h-64
+                        xl:w-72 xl:h-72
+
+                        bg-[#C2410C]/20
+                        rounded-full
+                        blur-3xl
+
+                        bottom-10 left-10
+                    "
                     />
 
-                    {/* 🔥 BUBBLES */}
                     {slogans.map((text, i) => {
                         const b = bubbleDataRef.current[i];
 
@@ -255,26 +375,47 @@ export default function SignupPage() {
                                     ease: "easeOut",
                                     repeat: Infinity,
                                 }}
-                                className="absolute text-sm px-4 py-2 z-20 rounded-full 
-                            bg-white/60 backdrop-blur-md shadow-md 
-                            text-gray-700 whitespace-nowrap"
+                                className="
+                                absolute
+                                z-20
+
+                                text-xs
+
+                                px-3 py-1.5
+
+                                rounded-full
+
+                                bg-white/60
+                                backdrop-blur-md
+
+                                shadow-md
+
+                                text-gray-700
+                                whitespace-nowrap
+                            "
                             >
                                 {text}
                             </motion.div>
                         );
                     })}
 
-                    {/* Main image */}
                     <motion.img
                         src={loginImage}
                         alt="auction"
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.6 }}
-                        className="relative z-30 w-[500px]"
+                        className="
+                        relative z-30
+
+                        w-[280px]
+                        xl:w-[380px]
+                        2xl:w-[450px]
+
+                        max-w-full
+                    "
                     />
 
-                    {/* Headline */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -282,6 +423,7 @@ export default function SignupPage() {
                         className="absolute bottom-10 left-10"
                     >
                         <h2 className="text-xl font-semibold text-[#1F2937]">Bid. Win. Repeat.</h2>
+
                         <p className="text-sm text-[#6B7280]">Real-time auctions. No friction.</p>
                     </motion.div>
                 </div>
