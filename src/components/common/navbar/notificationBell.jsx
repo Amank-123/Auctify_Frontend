@@ -119,7 +119,7 @@ export default function NotificationBell({ onClick, refreshKey }) {
                 style={{
                     transformOrigin: "top center",
                 }}
-                className="relative text-2xl text-slate-800 hover:text-blue-600 transition-colors"
+                className="relative text-slate-800 hover:text-blue-600 transition-colors"
             >
                 <HiOutlineBell size={26} />
 
@@ -134,7 +134,13 @@ export default function NotificationBell({ onClick, refreshKey }) {
                                 scale: 0,
                                 opacity: 0,
                             }}
-                            className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold min-w-[16px] h-4 px-[3px] rounded-full flex items-center justify-center border-2 border-white"
+                            className="
+                            absolute -top-1 -right-1
+                            bg-red-500 text-white text-[10px]
+                            font-bold min-w-[16px] h-4 px-[3px]
+                            rounded-full flex items-center
+                            justify-center border-2 border-white
+                            "
                         >
                             {count > 99 ? "99+" : count}
                         </motion.span>

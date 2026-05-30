@@ -68,7 +68,7 @@ export default function LoginPage() {
 
     return (
         <div className="min-h-screen bg-[#F8F8FF] flex items-center justify-center px-4">
-            <div className="absolute w-[600px] h-[600px] bg-[#2563EB]/20 rounded-full blur-[120px] -top-32 -left-32" />
+            <div className="absolute w-[600px] h-[300px] bg-[#2563EB]/20 rounded-full blur-[120px] -top-32 -left-32" />
             <div className="absolute w-[500px] h-[500px] bg-[#C2410C]/20 rounded-full blur-[120px] bottom-0 right-0" />
 
             <div className="w-full max-w-6xl z-30 grid lg:grid-cols-2 bg-white rounded-3xl shadow-xl overflow-hidden">

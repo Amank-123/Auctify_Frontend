@@ -110,7 +110,6 @@ function DetailRow({
                     break-words
                     ${valueColor}
                     ${valueBg}
-                    ${mono ? "font-mono" : ""}
                 `}
             >
                 {value}

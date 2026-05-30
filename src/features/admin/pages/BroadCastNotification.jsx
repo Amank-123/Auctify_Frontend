@@ -107,7 +107,7 @@ function StyledTextarea({ charCount, maxLength, ...props }) {
                 }`}
             />
             <span
-                className={`absolute bottom-2.5 right-3 text-xs font-mono transition-colors ${charCount > maxLength * 0.85 ? "text-amber-400" : "text-slate-300"}`}
+                className={`absolute bottom-2.5 right-3 text-xs  transition-colors ${charCount > maxLength * 0.85 ? "text-amber-400" : "text-slate-300"}`}
             >
                 {charCount}/{maxLength}
             </span>

@@ -22,7 +22,7 @@ export default function CategoryAuctionsPage() {
     usePageTitle(category ? `${categoryName} | Explore Auctify Auctions` : "Category");
 
     return (
-        <div className="min-h-screen bg-[#F8F9FF] font-sans">
+        <div className="min-h-screen bg-[#F8F9FF] ">
             {/* TOP BANNER */}
             <div
                 className="

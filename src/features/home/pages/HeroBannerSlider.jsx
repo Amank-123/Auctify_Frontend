@@ -1,106 +1,137 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-
 import { useNavigate } from "react-router-dom";
-
 import { api } from "@/shared/services/axios";
+
+// ── Variants ────────────────────────────────────────────────────────────────
+
+const slideVariants = {
+    enter: (d) => ({ x: d > 0 ? "6%" : "-6%", opacity: 0, scale: 1.04 }),
+    center: {
+        x: 0,
+        opacity: 1,
+        scale: 1,
+        transition: { duration: 0.65, ease: [0.32, 0.72, 0, 1] },
+    },
+    exit: (d) => ({
+        x: d > 0 ? "-6%" : "6%",
+        opacity: 0,
+        scale: 0.97,
+        transition: { duration: 0.45, ease: [0.4, 0, 1, 1] },
+    }),
+};
+
+const overlayVariants = {
+    enter: { opacity: 0 },
+    center: { opacity: 1, transition: { duration: 0.5, delay: 0.1 } },
+    exit: { opacity: 0, transition: { duration: 0.3 } },
+};
+
+const contentVariants = {
+    hidden: {},
+    visible: { transition: { staggerChildren: 0.08, delayChildren: 0.25 } },
+    exit: { transition: { staggerChildren: 0.04, staggerDirection: -1 } },
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 22, filter: "blur(4px)" },
+    visible: {
+        opacity: 1,
+        y: 0,
+        filter: "blur(0px)",
+        transition: { duration: 0.55, ease: [0.25, 0.46, 0.45, 0.94] },
+    },
+    exit: {
+        opacity: 0,
+        y: -10,
+        filter: "blur(4px)",
+        transition: { duration: 0.25, ease: "easeIn" },
+    },
+};
+
+const INTERVAL_MS = 5000;
+
+// ── Component ────────────────────────────────────────────────────────────────
 
 export default function HeroBannerSlider() {
     const navigate = useNavigate();
-
     const [banners, setBanners] = useState([]);
-
     const [current, setCurrent] = useState(0);
-
     const [direction, setDirection] = useState(1);
+    const [isPaused, setIsPaused] = useState(false);
 
-    /* ─────────────────────────────────────────────
-       FETCH BANNERS
-    ───────────────────────────────────────────── */
-    const fetchBanners = async () => {
-        try {
-            const res = await api.get("/api/banner/get");
+    // ✅ Single source of truth for the auto-advance timer
+    const intervalRef = useRef(null);
+    const bannersRef = useRef([]);
+    const isPausedRef = useRef(false);
+    // ✅ Tracks progress bar start time so the bar always reflects real elapsed time
+    const [progressKey, setProgressKey] = useState(0);
 
-            console.log("BANNER RESPONSE:", res.data);
-
-            setBanners(res.data.data || []);
-        } catch (error) {
-            console.log(error);
-            console.log(error?.response?.data);
-        }
-    };
+    useEffect(() => {
+        bannersRef.current = banners;
+    }, [banners]);
+    useEffect(() => {
+        isPausedRef.current = isPaused;
+    }, [isPaused]);
 
     useEffect(() => {
         fetchBanners();
     }, []);
 
-    /* ─────────────────────────────────────────────
-       AUTO SLIDE
-    ───────────────────────────────────────────── */
+    const fetchBanners = async () => {
+        try {
+            const res = await api.get("/api/banner/get");
+            setBanners(res.data.data || []);
+        } catch (error) {
+            console.log(error?.response?.data);
+        }
+    };
+
+    // ✅ Always clears the old interval and starts a fresh one
+    // Called after every manual interaction so the next auto-slide
+    // is always exactly INTERVAL_MS away from the last action
+    const resetInterval = useCallback(() => {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+
+        intervalRef.current = setInterval(() => {
+            if (isPausedRef.current) return;
+            const len = bannersRef.current.length;
+            if (!len) return;
+            setDirection(1);
+            setCurrent((prev) => (prev + 1) % len);
+            setProgressKey((k) => k + 1); // ✅ restart progress bar in sync
+        }, INTERVAL_MS);
+
+        setProgressKey((k) => k + 1); // ✅ reset progress bar on manual nav too
+    }, []);
+
+    // Start interval once banners load
     useEffect(() => {
         if (!banners.length) return;
+        resetInterval();
+        return () => clearInterval(intervalRef.current);
+    }, [banners.length]);
 
-        const timer = setInterval(() => {
-            nextSlide();
-        }, 5000);
+    // ✅ paginate resets the interval so no double-fire after manual click
+    const paginate = useCallback(
+        (newDirection, targetIndex = null) => {
+            setDirection(newDirection);
+            setCurrent((prev) => {
+                const len = bannersRef.current.length;
+                if (targetIndex !== null) return targetIndex;
+                return newDirection > 0 ? (prev + 1) % len : (prev - 1 + len) % len;
+            });
+            resetInterval(); // ✅ always exactly 5s until next auto-slide
+        },
+        [resetInterval],
+    );
 
-        return () => clearInterval(timer);
-    }, [current, banners]);
-
-    /* ─────────────────────────────────────────────
-       NEXT
-    ───────────────────────────────────────────── */
-    const nextSlide = () => {
-        setDirection(1);
-
-        setCurrent((prev) => (prev + 1) % banners.length);
-    };
-
-    /* ─────────────────────────────────────────────
-       PREV
-    ───────────────────────────────────────────── */
-    const prevSlide = () => {
-        setDirection(-1);
-
-        setCurrent((prev) => (prev - 1 + banners.length) % banners.length);
-    };
-
-    /* ─────────────────────────────────────────────
-       NAVIGATE CATEGORY
-    ───────────────────────────────────────────── */
     const handleNavigate = (banner) => {
         if (!banner?.category?.name) return;
-
         navigate(`/category/${banner.category.name.toLowerCase().replace(/\s+/g, "-")}`);
     };
 
-    /* ─────────────────────────────────────────────
-       SLIDE ANIMATION
-    ───────────────────────────────────────────── */
-    const slideVariants = {
-        enter: (direction) => ({
-            x: direction > 0 ? 120 : -120,
-            opacity: 0,
-            scale: 1.05,
-        }),
-
-        center: {
-            x: 0,
-            opacity: 1,
-            scale: 1,
-        },
-
-        exit: (direction) => ({
-            x: direction > 0 ? -120 : 120,
-            opacity: 0,
-            scale: 1.03,
-        }),
-    };
-
-    /* ─────────────────────────────────────────────
-       LOADING
-    ───────────────────────────────────────────── */
     if (!banners.length) {
         return (
             <section className="w-full">
@@ -111,8 +142,13 @@ export default function HeroBannerSlider() {
 
     return (
         <section className="w-full">
-            <div className="relative h-[320px] sm:h-[420px] md:h-[480px] overflow-hidden shadow-2xl bg-slate-900">
-                <AnimatePresence mode="wait" custom={direction}>
+            <div
+                className="relative h-[320px] sm:h-[420px] md:h-[480px] overflow-hidden bg-slate-900"
+                onMouseEnter={() => setIsPaused(true)}
+                onMouseLeave={() => setIsPaused(false)}
+            >
+                {/* Slide layer */}
+                <AnimatePresence custom={direction} mode="wait">
                     <motion.div
                         key={current}
                         custom={direction}
@@ -120,173 +156,113 @@ export default function HeroBannerSlider() {
                         initial="enter"
                         animate="center"
                         exit="exit"
-                        transition={{
-                            duration: 0.7,
-                            ease: [0.22, 1, 0.36, 1],
-                        }}
                         className="absolute inset-0"
                     >
-                        {/* IMAGE */}
-                        <motion.img
+                        <img
                             src={banners[current]?.image}
                             alt={banners[current]?.title}
                             className="w-full h-full object-cover"
-                            initial={{
-                                scale: 1.08,
-                            }}
-                            animate={{
-                                scale: 1,
-                            }}
-                            transition={{
-                                duration: 6,
-                                ease: "easeOut",
-                            }}
                         />
 
-                        {/* OVERLAY */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-transparent" />
+                        <motion.div
+                            variants={overlayVariants}
+                            initial="enter"
+                            animate="center"
+                            exit="exit"
+                            className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent"
+                        />
 
-                        {/* CONTENT */}
-                        {/* CONTENT */}
-                        <div
+                        <motion.div
                             className="
-        absolute
-        left-4 sm:left-6 md:left-20 lg:left-36
-        top-1/2 -translate-y-1/2
-        max-w-[92%] sm:max-w-lg md:max-w-xl
-        text-white
-        pr-4 sm:pr-6
-    "
+                                absolute
+                                left-4 sm:left-8 md:left-20 lg:left-36
+                                top-1/2 -translate-y-1/2
+                                max-w-[92%] sm:max-w-lg md:max-w-xl
+                                text-white pr-4 sm:pr-6
+                            "
+                            variants={contentVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
                         >
                             <motion.p
-                                initial={{
-                                    opacity: 0,
-                                    y: 16,
-                                }}
-                                animate={{
-                                    opacity: 1,
-                                    y: 0,
-                                }}
-                                transition={{
-                                    delay: 0.2,
-                                }}
-                                className="
-            text-[10px] sm:text-xs md:text-sm
-            uppercase tracking-[2px] sm:tracking-[3px]
-            mb-2 sm:mb-4
-            text-white/75
-        "
+                                variants={itemVariants}
+                                className="text-[10px] sm:text-xs md:text-sm uppercase tracking-[3px] mb-2 sm:mb-4 text-white/65"
                             >
                                 Featured Auction
                             </motion.p>
 
                             <motion.h1
-                                initial={{
-                                    opacity: 0,
-                                    y: 22,
-                                }}
-                                animate={{
-                                    opacity: 1,
-                                    y: 0,
-                                }}
-                                transition={{
-                                    delay: 0.3,
-                                }}
-                                className="
-            text-2xl sm:text-4xl md:text-5xl lg:text-6xl
-            font-bold leading-tight
-        "
+                                variants={itemVariants}
+                                className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight"
                             >
                                 {banners[current]?.title}
                             </motion.h1>
 
                             <motion.p
-                                initial={{
-                                    opacity: 0,
-                                    y: 22,
-                                }}
-                                animate={{
-                                    opacity: 1,
-                                    y: 0,
-                                }}
-                                transition={{
-                                    delay: 0.45,
-                                }}
-                                className="
-            mt-3 sm:mt-4 md:mt-5
-            text-[13px] sm:text-base md:text-lg
-            text-white/85
-            leading-5 sm:leading-7 md:leading-8
-            line-clamp-3 sm:line-clamp-none
-        "
+                                variants={itemVariants}
+                                className="mt-3 sm:mt-4 md:mt-5 text-[13px] sm:text-base md:text-lg text-white/80 leading-relaxed line-clamp-3 sm:line-clamp-none"
                             >
                                 {banners[current]?.description}
                             </motion.p>
 
                             <motion.button
-                                initial={{
-                                    opacity: 0,
-                                    y: 22,
-                                }}
-                                animate={{
-                                    opacity: 1,
-                                    y: 0,
-                                }}
-                                transition={{
-                                    delay: 0.55,
-                                }}
+                                variants={itemVariants}
+                                whileHover={{ scale: 1.05, backgroundColor: "#f1f5f9" }}
+                                whileTap={{ scale: 0.97 }}
                                 onClick={() => handleNavigate(banners[current])}
-                                className="
-            mt-5 sm:mt-7 md:mt-8
-            px-5 sm:px-7
-            h-10 sm:h-12 md:h-14
-            rounded-xl md:rounded-2xl
-            bg-white text-slate-900
-            text-sm sm:text-base
-            font-semibold
-            hover:scale-105 hover:bg-slate-100
-            transition
-        "
+                                className="mt-5 sm:mt-7 md:mt-8 px-5 sm:px-7 h-10 sm:h-12 md:h-14 rounded-xl md:rounded-2xl bg-white text-slate-900 text-sm sm:text-base font-semibold transition-colors"
                             >
                                 {banners[current]?.cta}
                             </motion.button>
-                        </div>
+                        </motion.div>
                     </motion.div>
                 </AnimatePresence>
 
-                {/* LEFT */}
+                {/* Navigation arrows */}
                 <div className="hidden md:block">
-                    <button
-                        onClick={prevSlide}
-                        className="absolute left-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/15 border border-white/20 backdrop-blur-md text-white hover:bg-white hover:text-slate-900 transition-all duration-300 flex items-center justify-center"
-                    >
-                        <ChevronLeft />
-                    </button>
-
-                    <button
-                        onClick={nextSlide}
-                        className="absolute right-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/15 border border-white/20 backdrop-blur-md text-white hover:bg-white hover:text-slate-900 transition-all duration-300 flex items-center justify-center"
-                    >
-                        <ChevronRight />
-                    </button>
+                    {[
+                        { dir: -1, Icon: ChevronLeft, side: "left-6" },
+                        { dir: 1, Icon: ChevronRight, side: "right-6" },
+                    ].map(({ dir, Icon, side }) => (
+                        <motion.button
+                            key={dir}
+                            onClick={() => paginate(dir)}
+                            whileHover={{ scale: 1.12, backgroundColor: "rgba(255,255,255,0.95)" }}
+                            whileTap={{ scale: 0.92 }}
+                            className={`absolute ${side} top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-white/15 border border-white/25 backdrop-blur-md text-white hover:text-slate-900 flex items-center justify-center transition-colors duration-200`}
+                        >
+                            <Icon size={20} />
+                        </motion.button>
+                    ))}
                 </div>
 
-                {/* DOTS */}
-                <div className="absolute bottom-5 md:bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+                {/* Progress dots */}
+                <div className="absolute bottom-5 md:bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-10">
                     {banners.map((_, i) => (
-                        <button
+                        <motion.button
                             key={i}
-                            onClick={() => {
-                                setDirection(i > current ? 1 : -1);
-
-                                setCurrent(i);
+                            onClick={() => paginate(i > current ? 1 : -1, i)}
+                            animate={{
+                                width: current === i ? 28 : 8,
+                                opacity: current === i ? 1 : 0.45,
                             }}
-                            className={`h-2 rounded-full transition-all duration-300 ${
-                                current === i ? "w-8 bg-white" : "w-2 bg-white/45 hover:bg-white/70"
-                            }`}
+                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                            className="h-2 rounded-full bg-white"
                         />
                     ))}
                 </div>
+
+                {/* ✅ Progress bar — keyed to progressKey, always in sync with interval */}
+                {!isPaused && (
+                    <motion.div
+                        key={progressKey}
+                        className="absolute bottom-0 left-0 h-[3px] bg-white/60 z-10"
+                        initial={{ width: "0%" }}
+                        animate={{ width: "100%" }}
+                        transition={{ duration: INTERVAL_MS / 1000, ease: "linear" }}
+                    />
+                )}
             </div>
         </section>
     );

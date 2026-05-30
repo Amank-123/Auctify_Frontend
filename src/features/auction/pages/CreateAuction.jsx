@@ -147,7 +147,7 @@ export default function CreateAuction() {
     const progressPct = (step / STEPS.length) * 100;
 
     return (
-        <div className="min-h-screen bg-[#f7f8fc] font-sans">
+        <div className="min-h-screen bg-[#f7f8fc] ">
             {/* LOADING OVERLAY */}
             <AnimatePresence>
                 {loading && (
