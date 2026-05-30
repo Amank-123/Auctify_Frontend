@@ -2,7 +2,7 @@ import { RouterProvider } from "react-router-dom";
 import router from "../routes/router.jsx";
 import { AuthProvider } from "../context/authContext.jsx";
 import { Toaster } from "react-hot-toast";
-// import { Analytics } from "@vercel/analytics/react";
+import { Analytics } from "@vercel/analytics/react";
 import { useEffect } from "react";
 import { syncServerTime } from "../shared/utils/timeSync.js";
 import ChatbotWidget from "../features/ChatAgent/ChatbotWidget.jsx";
@@ -44,8 +44,9 @@ export const App = () => {
             <AuthProvider>
                 <RouterProvider router={router} />
             </AuthProvider>
-            {/* <Analytics /> */}
+            <Analytics />
         </>
     );
 };
+
 export default App;
