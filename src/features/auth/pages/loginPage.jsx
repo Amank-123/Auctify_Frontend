@@ -54,7 +54,9 @@ export default function LoginPage() {
                 throw new Error(res.data?.message || "Login failed");
             }
         } catch (err) {
-            showError(`${err}`);
+            console.log(err.response?.data);
+
+            showError(err.response?.data?.message || err.message || "Login failed");
         } finally {
             setLoading(false);
         }
