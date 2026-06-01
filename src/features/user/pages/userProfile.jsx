@@ -71,37 +71,6 @@ const UploadIcon = () => (
     </svg>
 );
 
-const MenuIcon = () => (
-    <svg
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-    >
-        <line x1="3" y1="6" x2="21" y2="6" />
-        <line x1="3" y1="12" x2="21" y2="12" />
-        <line x1="3" y1="18" x2="21" y2="18" />
-    </svg>
-);
-
-const ChevronRight = () => (
-    <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-    >
-        <polyline points="9 18 15 12 9 6" />
-    </svg>
-);
-
 export default function Profile() {
     const { Loading, User, setUser } = useAuth();
     const navigate = useNavigate();
@@ -115,7 +84,6 @@ export default function Profile() {
     const [bids, setBids] = useState([]);
     const [auctions, setAuctions] = useState([]);
     const [loadingData, setLoadingData] = useState(true);
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         (async () => {
@@ -146,8 +114,6 @@ export default function Profile() {
         () => `${User?.firstName || ""} ${User?.lastName || ""}`.trim() || User?.username,
         [User],
     );
-
-    const activeLabel = NAV_ITEMS.find((n) => n.key === activeTab)?.label || "";
 
     const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
@@ -187,11 +153,6 @@ export default function Profile() {
         }
     };
 
-    const handleTabChange = (key) => {
-        setActiveTab(key);
-        setMobileMenuOpen(false);
-    };
-
     if (Loading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -205,113 +166,51 @@ export default function Profile() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* ── Mobile top bar ── */}
-            <div className="md:hidden sticky top-0 z-30 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
+            {/* ── Mobile: user identity strip (no hamburger) ── */}
+            <div className="md:hidden bg-white border-b border-gray-100 px-4 pt-4 pb-0">
+                <div className="flex items-center gap-3 mb-4">
                     <img
                         src={User?.profile || defaultUp}
-                        className="h-8 w-8 rounded-full object-cover ring-2 ring-gray-100"
+                        className="h-10 w-10 rounded-full object-cover ring-2 ring-gray-100 flex-shrink-0"
                     />
-                    <div>
-                        <p className="text-sm font-semibold text-gray-900 leading-tight">
+                    <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">
                             {displayName}
                         </p>
-                        <p className="text-xs text-gray-400">{activeLabel}</p>
+                        <p className="text-xs text-gray-400 truncate">{User?.email}</p>
                     </div>
                 </div>
-                <button
-                    onClick={() => setMobileMenuOpen(true)}
-                    className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors"
-                    aria-label="Open menu"
-                >
-                    <MenuIcon />
-                </button>
+
+                {/* ── Scrollable pill tab bar ── */}
+                <div className="flex gap-1.5 overflow-x-auto pb-3 scrollbar-hide -mx-4 px-4">
+                    {NAV_ITEMS.map(({ key, label }) => {
+                        const isActive = activeTab === key;
+                        return (
+                            <button
+                                key={key}
+                                onClick={() => setActiveTab(key)}
+                                className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all duration-150
+                                    ${
+                                        isActive
+                                            ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                                            : "bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-800"
+                                    }`}
+                            >
+                                {label}
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
 
-            {/* ── Mobile drawer overlay ── */}
-            <AnimatePresence>
-                {mobileMenuOpen && (
-                    <>
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.18 }}
-                            className="fixed inset-0 z-40 bg-black/40 md:hidden"
-                            onClick={() => setMobileMenuOpen(false)}
-                        />
-                        <motion.div
-                            initial={{ x: "100%" }}
-                            animate={{ x: 0 }}
-                            exit={{ x: "100%" }}
-                            transition={{ type: "spring", stiffness: 380, damping: 36 }}
-                            className="fixed top-0 right-0 bottom-0 z-50 w-72 bg-white shadow-2xl flex flex-col md:hidden"
-                        >
-                            {/* Drawer header */}
-                            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                                <div className="flex items-center gap-3">
-                                    <img
-                                        src={User?.profile || defaultUp}
-                                        className="h-10 w-10 rounded-full object-cover ring-2 ring-gray-100"
-                                    />
-                                    <div>
-                                        <p className="text-sm font-semibold text-gray-900">
-                                            {displayName}
-                                        </p>
-                                        <p className="text-xs text-gray-400">{User?.email}</p>
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors"
-                                >
-                                    <XIcon />
-                                </button>
-                            </div>
-
-                            {/* Drawer nav */}
-                            <nav className="flex-1 overflow-y-auto py-3 px-3">
-                                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 px-3 mb-2">
-                                    Navigation
-                                </p>
-                                {NAV_ITEMS.map(({ key, label }) => {
-                                    const isActive = activeTab === key;
-                                    return (
-                                        <button
-                                            key={key}
-                                            onClick={() => handleTabChange(key)}
-                                            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 mb-0.5
-                                                ${
-                                                    isActive
-                                                        ? "text-blue-600 bg-blue-50"
-                                                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                                                }`}
-                                        >
-                                            {label}
-                                            {isActive && <ChevronRight />}
-                                        </button>
-                                    );
-                                })}
-                            </nav>
-
-                            <div className="px-3 pb-6 border-t border-gray-100 pt-3">
-                                <button className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors">
-                                    Delete Account
-                                </button>
-                            </div>
-                        </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
-
-            {/* ── Desktop layout ── */}
-            <div className="px-4 py-6 md:px-10 md:py-8">
+            {/* ── Page layout ── */}
+            <div className="px-4 py-4 md:px-10 md:py-8">
                 <h1 className="hidden md:block text-xl font-semibold text-gray-900 mb-6 max-w-6xl mx-auto">
                     Account Settings
                 </h1>
 
                 <div className="max-w-6xl mx-auto flex gap-8 items-start">
-                    {/* ── Desktop Sidebar ── */}
+                    {/* ── Desktop sidebar ── */}
                     <motion.aside
                         initial={{ opacity: 0, x: -16 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -357,11 +256,6 @@ export default function Profile() {
 
                     {/* ── Main content ── */}
                     <div className="flex-1 min-w-0">
-                        {/* Mobile section title */}
-                        <p className="md:hidden text-base font-semibold text-gray-900 mb-4">
-                            {activeLabel}
-                        </p>
-
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={activeTab}
@@ -476,7 +370,7 @@ export default function Profile() {
                                             </div>
                                         </div>
 
-                                        {/* Meta */}
+                                        {/* Meta + delete */}
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="bg-white rounded-2xl border border-gray-200 p-4 md:p-5">
                                                 <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">
@@ -507,6 +401,13 @@ export default function Profile() {
                                                 </p>
                                             </div>
                                         </div>
+
+                                        {/* Mobile-only delete account */}
+                                        <div className="md:hidden">
+                                            <button className="w-full text-center py-3 rounded-2xl border border-red-100 bg-red-50 text-sm font-medium text-red-500 hover:bg-red-100 transition-colors">
+                                                Delete Account
+                                            </button>
+                                        </div>
                                     </>
                                 )}
 
@@ -523,10 +424,7 @@ export default function Profile() {
                                                     val: User?.auctionCount || 0,
                                                 },
                                                 { label: "Total Bids", val: User?.bidCount || 0 },
-                                                {
-                                                    label: "Account Status",
-                                                    val: User?.status || "Active",
-                                                },
+                                                { label: "Status", val: User?.status || "Active" },
                                             ].map((s, i) => (
                                                 <motion.div
                                                     key={s.label}
@@ -539,7 +437,7 @@ export default function Profile() {
                                                     <p className="text-xl md:text-2xl font-bold text-blue-600">
                                                         {s.val}
                                                     </p>
-                                                    <p className="text-[10px] md:text-xs text-gray-400 font-medium mt-1 uppercase tracking-wider">
+                                                    <p className="text-[10px] md:text-xs text-gray-400 font-medium mt-1 uppercase tracking-wider leading-tight">
                                                         {s.label}
                                                     </p>
                                                 </motion.div>
@@ -691,7 +589,7 @@ export default function Profile() {
                                                             onClick={() =>
                                                                 navigate(`/auction/${auction._id}`)
                                                             }
-                                                            className="flex items-center justify-between gap-3 md:gap-4 px-4 md:px-6 py-3.5 md:py-4 cursor-pointer transition-colors"
+                                                            className="flex items-center justify-between gap-3 px-4 md:px-6 py-3.5 md:py-4 cursor-pointer transition-colors"
                                                         >
                                                             <div className="flex items-center gap-3 md:gap-4 min-w-0">
                                                                 {image ? (
@@ -717,7 +615,7 @@ export default function Profile() {
                                                                     <p className="text-sm font-semibold text-gray-800 truncate">
                                                                         {auction.name}
                                                                     </p>
-                                                                    <p className="text-xs text-gray-400 mt-0.5 line-clamp-1 max-w-[160px] md:max-w-xs">
+                                                                    <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">
                                                                         {auction.description}
                                                                     </p>
                                                                 </div>
@@ -774,14 +672,19 @@ export default function Profile() {
                         onClick={(e) => e.target === e.currentTarget && setEditSection(null)}
                     >
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.97, y: 16 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.97, y: 16 }}
+                            initial={{ opacity: 0, y: 40 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 40 }}
                             transition={{ type: "spring", stiffness: 360, damping: 30 }}
                             className="w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl border border-gray-200 shadow-2xl max-h-[90vh] overflow-y-auto"
                         >
+                            {/* drag handle on mobile */}
+                            <div className="sm:hidden flex justify-center pt-3 pb-1">
+                                <div className="w-10 h-1 rounded-full bg-gray-200" />
+                            </div>
+
                             {/* Modal header */}
-                            <div className="flex items-center justify-between px-5 md:px-6 pt-5 md:pt-6 pb-4 border-b border-gray-100">
+                            <div className="flex items-center justify-between px-5 md:px-6 pt-4 md:pt-6 pb-4 border-b border-gray-100">
                                 <div>
                                     <h3 className="text-base font-semibold text-gray-900">
                                         {editSection === "profile" && "Edit Profile"}
@@ -916,7 +819,7 @@ export default function Profile() {
                                     </div>
                                 )}
 
-                                <div className="flex justify-end gap-3 pt-2 pb-safe">
+                                <div className="flex justify-end gap-3 pt-2 pb-2">
                                     <button
                                         type="button"
                                         onClick={() => setEditSection(null)}
