@@ -126,9 +126,7 @@ export default function Profile() {
             if (form[k] !== undefined && form[k] !== null) fd.append(k, form[k]);
         });
         if (form.address) {
-            Object.entries(form.address).forEach(([k, v]) => {
-                if (v) fd.append(`address[${k}]`, v);
-            });
+            fd.append("address", JSON.stringify(form.address));
         }
         if (file) fd.append("profile", file);
         return fd;
