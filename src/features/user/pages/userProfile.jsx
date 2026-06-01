@@ -58,7 +58,6 @@ export default function ProfilePage() {
         lastName: "",
         username: "",
         email: "",
-        bio: "",
     });
 
     useEffect(() => {
@@ -68,7 +67,6 @@ export default function ProfilePage() {
                 lastName: User.lastName || "",
                 username: User.username || "",
                 email: User.email || "",
-                bio: User.bio || "",
             });
     }, [User]);
 

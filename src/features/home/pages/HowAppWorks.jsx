@@ -1,289 +1,516 @@
-import { Icon } from "./Icons.jsx";
-import { motion } from "framer-motion";
-const HowBlueApplicationWorks = () => {
+import { useEffect, useRef } from "react";
+
+const HowItWorks = () => {
+    const cardRefs = useRef([]);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = "1";
+                        entry.target.style.transform = "translateY(0)";
+                    }
+                });
+            },
+            { threshold: 0.15 },
+        );
+        cardRefs.current.forEach((el) => el && observer.observe(el));
+        return () => observer.disconnect();
+    }, []);
+
     const steps = [
         {
-            title: "Browse & Discover",
-            desc: "Explore premium auctions listed by verified sellers — electronics, collectibles, vehicles, fashion and rare finds.",
-            color: "blue",
-            icon: <Icon.Search className="w-5 h-5 stroke-[2.2]" />,
-            image: "https://images.unsplash.com/photo-1515169067868-5387ec356754?auto=format&fit=crop&w=1200&q=80",
-            action: "Start Exploring",
+            num: "01",
+            label: "Browse",
+            title: "Browse & discover",
+            desc: "Explore premium auctions by verified sellers — electronics, collectibles, vehicles, fashion and rare finds.",
+            image: "https://images.unsplash.com/photo-1515169067868-5387ec356754?auto=format&fit=crop&w=800&q=75",
+            alt: "Browse auctions",
+            iconClass: "ti ti-search",
+            accent: {
+                numBg: "#E6F1FB",
+                numColor: "#185FA5",
+                iconColor: "#185FA5",
+                statBg: "#E6F1FB",
+                statBorder: "#B5D4F4",
+                statColor: "#185FA5",
+            },
+            extra: (
+                <div>
+                    <div
+                        style={{
+                            background: "#E6F1FB",
+                            border: "0.5px solid #B5D4F4",
+                            borderRadius: 12,
+                            padding: "12px 14px",
+                            marginBottom: 10,
+                        }}
+                    >
+                        <div style={{ fontSize: 11, color: "#888", marginBottom: 3 }}>
+                            Active listings
+                        </div>
+                        <div style={{ fontSize: 22, fontWeight: 500, color: "#185FA5" }}>
+                            12,450+
+                        </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
+                        {["Electronics", "Cars", "Luxury", "Art"].map((tag) => (
+                            <span
+                                key={tag}
+                                style={{
+                                    fontSize: 11,
+                                    padding: "4px 10px",
+                                    borderRadius: 100,
+                                    background: "#f3f4f6",
+                                    color: "#6b7280",
+                                    border: "0.5px solid #e5e7eb",
+                                }}
+                            >
+                                {tag}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            ),
+            action: "Start exploring →",
         },
         {
-            title: "Bid Live Instantly",
+            num: "02",
+            label: "Bid",
+            title: "Bid live instantly",
             desc: "Join real-time bidding rooms, place smart bids, set your max limit, and compete transparently.",
-            color: "orange",
-            icon: <Icon.Gavel className="w-5 h-5 stroke-[2.2]" />,
-            image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1200&q=80",
-            action: "Place a Bid",
+            image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=75",
+            alt: "Live bidding",
+            iconClass: "ti ti-gavel",
             live: true,
+            accent: {
+                numBg: "#FAEEDA",
+                numColor: "#854F0B",
+                iconColor: "#854F0B",
+                statBg: "#FAEEDA",
+                statBorder: "#FAC775",
+                statColor: "#854F0B",
+            },
+            extra: (
+                <div>
+                    <div
+                        style={{
+                            background: "#FAEEDA",
+                            border: "0.5px solid #FAC775",
+                            borderRadius: 12,
+                            padding: "12px 14px",
+                            marginBottom: 16,
+                        }}
+                    >
+                        <div style={{ fontSize: 11, color: "#888", marginBottom: 3 }}>
+                            Current highest bid
+                        </div>
+                        <div style={{ fontSize: 22, fontWeight: 500, color: "#854F0B" }}>
+                            ₹24,750
+                        </div>
+                        <div style={{ fontSize: 11, color: "#854F0B", marginTop: 2 }}>
+                            12 bids in the last hour
+                        </div>
+                    </div>
+                </div>
+            ),
+            action: "Place a bid →",
         },
         {
-            title: "Win & Connect",
+            num: "03",
+            label: "Win",
+            title: "Win & connect",
             desc: "Winning buyers connect directly with sellers to finalize payment and delivery with total flexibility.",
-            color: "emerald",
-            icon: <Icon.Trophy className="w-5 h-5 stroke-[2.2]" />,
-            image: "https://images.unsplash.com/photo-1607082349566-187342175e2f?auto=format&fit=crop&w=1200&q=80",
-            action: "You Won",
+            image: "https://images.unsplash.com/photo-1607082349566-187342175e2f?auto=format&fit=crop&w=800&q=75",
+            alt: "Win and connect",
+            iconClass: "ti ti-trophy",
+            accent: {
+                numBg: "#EAF3DE",
+                numColor: "#3B6D11",
+                iconColor: "#3B6D11",
+                statBg: "#EAF3DE",
+                statBorder: "#C0DD97",
+                statColor: "#3B6D11",
+            },
+            extra: (
+                <div>
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            background: "#EAF3DE",
+                            border: "0.5px solid #C0DD97",
+                            borderRadius: 10,
+                            padding: "10px 12px",
+                            marginBottom: 8,
+                            fontSize: 12,
+                            color: "#3B6D11",
+                            fontWeight: 500,
+                        }}
+                    >
+                        <span
+                            style={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: "50%",
+                                background: "#639922",
+                                display: "inline-block",
+                                animation: "pulse 1.5s infinite",
+                            }}
+                        />
+                        Highest bidder confirmed
+                    </div>
+                    <div
+                        style={{
+                            background: "#f9fafb",
+                            border: "0.5px solid #e5e7eb",
+                            borderRadius: 10,
+                            padding: "10px 12px",
+                            marginBottom: 16,
+                            fontSize: 12,
+                            color: "#6b7280",
+                        }}
+                    >
+                        <strong
+                            style={{
+                                color: "#111827",
+                                fontWeight: 500,
+                                display: "block",
+                                fontSize: 13,
+                            }}
+                        >
+                            Direct seller contact
+                        </strong>
+                        Secure, flexible post-auction communication
+                    </div>
+                </div>
+            ),
+            action: "You won →",
         },
     ];
 
-    const styles = {
-        blue: {
-            iconBg: "bg-white/90",
-            iconText: "text-slate-800",
-            badge: "bg-blue-50 text-blue-700",
-            button: "hover:bg-blue-600 hover:border-blue-600 hover:text-white border-blue-100",
+    const features = [
+        {
+            icon: "ti ti-badge",
+            title: "Verified sellers",
+            desc: "Seller profiles and listings designed to create trust from day one.",
+            iconBg: "#E6F1FB",
+            iconColor: "#185FA5",
         },
-        orange: {
-            iconBg: "bg-white/90",
-            iconText: "text-slate-800",
-            badge: "bg-orange-50 text-orange-700",
-            button: "hover:bg-orange-500 hover:border-orange-500 hover:text-white border-orange-100",
+        {
+            icon: "ti ti-bolt",
+            title: "Real-time bidding",
+            desc: "Live updates so every participant competes on a level playing field.",
+            iconBg: "#FAEEDA",
+            iconColor: "#854F0B",
         },
-        emerald: {
-            iconBg: "bg-white/90",
-            iconText: "text-slate-800",
-            badge: "bg-emerald-50 text-emerald-700",
-            button: "hover:bg-emerald-600 hover:border-emerald-600 hover:text-white border-emerald-100",
+        {
+            icon: "ti ti-users",
+            title: "Direct connection",
+            desc: "Winners communicate directly with sellers after the auction closes.",
+            iconBg: "#EAF3DE",
+            iconColor: "#3B6D11",
         },
-    };
+    ];
 
     return (
-        <section className="py-24 bg-gradient-to-b from-[#F8F8FF] via-white to-[#F8F8FF]">
-            <div className="max-w-7xl mx-auto px-6">
-                {/* Header */}
-                <div className="text-center mb-20">
-                    <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white border border-gray-200 shadow-sm mb-6">
-                        <div className="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center">
-                            <Icon.Gavel className="w-4 h-4 text-white" />
+        <>
+            <style>{`
+        @import url('https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/tabler-icons.min.css');
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        .hiw-card { transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease; }
+        .hiw-card:hover { transform: translateY(-7px) !important; box-shadow: 0 16px 40px rgba(0,0,0,0.08) !important; border-color: #d1d5db !important; }
+        .hiw-card:hover .hiw-card-img { transform: scale(1.05); }
+        .hiw-card-img { transition: transform 0.45s ease; }
+        .hiw-feat { transition: transform 0.2s ease, background 0.2s ease; }
+        .hiw-feat:hover { transform: translateY(-4px); background: #ffffff !important; }
+        .hiw-cta-btn { transition: background 0.2s ease; cursor: pointer; }
+        .hiw-cta-btn:hover { background: #f3f4f6 !important; }
+        .hiw-banner-btn { transition: background 0.2s ease; cursor: pointer; }
+        .hiw-banner-btn:hover { background: rgba(255,255,255,0.22) !important; }
+      `}</style>
+
+            <section
+                style={{
+                    padding: "5rem 1.5rem",
+                    background: "#fafafa",
+                    fontFamily: "system-ui, sans-serif",
+                }}
+            >
+                <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+                    {/* Header */}
+                    <div style={{ textAlign: "center", marginBottom: "3.5rem" }}>
+                        <div
+                            style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 8,
+                                padding: "6px 16px",
+                                borderRadius: 100,
+                                background: "#fff",
+                                border: "0.5px solid #e5e7eb",
+                                fontSize: 11,
+                                fontWeight: 500,
+                                color: "#6b7280",
+                                letterSpacing: "0.05em",
+                                marginBottom: "1.25rem",
+                                textTransform: "uppercase",
+                            }}
+                        >
+                            <span
+                                style={{
+                                    width: 7,
+                                    height: 7,
+                                    borderRadius: "50%",
+                                    background: "#378ADD",
+                                    display: "inline-block",
+                                }}
+                            />
+                            How it works
                         </div>
 
-                        <span className="text-sm font-semibold tracking-wide text-gray-700">
-                            HOW IT WORKS
-                        </span>
+                        <h2
+                            style={{
+                                fontSize: "clamp(26px, 4vw, 42px)",
+                                fontWeight: 500,
+                                lineHeight: 1.15,
+                                color: "#0f172a",
+                                marginBottom: "0.75rem",
+                            }}
+                        >
+                            Buy smart. <span style={{ color: "#185FA5" }}>Bid fast.</span> Win easy.
+                        </h2>
+
+                        <p
+                            style={{
+                                fontSize: 15,
+                                color: "#6b7280",
+                                maxWidth: 460,
+                                margin: "0 auto 2.5rem",
+                                lineHeight: 1.7,
+                            }}
+                        >
+                            A premium auction experience built for trust and speed. Discover
+                            products, place live bids, and connect directly after winning.
+                        </p>
+
+                        {/* Step connector */}
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                marginBottom: "2.5rem",
+                            }}
+                        >
+                            {["01 Browse", "02 Bid", "03 Win"].map((s, i) => {
+                                const [num, label] = s.split(" ");
+                                return (
+                                    <div key={i} style={{ display: "flex", alignItems: "center" }}>
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                alignItems: "center",
+                                                gap: 5,
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    width: 36,
+                                                    height: 36,
+                                                    borderRadius: "50%",
+                                                    border: "0.5px solid #d1d5db",
+                                                    background: "#fff",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    fontSize: 12,
+                                                    fontWeight: 500,
+                                                    color: "#374151",
+                                                }}
+                                            >
+                                                {num}
+                                            </div>
+                                            <span style={{ fontSize: 11, color: "#9ca3af" }}>
+                                                {label}
+                                            </span>
+                                        </div>
+                                        {i < 2 && (
+                                            <div
+                                                style={{
+                                                    width: 70,
+                                                    height: 0.5,
+                                                    background: "#d1d5db",
+                                                    margin: "0 6px",
+                                                    marginBottom: 20,
+                                                }}
+                                            />
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
 
-                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900 leading-[1.12]">
-                        Buy Smart. <span className="text-blue-600">Bid Fast.</span> Win Easy.
-                    </h2>
-
-                    <p className="mt-4 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-8 font-medium">
-                        A premium auction experience designed for trust, speed and excitement.
-                        Discover products, place bids live, and connect directly after winning.
-                    </p>
-                </div>
-
-                {/* Cards */}
-                <div className="grid lg:grid-cols-3 gap-8">
-                    {steps.map((item, i) => (
-                        <motion.div
-                            key={i}
-                            whileHover={{ y: -8 }}
-                            transition={{ duration: 0.25 }}
-                            className="group bg-white rounded-[30px] overflow-hidden border border-gray-100 shadow-sm hover:shadow-2xl flex flex-col"
-                        >
-                            {/* Image */}
-                            <div className="relative h-56 overflow-hidden">
-                                <img
-                                    src={item.image}
-                                    alt={item.title}
-                                    className="w-full h-full object-cover group-hover:scale-105 duration-700"
-                                />
-
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-black/10" />
-
-                                {item.live && (
-                                    <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-orange-500 text-white text-[11px] font-semibold shadow-lg">
-                                        LIVE NOW
-                                    </div>
-                                )}
-
-                                <div
-                                    className={`absolute left-5 bottom-5 w-12 h-12 rounded-2xl backdrop-blur-md shadow-xl border border-white/60 flex items-center justify-center ${styles[item.color].iconBg} ${styles[item.color].iconText}`}
-                                >
-                                    {item.icon}
-                                </div>
-                            </div>
-
-                            {/* Content */}
-                            <div className="p-7 flex flex-col flex-1">
-                                {/* Title */}
-                                <div className="flex items-center gap-3 mb-4">
-                                    <span
-                                        className={`px-3 h-8 rounded-full text-sm font-semibold flex items-center justify-center ${styles[item.color].badge}`}
-                                    >
-                                        0{i + 1}
-                                    </span>
-
-                                    <h3 className="text-[25px] font-semibold text-gray-900 tracking-tight">
-                                        {item.title}
-                                    </h3>
-                                </div>
-
-                                {/* Description */}
-                                <p className="text-gray-600 leading-7 mb-6">{item.desc}</p>
-
-                                {/* Fill Empty Area With Premium Content */}
-                                <div className="space-y-4 mb-6 flex-1">
-                                    {i === 0 && (
-                                        <>
-                                            <div className="rounded-2xl bg-blue-50 p-4 border border-blue-100">
-                                                <p className="text-sm text-gray-500">
-                                                    Active Listings
-                                                </p>
-                                                <p className="text-2xl font-semibold text-blue-600">
-                                                    12,450+
-                                                </p>
-                                            </div>
-
-                                            <div className="flex gap-2">
-                                                {["Electronics", "Cars", "Luxury"].map((tag) => (
-                                                    <span
-                                                        key={tag}
-                                                        className="px-3 py-1 rounded-full bg-gray-100 text-xs font-medium text-gray-600"
-                                                    >
-                                                        {tag}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </>
-                                    )}
-
-                                    {i === 1 && (
-                                        <div className="rounded-2xl border border-orange-100 bg-orange-50 p-4">
-                                            <p className="text-sm text-gray-500">
-                                                Current Highest Bid
-                                            </p>
-                                            <p className="text-3xl font-semibold text-orange-600 mt-1">
-                                                ₹24,750
-                                            </p>
-                                            <p className="text-xs text-orange-500 mt-1">
-                                                12 bids in the last hour
-                                            </p>
+                    {/* Cards */}
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+                            gap: "1.25rem",
+                            marginBottom: "1.25rem",
+                        }}
+                    >
+                        {steps.map((item, i) => (
+                            <div
+                                key={i}
+                                ref={(el) => (cardRefs.current[i] = el)}
+                                className="hiw-card"
+                                style={{
+                                    background: "#fff",
+                                    border: "0.5px solid #e5e7eb",
+                                    borderRadius: 20,
+                                    overflow: "hidden",
+                                    opacity: 0,
+                                    transform: "translateY(24px)",
+                                    transition: `opacity 0.5s ease ${i * 0.12}s, transform 0.5s ease ${i * 0.12}s`,
+                                    display: "flex",
+                                    flexDirection: "column",
+                                }}
+                            >
+                                {/* Image */}
+                                <div style={{ position: "relative", overflow: "hidden" }}>
+                                    <img
+                                        src={item.image}
+                                        alt={item.alt}
+                                        className="hiw-card-img"
+                                        style={{
+                                            width: "100%",
+                                            height: 165,
+                                            objectFit: "cover",
+                                            display: "block",
+                                        }}
+                                    />
+                                    <div
+                                        style={{
+                                            position: "absolute",
+                                            inset: 0,
+                                            background:
+                                                "linear-gradient(to top, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.05) 60%)",
+                                        }}
+                                    />
+                                    {item.live && (
+                                        <div
+                                            style={{
+                                                position: "absolute",
+                                                top: 12,
+                                                right: 12,
+                                                background: "#E24B4A",
+                                                color: "#fff",
+                                                fontSize: 10,
+                                                fontWeight: 500,
+                                                padding: "3px 10px",
+                                                borderRadius: 100,
+                                                letterSpacing: "0.06em",
+                                            }}
+                                        >
+                                            ● LIVE
                                         </div>
                                     )}
-
-                                    {i === 2 && (
-                                        <>
-                                            <div className="rounded-2xl bg-emerald-50 p-4 flex items-center gap-3">
-                                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                                                <span className="text-sm font-medium text-emerald-700">
-                                                    Highest bidder confirmed
-                                                </span>
-                                            </div>
-
-                                            <div className="rounded-2xl border border-gray-100 p-4">
-                                                <p className="text-sm text-gray-500">
-                                                    Secure Transactions
-                                                </p>
-                                                <p className="text-lg font-semibold text-gray-900">
-                                                    Direct Seller Contact
-                                                </p>
-                                            </div>
-                                        </>
-                                    )}
+                                    <div
+                                        style={{
+                                            position: "absolute",
+                                            bottom: 12,
+                                            left: 14,
+                                            width: 38,
+                                            height: 38,
+                                            borderRadius: 12,
+                                            background: "rgba(255,255,255,0.92)",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                        }}
+                                    >
+                                        <i
+                                            className={item.iconClass}
+                                            style={{ fontSize: 18, color: item.accent.iconColor }}
+                                        />
+                                    </div>
                                 </div>
 
-                                {/* Button */}
-                                <button
-                                    className={`w-full h-12 rounded-2xl border text-sm font-semibold transition-all duration-300 ${styles[item.color].button}`}
+                                {/* Body */}
+                                <div
+                                    style={{
+                                        padding: "1.25rem",
+                                        flex: 1,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                    }}
                                 >
-                                    {item.action}
-                                </button>
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
-
-                {/* Clean Trust Section - No Fake Stats */}
-                <div className="mt-20 rounded-[34px] border border-gray-100 bg-white shadow-sm overflow-hidden">
-                    <div className="px-8 py-10 md:px-12">
-                        {/* Header */}
-                        <div className="text-center mb-10">
-                            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold tracking-wide">
-                                <div className="w-2 h-2 rounded-full bg-blue-600"></div>
-                                WHY CHOOSE AUCTIFY
-                            </span>
-
-                            <h3 className="mt-5 text-3xl md:text-4xl font-semibold text-slate-900 tracking-tight">
-                                Built for Fair & Direct Auctions
-                            </h3>
-
-                            <p className="mt-3 text-slate-500 max-w-2xl mx-auto leading-7">
-                                A clean marketplace where buyers and sellers connect directly
-                                through transparent bidding.
-                            </p>
-                        </div>
-
-                        {/* Features */}
-                        <div className="grid md:grid-cols-3 gap-6">
-                            {[
-                                {
-                                    title: "Verified Sellers",
-                                    desc: "Seller profiles and listings designed to create trust from day one.",
-                                    icon: <Icon.BadgeCheck className="w-5 h-5" />,
-                                    color: "blue",
-                                },
-                                {
-                                    title: "Real-Time Bidding",
-                                    desc: "Live bidding updates so every participant competes fairly.",
-                                    icon: <Icon.Bolt className="w-5 h-5" />,
-                                    color: "orange",
-                                },
-                                {
-                                    title: "Direct Connection",
-                                    desc: "Winners communicate directly with sellers after auction close.",
-                                    icon: <Icon.Users className="w-5 h-5" />,
-                                    color: "emerald",
-                                },
-                            ].map((item, i) => (
-                                <motion.div
-                                    key={i}
-                                    whileHover={{ y: -6 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="group rounded-3xl border border-gray-100 bg-[#F8F8FF] p-6 hover:bg-white hover:shadow-xl"
-                                >
-                                    <div
-                                        className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-5 ${
-                                            item.color === "blue"
-                                                ? "bg-blue-100 text-blue-600"
-                                                : item.color === "orange"
-                                                  ? "bg-orange-100 text-orange-600"
-                                                  : "bg-emerald-100 text-emerald-600"
-                                        }`}
+                                    <span
+                                        style={{
+                                            display: "inline-block",
+                                            fontSize: 11,
+                                            fontWeight: 500,
+                                            padding: "3px 10px",
+                                            borderRadius: 100,
+                                            background: item.accent.numBg,
+                                            color: item.accent.numColor,
+                                            marginBottom: 10,
+                                        }}
                                     >
-                                        {item.icon}
-                                    </div>
-
-                                    <h4 className="text-xl font-semibold text-slate-900">
+                                        {item.num} — {item.label}
+                                    </span>
+                                    <div
+                                        style={{
+                                            fontSize: 17,
+                                            fontWeight: 500,
+                                            color: "#0f172a",
+                                            marginBottom: 6,
+                                        }}
+                                    >
                                         {item.title}
-                                    </h4>
-
-                                    <p className="mt-3 text-sm text-slate-500 leading-7">
+                                    </div>
+                                    <p
+                                        style={{
+                                            fontSize: 13,
+                                            color: "#6b7280",
+                                            lineHeight: 1.65,
+                                            marginBottom: "1rem",
+                                        }}
+                                    >
                                         {item.desc}
                                     </p>
-                                </motion.div>
-                            ))}
-                        </div>
-
-                        {/* Bottom Statement */}
-                        <div className="mt-10 rounded-3xl bg-blue-900 px-8 py-6 text-center">
-                            <h4 className="text-white text-xl font-semibold">
-                                New Platform. Strong Standards.
-                            </h4>
-
-                            <p className="text-slate-300 mt-2 max-w-2xl mx-auto leading-7 text-sm">
-                                We’re just getting started — focused on trust, clean design, and a
-                                better auction experience for everyone.
-                            </p>
-                        </div>
+                                    <div style={{ flex: 1 }}>{item.extra}</div>
+                                    <button
+                                        className="hiw-cta-btn"
+                                        style={{
+                                            width: "100%",
+                                            padding: "10px",
+                                            borderRadius: 12,
+                                            border: "0.5px solid #e5e7eb",
+                                            background: "transparent",
+                                            color: "#374151",
+                                            fontSize: 13,
+                                            fontWeight: 500,
+                                            fontFamily: "inherit",
+                                        }}
+                                    >
+                                        {item.action}
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
                     </div>
+
+                    {/* Trust Section */}
                 </div>
-            </div>
-        </section>
+            </section>
+        </>
     );
 };
 
-export default HowBlueApplicationWorks;
+export default HowItWorks;
