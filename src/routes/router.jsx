@@ -1,7 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import RootLayout from "@/layouts/MainLayout.jsx";
 import NotFound from "@/components/common/notFound.jsx";
-import PrivacyPolicy from "@/features/home/pages/PrivacyPolicy.jsx";
+import PrivacyPolicy from "@/features/home/pages/PolicyPage.jsx";
 import Terms from "@/features/home/pages/TermsAndConditions.jsx";
 import Cookies from "@/features/home/pages/Cookies.jsx";
 import HelpCenter from "@/features/home/pages/HelpCenter.jsx";

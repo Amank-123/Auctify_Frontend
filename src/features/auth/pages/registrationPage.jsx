@@ -177,7 +177,7 @@ export default function SignupPage() {
                             <input
                                 type="text"
                                 name="firstName"
-                                placeholder="First name (optional)"
+                                placeholder="First name"
                                 value={form.firstName}
                                 onChange={handleChange}
                                 className="

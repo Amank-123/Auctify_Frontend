@@ -10,8 +10,8 @@ const AuthSuccess = () => {
     const location = useLocation();
 
     useEffect(() => {
-        // console.log("User log from authsuccess: ", User);
         if (!Loading) {
+            console.log("User log from authsuccess: ", User);
             if (User) {
                 showSuccess("User successfully logged in");
                 navigate("/", { replace: true });
