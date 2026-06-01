@@ -427,38 +427,6 @@ export default function ProfilePage() {
                                             type="email"
                                         />
                                     </div>
-                                    <div style={{ marginBottom: 16 }}>
-                                        <label style={lbStyle}>Bio</label>
-                                        <textarea
-                                            name="bio"
-                                            value={form.bio}
-                                            onChange={handleChange}
-                                            rows={3}
-                                            placeholder="Something about you…"
-                                            style={{
-                                                width: "100%",
-                                                borderRadius: 10,
-                                                padding: "10px 12px",
-                                                fontSize: 14,
-                                                color: GR,
-                                                border: `1.5px solid ${BD}`,
-                                                background: "#FAFBFF",
-                                                resize: "none",
-                                                outline: "none",
-                                                fontFamily: "Inter,sans-serif",
-                                                boxSizing: "border-box",
-                                                transition: "border-color 0.15s,box-shadow 0.15s",
-                                            }}
-                                            onFocus={(e) => {
-                                                e.target.style.borderColor = B;
-                                                e.target.style.boxShadow = `0 0 0 3px ${B}18`;
-                                            }}
-                                            onBlur={(e) => {
-                                                e.target.style.borderColor = BD;
-                                                e.target.style.boxShadow = "none";
-                                            }}
-                                        />
-                                    </div>
 
                                     <div
                                         style={{
@@ -529,8 +497,8 @@ export default function ProfilePage() {
                                         margin: "0 16px 16px",
                                         padding: "12px 14px",
                                         borderRadius: 12,
-                                        background: "#FFF8F8",
-                                        border: "1.5px solid #FFE4E4",
+                                        background: "#FAFAFA",
+                                        border: "1.5px solid #E5E7EB",
                                     }}
                                 >
                                     <div
@@ -549,12 +517,13 @@ export default function ProfilePage() {
                                                     fontWeight: 700,
                                                     letterSpacing: "0.15em",
                                                     textTransform: "uppercase",
-                                                    color: "#F87171",
+                                                    color: "#6B7280",
                                                     marginBottom: 3,
                                                 }}
                                             >
-                                                Danger Zone
+                                                Account Deletion
                                             </p>
+
                                             <p
                                                 style={{
                                                     fontSize: 12,
@@ -562,64 +531,29 @@ export default function ProfilePage() {
                                                     lineHeight: 1.5,
                                                 }}
                                             >
-                                                This action is permanent and cannot be undone.
+                                                Self-service account deletion is not available at
+                                                this time. Please contact support if you need
+                                                assistance with account management.
                                             </p>
                                         </div>
-                                        {!delConfirm ? (
-                                            <button
-                                                onClick={() => setDelConfirm(true)}
-                                                style={{
-                                                    height: 36,
-                                                    padding: "0 16px",
-                                                    borderRadius: 9,
-                                                    border: "1.5px solid #FCA5A5",
-                                                    background: "transparent",
-                                                    color: "#EF4444",
-                                                    fontSize: 12,
-                                                    fontWeight: 600,
-                                                    cursor: "pointer",
-                                                    flexShrink: 0,
-                                                }}
-                                            >
-                                                Delete Account
-                                            </button>
-                                        ) : (
-                                            <div style={{ display: "flex", gap: 8 }}>
-                                                <button
-                                                    onClick={() => setDelConfirm(false)}
-                                                    style={{
-                                                        height: 36,
-                                                        padding: "0 14px",
-                                                        borderRadius: 9,
-                                                        border: `1.5px solid ${BD}`,
-                                                        background: WH,
-                                                        color: SB,
-                                                        fontSize: 12,
-                                                        fontWeight: 600,
-                                                        cursor: "pointer",
-                                                    }}
-                                                >
-                                                    Cancel
-                                                </button>
-                                                <button
-                                                    onClick={handleDelete}
-                                                    disabled={deleteLoading}
-                                                    style={{
-                                                        height: 36,
-                                                        padding: "0 14px",
-                                                        borderRadius: 9,
-                                                        border: "none",
-                                                        background: "#EF4444",
-                                                        color: WH,
-                                                        fontSize: 12,
-                                                        fontWeight: 600,
-                                                        cursor: "pointer",
-                                                    }}
-                                                >
-                                                    {deleteLoading ? "…" : "Confirm"}
-                                                </button>
-                                            </div>
-                                        )}
+
+                                        <button
+                                            disabled
+                                            style={{
+                                                height: 36,
+                                                padding: "0 16px",
+                                                borderRadius: 9,
+                                                border: "1.5px solid #D1D5DB",
+                                                background: "#F3F4F6",
+                                                color: "#9CA3AF",
+                                                fontSize: 12,
+                                                fontWeight: 600,
+                                                cursor: "not-allowed",
+                                                opacity: 0.8,
+                                            }}
+                                        >
+                                            Coming Soon
+                                        </button>
                                     </div>
                                 </div>
                             </div>
