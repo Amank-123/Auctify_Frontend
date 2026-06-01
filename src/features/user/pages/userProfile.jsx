@@ -134,12 +134,37 @@ export default function Profile() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
         try {
+            setErrors({});
+
             const res = await updateUserProfile(buildFormData(form, profileFile));
+
             setUser(res.data);
             setEditSection(null);
         } catch (err) {
             console.error(err);
+
+            const backendErrors = err?.response?.data?.errors;
+
+            if (backendErrors?.length) {
+                const mappedErrors = {};
+
+                backendErrors.forEach((error) => {
+                    const key = error.path?.[error.path.length - 1];
+
+                    if (key) {
+                        mappedErrors[key] = error.message;
+                    }
+                });
+
+                setErrors(mappedErrors);
+                return;
+            }
+
+            setErrors({
+                general: err?.response?.data?.message || "Something went wrong",
+            });
         }
     };
 
@@ -695,12 +720,14 @@ export default function Profile() {
                                             name="firstName"
                                             value={form.firstName || ""}
                                             onChange={handleChange}
+                                            error={errors.firstName}
                                         />
                                         <FieldInput
                                             label="Last Name"
                                             name="lastName"
                                             value={form.lastName || ""}
                                             onChange={handleChange}
+                                            error={errors.lastName}
                                         />
                                         <FieldInput
                                             label="Email"
@@ -708,6 +735,7 @@ export default function Profile() {
                                             value={form.email || ""}
                                             onChange={handleChange}
                                             type="email"
+                                            error={errors.email}
                                         />
                                         <FieldInput
                                             label="Phone"
@@ -715,6 +743,7 @@ export default function Profile() {
                                             value={form.phone || ""}
                                             onChange={handleChange}
                                             type="tel"
+                                            error={errors.phone}
                                         />
                                         <div className="col-span-2">
                                             <FieldInput
@@ -722,6 +751,7 @@ export default function Profile() {
                                                 name="username"
                                                 value={form.username || ""}
                                                 onChange={handleChange}
+                                                error={errors.username}
                                             />
                                         </div>
                                     </div>
@@ -735,24 +765,28 @@ export default function Profile() {
                                             name="country"
                                             value={form.address?.country || ""}
                                             onChange={handleAddressChange}
+                                            error={errors.country}
                                         />
                                         <FieldInput
                                             label="City"
                                             name="city"
                                             value={form.address?.city || ""}
                                             onChange={handleAddressChange}
+                                            error={errors.city}
                                         />
                                         <FieldInput
                                             label="State"
                                             name="state"
                                             value={form.address?.state || ""}
                                             onChange={handleAddressChange}
+                                            error={errors.state}
                                         />
                                         <FieldInput
                                             label="Postal Code"
                                             name="pin"
                                             value={form.address?.pin || ""}
                                             onChange={handleAddressChange}
+                                            error={errors.pin}
                                         />
                                         <div className="col-span-2">
                                             <FieldInput
@@ -760,8 +794,14 @@ export default function Profile() {
                                                 name="street"
                                                 value={form.address?.street || ""}
                                                 onChange={handleAddressChange}
+                                                error={errors.street}
                                             />
                                         </div>
+                                    </div>
+                                )}
+                                {errors.general && (
+                                    <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-600">
+                                        {errors.general}
                                     </div>
                                 )}
 
@@ -815,7 +855,7 @@ function InfoField({ label, value, valueClass = "" }) {
     );
 }
 
-function FieldInput({ label, name, value, onChange, type = "text" }) {
+function FieldInput({ label, name, value, onChange, type = "text", error }) {
     return (
         <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium text-gray-500">{label}</label>
@@ -824,9 +864,15 @@ function FieldInput({ label, name, value, onChange, type = "text" }) {
                 name={name}
                 value={value}
                 onChange={onChange}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-800 outline-none
-                    focus:border-blue-400 focus:ring-4 focus:ring-blue-50 focus:bg-white transition-all duration-150 placeholder:text-gray-300"
+                className={`w-full rounded-xl px-3.5 py-2.5 text-sm outline-none transition-all duration-150
+        ${
+            error
+                ? "border border-red-500 bg-red-50"
+                : "border border-gray-200 bg-gray-50 focus:border-blue-400 focus:ring-4 focus:ring-blue-50 focus:bg-white"
+        }`}
             />
+
+            {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
         </div>
     );
 }
