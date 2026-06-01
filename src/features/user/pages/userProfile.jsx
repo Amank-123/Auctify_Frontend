@@ -80,6 +80,7 @@ export default function Profile() {
     const [editSection, setEditSection] = useState(null); // "profile" | "personal" | "address"
     const [form, setForm] = useState({});
     const [profileFile, setProfileFile] = useState(null);
+    const [errors, setErrors] = useState({});
     const [preview, setPreview] = useState("");
     const [bids, setBids] = useState([]);
     const [auctions, setAuctions] = useState([]);
