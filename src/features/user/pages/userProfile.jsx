@@ -22,7 +22,7 @@ const fadeUp = {
     }),
 };
 
-/* ── Edit pencil icon (inline SVG, no emoji) ── */
+/* ── Icons ── */
 const PencilIcon = () => (
     <svg
         width="13"
@@ -71,12 +71,43 @@ const UploadIcon = () => (
     </svg>
 );
 
+const MenuIcon = () => (
+    <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+    >
+        <line x1="3" y1="6" x2="21" y2="6" />
+        <line x1="3" y1="12" x2="21" y2="12" />
+        <line x1="3" y1="18" x2="21" y2="18" />
+    </svg>
+);
+
+const ChevronRight = () => (
+    <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+    >
+        <polyline points="9 18 15 12 9 6" />
+    </svg>
+);
+
 export default function Profile() {
     const { Loading, User, setUser } = useAuth();
     const navigate = useNavigate();
 
     const [activeTab, setActiveTab] = useState("info");
-    const [editSection, setEditSection] = useState(null); // "profile" | "personal" | "address"
+    const [editSection, setEditSection] = useState(null);
     const [form, setForm] = useState({});
     const [profileFile, setProfileFile] = useState(null);
     const [errors, setErrors] = useState({});
@@ -84,6 +115,7 @@ export default function Profile() {
     const [bids, setBids] = useState([]);
     const [auctions, setAuctions] = useState([]);
     const [loadingData, setLoadingData] = useState(true);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         (async () => {
@@ -115,6 +147,8 @@ export default function Profile() {
         [User],
     );
 
+    const activeLabel = NAV_ITEMS.find((n) => n.key === activeTab)?.label || "";
+
     const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
     const handleAddressChange = (e) =>
@@ -125,47 +159,37 @@ export default function Profile() {
         ["username", "email", "firstName", "lastName"].forEach((k) => {
             if (form[k] !== undefined && form[k] !== null) fd.append(k, form[k]);
         });
-        if (form.address) {
-            fd.append("address", JSON.stringify(form.address));
-        }
+        if (form.address) fd.append("address", JSON.stringify(form.address));
         if (file) fd.append("profile", file);
         return fd;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         try {
             setErrors({});
-
             const res = await updateUserProfile(buildFormData(form, profileFile));
-
             setUser(res.data);
             setEditSection(null);
         } catch (err) {
             console.error(err);
-
             const backendErrors = err?.response?.data?.errors;
-
             if (backendErrors?.length) {
                 const mappedErrors = {};
-
                 backendErrors.forEach((error) => {
                     const key = error.path?.[error.path.length - 1];
-
-                    if (key) {
-                        mappedErrors[key] = error.message;
-                    }
+                    if (key) mappedErrors[key] = error.message;
                 });
-
                 setErrors(mappedErrors);
                 return;
             }
-
-            setErrors({
-                general: err?.response?.data?.message || "Something went wrong",
-            });
+            setErrors({ general: err?.response?.data?.message || "Something went wrong" });
         }
+    };
+
+    const handleTabChange = (key) => {
+        setActiveTab(key);
+        setMobileMenuOpen(false);
     };
 
     if (Loading) {
@@ -180,439 +204,565 @@ export default function Profile() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 px-4 py-8 md:px-10">
-            {/* Page title */}
-            <h1 className="text-xl font-semibold text-gray-900 mb-6 max-w-6xl mx-auto">
-                Account Settings
-            </h1>
-
-            <div className="max-w-6xl mx-auto flex gap-8 items-start">
-                {/* ── Sidebar ───────────────────────────────── */}
-                <motion.aside
-                    initial={{ opacity: 0, x: -16 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                    className="w-48 flex-shrink-0"
+        <div className="min-h-screen bg-gray-50">
+            {/* ── Mobile top bar ── */}
+            <div className="md:hidden sticky top-0 z-30 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <img
+                        src={User?.profile || defaultUp}
+                        className="h-8 w-8 rounded-full object-cover ring-2 ring-gray-100"
+                    />
+                    <div>
+                        <p className="text-sm font-semibold text-gray-900 leading-tight">
+                            {displayName}
+                        </p>
+                        <p className="text-xs text-gray-400">{activeLabel}</p>
+                    </div>
+                </div>
+                <button
+                    onClick={() => setMobileMenuOpen(true)}
+                    className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors"
+                    aria-label="Open menu"
                 >
-                    <nav className="flex flex-col gap-0.5">
-                        {NAV_ITEMS.map(({ key, label }) => {
-                            const isActive = activeTab === key;
-                            return (
-                                <button
-                                    key={key}
-                                    onClick={() => setActiveTab(key)}
-                                    className={`relative text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
-                                        ${
-                                            isActive
-                                                ? "text-blue-600 bg-blue-50"
-                                                : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
-                                        }`}
-                                >
-                                    {isActive && (
-                                        <motion.span
-                                            layoutId="nav-pill"
-                                            className="absolute inset-0 bg-blue-50 rounded-xl -z-10"
-                                            transition={{
-                                                type: "spring",
-                                                stiffness: 400,
-                                                damping: 32,
-                                            }}
-                                        />
-                                    )}
-                                    {label}
-                                </button>
-                            );
-                        })}
+                    <MenuIcon />
+                </button>
+            </div>
 
-                        <div className="mt-4 pt-4 border-t border-gray-200">
-                            <button className="text-left px-4 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 w-full transition-colors">
-                                Delete Account
-                            </button>
-                        </div>
-                    </nav>
-                </motion.aside>
-
-                {/* ── Main content ──────────────────────────── */}
-                <div className="flex-1 min-w-0">
-                    <AnimatePresence mode="wait">
+            {/* ── Mobile drawer overlay ── */}
+            <AnimatePresence>
+                {mobileMenuOpen && (
+                    <>
                         <motion.div
-                            key={activeTab}
-                            initial={{ opacity: 0, y: 12 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -8 }}
-                            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-                            className="space-y-4"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.18 }}
+                            className="fixed inset-0 z-40 bg-black/40 md:hidden"
+                            onClick={() => setMobileMenuOpen(false)}
+                        />
+                        <motion.div
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", stiffness: 380, damping: 36 }}
+                            className="fixed top-0 right-0 bottom-0 z-50 w-72 bg-white shadow-2xl flex flex-col md:hidden"
                         >
-                            {/* ── MY PROFILE TAB ── */}
-                            {activeTab === "info" && (
-                                <>
-                                    <p className="text-base font-semibold text-gray-900 mb-4">
-                                        My Profile
-                                    </p>
+                            {/* Drawer header */}
+                            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                                <div className="flex items-center gap-3">
+                                    <img
+                                        src={User?.profile || defaultUp}
+                                        className="h-10 w-10 rounded-full object-cover ring-2 ring-gray-100"
+                                    />
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-900">
+                                            {displayName}
+                                        </p>
+                                        <p className="text-xs text-gray-400">{User?.email}</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors"
+                                >
+                                    <XIcon />
+                                </button>
+                            </div>
 
-                                    {/* Profile card */}
-                                    <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-4">
-                                                <img
-                                                    src={User?.profile || defaultUp}
-                                                    className="h-14 w-14 rounded-full object-cover ring-2 ring-gray-100"
-                                                />
-                                                <div>
-                                                    <p className="text-base font-semibold text-gray-900">
-                                                        {displayName}
-                                                    </p>
+                            {/* Drawer nav */}
+                            <nav className="flex-1 overflow-y-auto py-3 px-3">
+                                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 px-3 mb-2">
+                                    Navigation
+                                </p>
+                                {NAV_ITEMS.map(({ key, label }) => {
+                                    const isActive = activeTab === key;
+                                    return (
+                                        <button
+                                            key={key}
+                                            onClick={() => handleTabChange(key)}
+                                            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 mb-0.5
+                                                ${
+                                                    isActive
+                                                        ? "text-blue-600 bg-blue-50"
+                                                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                                                }`}
+                                        >
+                                            {label}
+                                            {isActive && <ChevronRight />}
+                                        </button>
+                                    );
+                                })}
+                            </nav>
 
-                                                    <p className="text-sm text-gray-400 mt-0.5">
-                                                        {[
-                                                            User?.address?.city,
-                                                            User?.address?.country,
-                                                        ]
-                                                            .filter(Boolean)
-                                                            .join(", ") || "No location set"}
-                                                    </p>
+                            <div className="px-3 pb-6 border-t border-gray-100 pt-3">
+                                <button className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors">
+                                    Delete Account
+                                </button>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+
+            {/* ── Desktop layout ── */}
+            <div className="px-4 py-6 md:px-10 md:py-8">
+                <h1 className="hidden md:block text-xl font-semibold text-gray-900 mb-6 max-w-6xl mx-auto">
+                    Account Settings
+                </h1>
+
+                <div className="max-w-6xl mx-auto flex gap-8 items-start">
+                    {/* ── Desktop Sidebar ── */}
+                    <motion.aside
+                        initial={{ opacity: 0, x: -16 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                        className="hidden md:block w-48 flex-shrink-0"
+                    >
+                        <nav className="flex flex-col gap-0.5">
+                            {NAV_ITEMS.map(({ key, label }) => {
+                                const isActive = activeTab === key;
+                                return (
+                                    <button
+                                        key={key}
+                                        onClick={() => setActiveTab(key)}
+                                        className={`relative text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
+                                            ${
+                                                isActive
+                                                    ? "text-blue-600 bg-blue-50"
+                                                    : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+                                            }`}
+                                    >
+                                        {isActive && (
+                                            <motion.span
+                                                layoutId="nav-pill"
+                                                className="absolute inset-0 bg-blue-50 rounded-xl -z-10"
+                                                transition={{
+                                                    type: "spring",
+                                                    stiffness: 400,
+                                                    damping: 32,
+                                                }}
+                                            />
+                                        )}
+                                        {label}
+                                    </button>
+                                );
+                            })}
+                            <div className="mt-4 pt-4 border-t border-gray-200">
+                                <button className="text-left px-4 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 w-full transition-colors">
+                                    Delete Account
+                                </button>
+                            </div>
+                        </nav>
+                    </motion.aside>
+
+                    {/* ── Main content ── */}
+                    <div className="flex-1 min-w-0">
+                        {/* Mobile section title */}
+                        <p className="md:hidden text-base font-semibold text-gray-900 mb-4">
+                            {activeLabel}
+                        </p>
+
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={activeTab}
+                                initial={{ opacity: 0, y: 12 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -8 }}
+                                transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                                className="space-y-4"
+                            >
+                                {/* ── MY PROFILE TAB ── */}
+                                {activeTab === "info" && (
+                                    <>
+                                        <p className="hidden md:block text-base font-semibold text-gray-900 mb-4">
+                                            My Profile
+                                        </p>
+
+                                        {/* Profile card */}
+                                        <div className="bg-white rounded-2xl border border-gray-200 p-4 md:p-6">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3 md:gap-4">
+                                                    <img
+                                                        src={User?.profile || defaultUp}
+                                                        className="h-12 w-12 md:h-14 md:w-14 rounded-full object-cover ring-2 ring-gray-100"
+                                                    />
+                                                    <div>
+                                                        <p className="text-sm md:text-base font-semibold text-gray-900">
+                                                            {displayName}
+                                                        </p>
+                                                        <p className="text-xs md:text-sm text-gray-400 mt-0.5">
+                                                            {[
+                                                                User?.address?.city,
+                                                                User?.address?.country,
+                                                            ]
+                                                                .filter(Boolean)
+                                                                .join(", ") || "No location set"}
+                                                        </p>
+                                                    </div>
                                                 </div>
+                                                <EditBtn
+                                                    onClick={() => setEditSection("profile")}
+                                                />
                                             </div>
-                                            <EditBtn onClick={() => setEditSection("profile")} />
                                         </div>
-                                    </div>
 
-                                    {/* Personal Information card */}
-                                    <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                                        <div className="flex items-center justify-between mb-5">
-                                            <p className="text-sm font-semibold text-gray-800">
-                                                Personal Information
-                                            </p>
-                                            <EditBtn onClick={() => setEditSection("personal")} />
+                                        {/* Personal Information card */}
+                                        <div className="bg-white rounded-2xl border border-gray-200 p-4 md:p-6">
+                                            <div className="flex items-center justify-between mb-4 md:mb-5">
+                                                <p className="text-sm font-semibold text-gray-800">
+                                                    Personal Information
+                                                </p>
+                                                <EditBtn
+                                                    onClick={() => setEditSection("personal")}
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 md:gap-y-5">
+                                                <InfoField
+                                                    label="First Name"
+                                                    value={User?.firstName}
+                                                />
+                                                <InfoField
+                                                    label="Last Name"
+                                                    value={User?.lastName}
+                                                />
+                                                <InfoField
+                                                    label="Email Address"
+                                                    value={User?.email}
+                                                />
+                                                <InfoField
+                                                    label="Username"
+                                                    value={`@${User?.username}`}
+                                                />
+                                                <InfoField
+                                                    label="Account Status"
+                                                    value={User?.status || "Active"}
+                                                    valueClass="text-emerald-600 font-semibold"
+                                                />
+                                            </div>
                                         </div>
-                                        <div className="grid grid-cols-2 gap-x-8 gap-y-5">
-                                            <InfoField label="First Name" value={User?.firstName} />
-                                            <InfoField label="Last Name" value={User?.lastName} />
-                                            <InfoField label="Email Address" value={User?.email} />
-                                            <InfoField
-                                                label="Username"
-                                                value={`@${User?.username}`}
-                                            />
-                                            <InfoField
-                                                label="Account Status"
-                                                value={User?.status || "Active"}
-                                                valueClass="text-emerald-600 font-semibold"
-                                            />
-                                        </div>
-                                    </div>
 
-                                    {/* Address card */}
-                                    <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                                        <div className="flex items-center justify-between mb-5">
-                                            <p className="text-sm font-semibold text-gray-800">
-                                                Address
-                                            </p>
-                                            <EditBtn onClick={() => setEditSection("address")} />
+                                        {/* Address card */}
+                                        <div className="bg-white rounded-2xl border border-gray-200 p-4 md:p-6">
+                                            <div className="flex items-center justify-between mb-4 md:mb-5">
+                                                <p className="text-sm font-semibold text-gray-800">
+                                                    Address
+                                                </p>
+                                                <EditBtn
+                                                    onClick={() => setEditSection("address")}
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 md:gap-y-5">
+                                                <InfoField
+                                                    label="Country"
+                                                    value={User?.address?.country}
+                                                />
+                                                <InfoField
+                                                    label="City / State"
+                                                    value={[
+                                                        User?.address?.city,
+                                                        User?.address?.state,
+                                                    ]
+                                                        .filter(Boolean)
+                                                        .join(", ")}
+                                                />
+                                                <InfoField
+                                                    label="Street"
+                                                    value={User?.address?.street}
+                                                />
+                                                <InfoField
+                                                    label="Postal Code"
+                                                    value={User?.address?.pin}
+                                                />
+                                            </div>
                                         </div>
-                                        <div className="grid grid-cols-2 gap-x-8 gap-y-5">
-                                            <InfoField
-                                                label="Country"
-                                                value={User?.address?.country}
-                                            />
-                                            <InfoField
-                                                label="City / State"
-                                                value={[User?.address?.city, User?.address?.state]
-                                                    .filter(Boolean)
-                                                    .join(", ")}
-                                            />
-                                            <InfoField
-                                                label="Street"
-                                                value={User?.address?.street}
-                                            />
-                                            <InfoField
-                                                label="Postal Code"
-                                                value={User?.address?.pin}
-                                            />
-                                        </div>
-                                    </div>
 
-                                    {/* Meta */}
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="bg-white rounded-2xl border border-gray-200 p-5">
-                                            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">
-                                                Member Since
-                                            </p>
-                                            <p className="text-sm font-semibold text-gray-800">
-                                                {User?.createdAt
-                                                    ? new Date(User.createdAt).toLocaleDateString(
-                                                          "en-GB",
-                                                          {
+                                        {/* Meta */}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-white rounded-2xl border border-gray-200 p-4 md:p-5">
+                                                <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">
+                                                    Member Since
+                                                </p>
+                                                <p className="text-sm font-semibold text-gray-800">
+                                                    {User?.createdAt
+                                                        ? new Date(
+                                                              User.createdAt,
+                                                          ).toLocaleDateString("en-GB", {
                                                               day: "numeric",
                                                               month: "long",
                                                               year: "numeric",
-                                                          },
-                                                      )
-                                                    : "—"}
-                                            </p>
+                                                          })
+                                                        : "—"}
+                                                </p>
+                                            </div>
+                                            <div className="bg-white rounded-2xl border border-gray-200 p-4 md:p-5">
+                                                <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">
+                                                    Verified
+                                                </p>
+                                                <p
+                                                    className={`text-sm font-semibold ${User?.isVerified ? "text-emerald-600" : "text-red-500"}`}
+                                                >
+                                                    {User?.isVerified
+                                                        ? "Verified Account"
+                                                        : "Not Verified"}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div className="bg-white rounded-2xl border border-gray-200 p-5">
-                                            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">
-                                                Verified
-                                            </p>
-                                            <p
-                                                className={`text-sm font-semibold ${User?.isVerified ? "text-emerald-600" : "text-red-500"}`}
-                                            >
-                                                {User?.isVerified
-                                                    ? "Verified Account"
-                                                    : "Not Verified"}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </>
-                            )}
+                                    </>
+                                )}
 
-                            {/* ── OVERVIEW TAB ── */}
-                            {activeTab === "overview" && (
-                                <>
-                                    <p className="text-base font-semibold text-gray-900 mb-4">
-                                        Overview
-                                    </p>
-                                    <div className="grid grid-cols-3 gap-4 mb-4">
-                                        {[
-                                            {
-                                                label: "Total Auctions",
-                                                val: User?.auctionCount || 0,
-                                            },
-                                            { label: "Total Bids", val: User?.bidCount || 0 },
-                                            {
-                                                label: "Account Status",
-                                                val: User?.status || "Active",
-                                            },
-                                        ].map((s, i) => (
-                                            <motion.div
-                                                key={s.label}
-                                                variants={fadeUp}
-                                                custom={i}
-                                                initial="hidden"
-                                                animate="show"
-                                                className="bg-white rounded-2xl border border-gray-200 p-5"
-                                            >
-                                                <p className="text-2xl font-bold text-blue-600">
-                                                    {s.val}
-                                                </p>
-                                                <p className="text-xs text-gray-400 font-medium mt-1 uppercase tracking-wider">
-                                                    {s.label}
-                                                </p>
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                    <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                                        <p className="text-sm font-semibold text-gray-800 mb-4">
-                                            Recent Bids
+                                {/* ── OVERVIEW TAB ── */}
+                                {activeTab === "overview" && (
+                                    <>
+                                        <p className="hidden md:block text-base font-semibold text-gray-900 mb-4">
+                                            Overview
                                         </p>
-                                        {loadingData ? (
-                                            <Skeleton />
-                                        ) : bids.length === 0 ? (
-                                            <Empty msg="No recent activity" />
-                                        ) : (
-                                            bids.slice(0, 3).map((bid, i) => (
+                                        <div className="grid grid-cols-3 gap-3 md:gap-4 mb-4">
+                                            {[
+                                                {
+                                                    label: "Total Auctions",
+                                                    val: User?.auctionCount || 0,
+                                                },
+                                                { label: "Total Bids", val: User?.bidCount || 0 },
+                                                {
+                                                    label: "Account Status",
+                                                    val: User?.status || "Active",
+                                                },
+                                            ].map((s, i) => (
                                                 <motion.div
-                                                    key={bid._id}
+                                                    key={s.label}
                                                     variants={fadeUp}
                                                     custom={i}
                                                     initial="hidden"
                                                     animate="show"
-                                                    className="flex items-center justify-between py-3.5 border-b border-gray-100 last:border-0"
+                                                    className="bg-white rounded-2xl border border-gray-200 p-3 md:p-5"
                                                 >
-                                                    <div>
-                                                        <p className="text-sm font-medium text-gray-800">
-                                                            {bid.auction?.title}
-                                                        </p>
-                                                        <p className="text-xs text-gray-400 mt-0.5">
-                                                            Recent bid
-                                                        </p>
-                                                    </div>
-                                                    <span className="text-sm font-bold text-blue-600">
-                                                        ₹{bid.amount}
-                                                    </span>
-                                                </motion.div>
-                                            ))
-                                        )}
-                                    </div>
-                                </>
-                            )}
-
-                            {/* ── ORDERS TAB ── */}
-                            {activeTab === "orders" && (
-                                <>
-                                    <p className="text-base font-semibold text-gray-900 mb-4">
-                                        My Orders
-                                    </p>
-                                    <div className="grid sm:grid-cols-2 gap-4">
-                                        {[1, 2].map((_, i) => (
-                                            <motion.div
-                                                key={i}
-                                                variants={fadeUp}
-                                                custom={i}
-                                                initial="hidden"
-                                                animate="show"
-                                                whileHover={{ y: -2 }}
-                                                className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200"
-                                            >
-                                                <div className="h-36 bg-gradient-to-br from-blue-50 to-indigo-100" />
-                                                <div className="p-4">
-                                                    <p className="font-semibold text-gray-800 text-sm">
-                                                        Item Name
+                                                    <p className="text-xl md:text-2xl font-bold text-blue-600">
+                                                        {s.val}
                                                     </p>
-                                                    <p className="text-xs text-emerald-600 mt-1 font-semibold">
-                                                        Delivered
+                                                    <p className="text-[10px] md:text-xs text-gray-400 font-medium mt-1 uppercase tracking-wider">
+                                                        {s.label}
                                                     </p>
-                                                    <button className="mt-3 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors">
-                                                        View Details
-                                                    </button>
-                                                </div>
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                </>
-                            )}
-
-                            {/* ── BIDS TAB ── */}
-                            {activeTab === "bids" && (
-                                <>
-                                    <p className="text-base font-semibold text-gray-900 mb-4">
-                                        My Bids
-                                    </p>
-                                    <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100">
-                                        {loadingData ? (
-                                            <div className="p-6">
-                                                <Skeleton />
-                                            </div>
-                                        ) : bids.length === 0 ? (
-                                            <div className="p-6">
-                                                <Empty msg="No bids placed yet" />
-                                            </div>
-                                        ) : (
-                                            bids.map((bid, i) => (
-                                                <motion.div
-                                                    key={bid._id}
-                                                    variants={fadeUp}
-                                                    custom={i}
-                                                    initial="hidden"
-                                                    animate="show"
-                                                    className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
-                                                >
-                                                    <div>
-                                                        <p className="text-sm font-medium text-gray-800">
-                                                            {bid.auction?.title || "Auction Item"}
-                                                        </p>
-                                                        <span className="inline-block mt-1 text-[10px] font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
-                                                            Active
-                                                        </span>
-                                                    </div>
-                                                    <span className="text-sm font-bold text-orange-500">
-                                                        ₹{bid.amount}
-                                                    </span>
                                                 </motion.div>
-                                            ))
-                                        )}
-                                    </div>
-                                </>
-                            )}
-
-                            {/* ── AUCTIONS TAB ── */}
-                            {activeTab === "auctions" && (
-                                <>
-                                    <p className="text-base font-semibold text-gray-900 mb-4">
-                                        My Auctions
-                                    </p>
-                                    <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100">
-                                        {loadingData ? (
-                                            <div className="p-6">
+                                            ))}
+                                        </div>
+                                        <div className="bg-white rounded-2xl border border-gray-200 p-4 md:p-6">
+                                            <p className="text-sm font-semibold text-gray-800 mb-4">
+                                                Recent Bids
+                                            </p>
+                                            {loadingData ? (
                                                 <Skeleton />
-                                            </div>
-                                        ) : auctions.length === 0 ? (
-                                            <div className="p-6">
-                                                <Empty msg="No auctions created yet" />
-                                            </div>
-                                        ) : (
-                                            auctions.map((auction, i) => {
-                                                const image = auction?.media?.[0]?.[0];
-                                                return (
+                                            ) : bids.length === 0 ? (
+                                                <Empty msg="No recent activity" />
+                                            ) : (
+                                                bids.slice(0, 3).map((bid, i) => (
                                                     <motion.div
-                                                        key={auction._id}
+                                                        key={bid._id}
                                                         variants={fadeUp}
                                                         custom={i}
                                                         initial="hidden"
                                                         animate="show"
-                                                        whileHover={{ backgroundColor: "#F9FAFB" }}
-                                                        onClick={() =>
-                                                            navigate(`/auction/${auction._id}`)
-                                                        }
-                                                        className="flex items-center justify-between gap-4 px-6 py-4 cursor-pointer transition-colors"
+                                                        className="flex items-center justify-between py-3.5 border-b border-gray-100 last:border-0"
                                                     >
-                                                        <div className="flex items-center gap-4">
-                                                            {image ? (
-                                                                <img
-                                                                    src={image}
-                                                                    className="h-12 w-12 rounded-xl object-cover"
-                                                                />
-                                                            ) : (
-                                                                <div className="h-12 w-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center">
-                                                                    <svg
-                                                                        width="18"
-                                                                        height="18"
-                                                                        viewBox="0 0 24 24"
-                                                                        fill="none"
-                                                                        stroke="#93C5FD"
-                                                                        strokeWidth="1.5"
-                                                                    >
-                                                                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                                                                    </svg>
-                                                                </div>
-                                                            )}
-                                                            <div>
-                                                                <p className="text-sm font-semibold text-gray-800">
-                                                                    {auction.name}
-                                                                </p>
-                                                                <p className="text-xs text-gray-400 mt-0.5 line-clamp-1 max-w-xs">
-                                                                    {auction.description}
-                                                                </p>
-                                                            </div>
+                                                        <div>
+                                                            <p className="text-sm font-medium text-gray-800">
+                                                                {bid.auction?.title}
+                                                            </p>
+                                                            <p className="text-xs text-gray-400 mt-0.5">
+                                                                Recent bid
+                                                            </p>
                                                         </div>
-                                                        <div className="flex items-center gap-5 flex-shrink-0">
-                                                            <span
-                                                                className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border
-                                                            ${
-                                                                auction.status === "live"
-                                                                    ? "text-emerald-700 bg-emerald-50 border-emerald-200"
-                                                                    : auction.status === "draft"
-                                                                      ? "text-gray-500 bg-gray-100 border-gray-200"
-                                                                      : "text-red-600 bg-red-50 border-red-200"
-                                                            }`}
-                                                            >
-                                                                {auction.status}
-                                                            </span>
-                                                            <div className="text-right">
-                                                                <p className="text-sm font-bold text-blue-600">
-                                                                    ₹
-                                                                    {auction.currentHighestBid > 0
-                                                                        ? auction.currentHighestBid
-                                                                        : auction.startPrice}
-                                                                </p>
-                                                                <p className="text-xs text-gray-400 mt-0.5">
-                                                                    {auction.bidCount} bids
-                                                                </p>
-                                                            </div>
-                                                        </div>
+                                                        <span className="text-sm font-bold text-blue-600">
+                                                            ₹{bid.amount}
+                                                        </span>
                                                     </motion.div>
-                                                );
-                                            })
-                                        )}
-                                    </div>
-                                </>
-                            )}
-                        </motion.div>
-                    </AnimatePresence>
+                                                ))
+                                            )}
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* ── ORDERS TAB ── */}
+                                {activeTab === "orders" && (
+                                    <>
+                                        <p className="hidden md:block text-base font-semibold text-gray-900 mb-4">
+                                            My Orders
+                                        </p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            {[1, 2].map((_, i) => (
+                                                <motion.div
+                                                    key={i}
+                                                    variants={fadeUp}
+                                                    custom={i}
+                                                    initial="hidden"
+                                                    animate="show"
+                                                    whileHover={{ y: -2 }}
+                                                    className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200"
+                                                >
+                                                    <div className="h-36 bg-gradient-to-br from-blue-50 to-indigo-100" />
+                                                    <div className="p-4">
+                                                        <p className="font-semibold text-gray-800 text-sm">
+                                                            Item Name
+                                                        </p>
+                                                        <p className="text-xs text-emerald-600 mt-1 font-semibold">
+                                                            Delivered
+                                                        </p>
+                                                        <button className="mt-3 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+                                                            View Details
+                                                        </button>
+                                                    </div>
+                                                </motion.div>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* ── BIDS TAB ── */}
+                                {activeTab === "bids" && (
+                                    <>
+                                        <p className="hidden md:block text-base font-semibold text-gray-900 mb-4">
+                                            My Bids
+                                        </p>
+                                        <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100">
+                                            {loadingData ? (
+                                                <div className="p-4 md:p-6">
+                                                    <Skeleton />
+                                                </div>
+                                            ) : bids.length === 0 ? (
+                                                <div className="p-4 md:p-6">
+                                                    <Empty msg="No bids placed yet" />
+                                                </div>
+                                            ) : (
+                                                bids.map((bid, i) => (
+                                                    <motion.div
+                                                        key={bid._id}
+                                                        variants={fadeUp}
+                                                        custom={i}
+                                                        initial="hidden"
+                                                        animate="show"
+                                                        className="flex items-center justify-between px-4 md:px-6 py-3.5 md:py-4 hover:bg-gray-50 transition-colors"
+                                                    >
+                                                        <div>
+                                                            <p className="text-sm font-medium text-gray-800">
+                                                                {bid.auction?.title ||
+                                                                    "Auction Item"}
+                                                            </p>
+                                                            <span className="inline-block mt-1 text-[10px] font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                                                                Active
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-sm font-bold text-orange-500">
+                                                            ₹{bid.amount}
+                                                        </span>
+                                                    </motion.div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* ── AUCTIONS TAB ── */}
+                                {activeTab === "auctions" && (
+                                    <>
+                                        <p className="hidden md:block text-base font-semibold text-gray-900 mb-4">
+                                            My Auctions
+                                        </p>
+                                        <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100">
+                                            {loadingData ? (
+                                                <div className="p-4 md:p-6">
+                                                    <Skeleton />
+                                                </div>
+                                            ) : auctions.length === 0 ? (
+                                                <div className="p-4 md:p-6">
+                                                    <Empty msg="No auctions created yet" />
+                                                </div>
+                                            ) : (
+                                                auctions.map((auction, i) => {
+                                                    const image = auction?.media?.[0]?.[0];
+                                                    return (
+                                                        <motion.div
+                                                            key={auction._id}
+                                                            variants={fadeUp}
+                                                            custom={i}
+                                                            initial="hidden"
+                                                            animate="show"
+                                                            whileHover={{
+                                                                backgroundColor: "#F9FAFB",
+                                                            }}
+                                                            onClick={() =>
+                                                                navigate(`/auction/${auction._id}`)
+                                                            }
+                                                            className="flex items-center justify-between gap-3 md:gap-4 px-4 md:px-6 py-3.5 md:py-4 cursor-pointer transition-colors"
+                                                        >
+                                                            <div className="flex items-center gap-3 md:gap-4 min-w-0">
+                                                                {image ? (
+                                                                    <img
+                                                                        src={image}
+                                                                        className="h-10 w-10 md:h-12 md:w-12 rounded-xl object-cover flex-shrink-0"
+                                                                    />
+                                                                ) : (
+                                                                    <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
+                                                                        <svg
+                                                                            width="18"
+                                                                            height="18"
+                                                                            viewBox="0 0 24 24"
+                                                                            fill="none"
+                                                                            stroke="#93C5FD"
+                                                                            strokeWidth="1.5"
+                                                                        >
+                                                                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                                                                        </svg>
+                                                                    </div>
+                                                                )}
+                                                                <div className="min-w-0">
+                                                                    <p className="text-sm font-semibold text-gray-800 truncate">
+                                                                        {auction.name}
+                                                                    </p>
+                                                                    <p className="text-xs text-gray-400 mt-0.5 line-clamp-1 max-w-[160px] md:max-w-xs">
+                                                                        {auction.description}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-2 md:gap-5 flex-shrink-0">
+                                                                <span
+                                                                    className={`hidden sm:inline-block text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border
+                                                                    ${
+                                                                        auction.status === "live"
+                                                                            ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                                                                            : auction.status ===
+                                                                                "draft"
+                                                                              ? "text-gray-500 bg-gray-100 border-gray-200"
+                                                                              : "text-red-600 bg-red-50 border-red-200"
+                                                                    }`}
+                                                                >
+                                                                    {auction.status}
+                                                                </span>
+                                                                <div className="text-right">
+                                                                    <p className="text-sm font-bold text-blue-600">
+                                                                        ₹
+                                                                        {auction.currentHighestBid >
+                                                                        0
+                                                                            ? auction.currentHighestBid
+                                                                            : auction.startPrice}
+                                                                    </p>
+                                                                    <p className="text-xs text-gray-400 mt-0.5">
+                                                                        {auction.bidCount} bids
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </motion.div>
+                                                    );
+                                                })
+                                            )}
+                                        </div>
+                                    </>
+                                )}
+                            </motion.div>
+                        </AnimatePresence>
+                    </div>
                 </div>
             </div>
 
-            {/* ── Edit Modal ───────────────────────────────── */}
+            {/* ── Edit Modal ── */}
             <AnimatePresence>
                 {editSection && (
                     <motion.div
@@ -620,7 +770,7 @@ export default function Profile() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.18 }}
-                        className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[2px] flex items-center justify-center px-4"
+                        className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[2px] flex items-end sm:items-center justify-center sm:px-4"
                         onClick={(e) => e.target === e.currentTarget && setEditSection(null)}
                     >
                         <motion.div
@@ -628,10 +778,10 @@ export default function Profile() {
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.97, y: 16 }}
                             transition={{ type: "spring", stiffness: 360, damping: 30 }}
-                            className="w-full max-w-lg bg-white rounded-2xl border border-gray-200 shadow-2xl"
+                            className="w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl border border-gray-200 shadow-2xl max-h-[90vh] overflow-y-auto"
                         >
                             {/* Modal header */}
-                            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+                            <div className="flex items-center justify-between px-5 md:px-6 pt-5 md:pt-6 pb-4 border-b border-gray-100">
                                 <div>
                                     <h3 className="text-base font-semibold text-gray-900">
                                         {editSection === "profile" && "Edit Profile"}
@@ -650,38 +800,39 @@ export default function Profile() {
                                 </button>
                             </div>
 
-                            <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+                            <form
+                                onSubmit={handleSubmit}
+                                className="px-5 md:px-6 py-4 md:py-5 space-y-4"
+                            >
                                 {/* Profile section */}
                                 {editSection === "profile" && (
-                                    <>
-                                        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                                            <img
-                                                src={preview || User?.profile || defaultUp}
-                                                className="h-14 w-14 rounded-full object-cover ring-2 ring-white shadow"
-                                            />
-                                            <div>
-                                                <p className="text-sm font-medium text-gray-700 mb-1">
-                                                    Profile photo
-                                                </p>
-                                                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-                                                    <UploadIcon /> Upload Photo
-                                                    <input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        className="hidden"
-                                                        onChange={(e) =>
-                                                            setProfileFile(e.target.files[0])
-                                                        }
-                                                    />
-                                                </label>
-                                            </div>
+                                    <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                        <img
+                                            src={preview || User?.profile || defaultUp}
+                                            className="h-14 w-14 rounded-full object-cover ring-2 ring-white shadow"
+                                        />
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-700 mb-1">
+                                                Profile photo
+                                            </p>
+                                            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                                                <UploadIcon /> Upload Photo
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="hidden"
+                                                    onChange={(e) =>
+                                                        setProfileFile(e.target.files[0])
+                                                    }
+                                                />
+                                            </label>
                                         </div>
-                                    </>
+                                    </div>
                                 )}
 
                                 {/* Personal section */}
                                 {editSection === "personal" && (
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <FieldInput
                                             label="First Name"
                                             name="firstName"
@@ -704,8 +855,7 @@ export default function Profile() {
                                             type="email"
                                             error={errors.email}
                                         />
-
-                                        <div className="col-span-2">
+                                        <div className="sm:col-span-2">
                                             <FieldInput
                                                 label="Username"
                                                 name="username"
@@ -719,7 +869,7 @@ export default function Profile() {
 
                                 {/* Address section */}
                                 {editSection === "address" && (
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <FieldInput
                                             label="Country"
                                             name="country"
@@ -748,7 +898,7 @@ export default function Profile() {
                                             onChange={handleAddressChange}
                                             error={errors.pin}
                                         />
-                                        <div className="col-span-2">
+                                        <div className="sm:col-span-2">
                                             <FieldInput
                                                 label="Street Address"
                                                 name="street"
@@ -759,13 +909,14 @@ export default function Profile() {
                                         </div>
                                     </div>
                                 )}
+
                                 {errors.general && (
                                     <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-600">
                                         {errors.general}
                                     </div>
                                 )}
 
-                                <div className="flex justify-end gap-3 pt-2">
+                                <div className="flex justify-end gap-3 pt-2 pb-safe">
                                     <button
                                         type="button"
                                         onClick={() => setEditSection(null)}
@@ -791,7 +942,7 @@ export default function Profile() {
     );
 }
 
-/* ── Sub-components ─────────────────────────────────────────────────────────── */
+/* ── Sub-components ── */
 
 function EditBtn({ onClick }) {
     return (
@@ -825,13 +976,12 @@ function FieldInput({ label, name, value, onChange, type = "text", error }) {
                 value={value}
                 onChange={onChange}
                 className={`w-full rounded-xl px-3.5 py-2.5 text-sm outline-none transition-all duration-150
-        ${
-            error
-                ? "border border-red-500 bg-red-50"
-                : "border border-gray-200 bg-gray-50 focus:border-blue-400 focus:ring-4 focus:ring-blue-50 focus:bg-white"
-        }`}
+                    ${
+                        error
+                            ? "border border-red-500 bg-red-50"
+                            : "border border-gray-200 bg-gray-50 focus:border-blue-400 focus:ring-4 focus:ring-blue-50 focus:bg-white"
+                    }`}
             />
-
             {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
         </div>
     );
