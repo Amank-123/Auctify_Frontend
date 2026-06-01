@@ -1,1304 +1,852 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { api } from "@/shared/services/axios";
+import defaultUp from "@/assets/default.png";
 import { getMyAuctions, getMyBids, updateUserProfile } from "../userAPI";
+import { useNavigate } from "react-router-dom";
 
-/* ── Fonts ─────────────────────────────────────────────────────── */
-if (typeof document !== "undefined" && !document.getElementById("pf-fonts")) {
-    const l = document.createElement("link");
-    l.id = "pf-fonts";
-    l.rel = "stylesheet";
-    l.href =
-        "https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Inter:wght@400;500;600&display=swap";
-    document.head.appendChild(l);
-}
-
-/* ── Tokens ─────────────────────────────────────────────────────── */
-const B = "#1A3BDB";
-const BDK = "#0F28CC";
-const BLT = "#EEF1FD";
-const BML = "#D6DCFA";
-const OR = "#FF6B2C";
-const OLT = "#FFF2EC";
-const GR = "#111827";
-const SB = "#6B7280";
-const BD = "#E8ECF8";
-const BG = "#F0F2FB";
-const WH = "#FFFFFF";
-
-const TABS = [
-    { key: "profile", label: "Profile" },
-    { key: "orders", label: "Orders" },
-    { key: "bids", label: "Bids" },
-    { key: "auctions", label: "Auctions" },
+const NAV_ITEMS = [
+    { key: "info", label: "My Profile" },
+    { key: "overview", label: "Overview" },
+    { key: "orders", label: "My Orders" },
+    { key: "bids", label: "My Bids" },
+    { key: "auctions", label: "My Auctions" },
+    { key: "settings", label: "Security" },
 ];
 
-const fmtDate = (d) =>
-    new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+const fadeUp = {
+    hidden: { opacity: 0, y: 14 },
+    show: (i = 0) => ({
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.3, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] },
+    }),
+};
 
-/* ════════════════════════════════════════════════════════════════ */
-export default function ProfilePage() {
+/* ── Edit pencil icon (inline SVG, no emoji) ── */
+const PencilIcon = () => (
+    <svg
+        width="13"
+        height="13"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+    >
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+);
+
+const XIcon = () => (
+    <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+    >
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+);
+
+const UploadIcon = () => (
+    <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+    >
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="17 8 12 3 7 8" />
+        <line x1="12" y1="3" x2="12" y2="15" />
+    </svg>
+);
+
+export default function Profile() {
+    const { Loading, User, setUser } = useAuth();
     const navigate = useNavigate();
-    const { User, setUser, logout, Loading } = useAuth();
 
-    const [tab, setTab] = useState("profile");
-    const [orders, setOrders] = useState([]);
+    const [activeTab, setActiveTab] = useState("info");
+    const [editSection, setEditSection] = useState(null); // "profile" | "personal" | "address"
+    const [form, setForm] = useState({});
+    const [profileFile, setProfileFile] = useState(null);
+    const [preview, setPreview] = useState("");
     const [bids, setBids] = useState([]);
     const [auctions, setAuctions] = useState([]);
     const [loadingData, setLoadingData] = useState(true);
-    const [deleteLoading, setDeleteLoading] = useState(false);
-    const [profileFile, setProfileFile] = useState(null);
-    const [preview, setPreview] = useState("");
-    const [saved, setSaved] = useState(false);
-    const [delConfirm, setDelConfirm] = useState(false);
-    const [form, setForm] = useState({
-        firstName: "",
-        lastName: "",
-        username: "",
-        email: "",
-    });
-
-    useEffect(() => {
-        if (User)
-            setForm({
-                firstName: User.firstName || "",
-                lastName: User.lastName || "",
-                username: User.username || "",
-                email: User.email || "",
-            });
-    }, [User]);
-
-    useEffect(() => {
-        if (!profileFile) {
-            setPreview("");
-            return;
-        }
-        const url = URL.createObjectURL(profileFile);
-        setPreview(url);
-        return () => URL.revokeObjectURL(url);
-    }, [profileFile]);
 
     useEffect(() => {
         (async () => {
             try {
-                setLoadingData(true);
-                const [b, a, o] = await Promise.all([
-                    getMyBids(),
-                    getMyAuctions(),
-                    api.get("/api/order/my"),
-                ]);
-                setBids(b?.data || []);
-                setAuctions(a?.data || []);
-                setOrders(o?.data?.data || []);
-            } catch (e) {
-                console.log(e);
+                const [bidsRes, auctionsRes] = await Promise.all([getMyBids(), getMyAuctions()]);
+                setBids(bidsRes?.data || []);
+                setAuctions(auctionsRes?.data || []);
+            } catch (err) {
+                console.error(err);
             } finally {
                 setLoadingData(false);
             }
         })();
     }, []);
 
-    const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        const fd = new FormData();
-        Object.entries(form).forEach(([k, v]) => fd.append(k, v));
-        if (profileFile) fd.append("profile", profileFile);
-        try {
-            const r = await updateUserProfile(fd);
-            setUser(r.data.data);
-            setSaved(true);
-            setTimeout(() => setSaved(false), 2500);
-        } catch (e) {
-            console.log(e);
-        }
-    };
-    const handleDelete = async () => {
-        try {
-            setDeleteLoading(true);
-            await api.delete("/api/user/delete");
-            await logout();
-            localStorage.clear();
-            navigate("/login");
-        } catch (e) {
-            console.log(e);
-        } finally {
-            setDeleteLoading(false);
-        }
-    };
+    useEffect(() => {
+        if (User) setForm(User);
+    }, [User]);
+
+    useEffect(() => {
+        if (!profileFile) return setPreview("");
+        const url = URL.createObjectURL(profileFile);
+        setPreview(url);
+        return () => URL.revokeObjectURL(url);
+    }, [profileFile]);
 
     const displayName = useMemo(
         () => `${User?.firstName || ""} ${User?.lastName || ""}`.trim() || User?.username,
         [User],
     );
-    const counts = { orders: orders.length, bids: bids.length, auctions: auctions.length };
 
-    if (Loading)
+    const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+
+    const handleAddressChange = (e) =>
+        setForm((p) => ({ ...p, address: { ...p.address, [e.target.name]: e.target.value } }));
+
+    const buildFormData = (form, file) => {
+        const fd = new FormData();
+        ["username", "email", "firstName", "lastName", "phone", "bio"].forEach((k) => {
+            if (form[k] !== undefined && form[k] !== null) fd.append(k, form[k]);
+        });
+        if (form.address) {
+            Object.entries(form.address).forEach(([k, v]) => {
+                if (v) fd.append(`address[${k}]`, v);
+            });
+        }
+        if (file) fd.append("profile", file);
+        return fd;
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const res = await updateUserProfile(buildFormData(form, profileFile));
+            setUser(res.data);
+            setEditSection(null);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    if (Loading) {
         return (
-            <div
-                style={{
-                    minHeight: "100vh",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                }}
-            >
-                <Spin />
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="bg-white rounded-2xl border border-gray-200 px-8 py-5 shadow flex items-center gap-3">
+                    <div className="h-4 w-4 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
+                    <span className="text-sm font-medium text-gray-600">Loading profile…</span>
+                </div>
             </div>
         );
+    }
 
     return (
-        <div style={{ fontFamily: "Inter,sans-serif", background: BG, minHeight: "100vh" }}>
-            <style>{`
-            #pf-body { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
-            @media (min-width: 640px) { #pf-body { padding-bottom: 0; } }
-            #pf-tabbar { display: flex; }
-            @media (min-width: 640px) { #pf-tabbar { display: none !important; } }
-            #pf-desktoptabs { display: none; }
-            @media (min-width: 640px) { #pf-desktoptabs { display: flex; } }
-        `}</style>
-            <div id="pf-body">
-                {/* ══ HERO ══════════════════════════════════════════════════ */}
-                <div
-                    style={{
-                        background: `linear-gradient(145deg, ${BDK} 0%, ${B} 55%, #2B4EF2 100%)`,
-                        paddingTop: "20px",
-                        paddingLeft: "20px",
-                        position: "relative",
-                        overflow: "hidden",
-                    }}
-                >
-                    {/* stat pills */}
-                    <div
-                        style={{
-                            display: "flex",
-                            gap: 8,
-                            marginBottom: 4,
-                            overflowX: "auto",
-                            scrollbarWidth: "none",
-                        }}
-                    >
-                        {[
-                            { label: "Orders", val: counts.orders },
-                            { label: "Bids", val: counts.bids },
-                            { label: "Auctions", val: counts.auctions },
-                        ].map((s, i) => (
-                            <div
-                                key={i}
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "center",
-                                    padding: "8px 20px",
-                                    borderRadius: 12,
-                                    background: "rgba(255,255,255,0.13)",
-                                    border: "1px solid rgba(255,255,255,0.16)",
-                                    flexShrink: 0,
-                                    backdropFilter: "blur(8px)",
-                                }}
-                            >
-                                <span
-                                    style={{
-                                        fontFamily: "Syne,sans-serif",
-                                        fontSize: 22,
-                                        fontWeight: 700,
-                                        color: WH,
-                                        lineHeight: 1,
-                                    }}
-                                >
-                                    {s.val}
-                                </span>
-                                <span
-                                    style={{
-                                        fontSize: 10,
-                                        fontWeight: 500,
-                                        color: "rgba(180,205,255,0.85)",
-                                        marginTop: 3,
-                                        letterSpacing: "0.05em",
-                                    }}
-                                >
-                                    {s.label}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
+        <div className="min-h-screen bg-gray-50 px-4 py-8 md:px-10">
+            {/* Page title */}
+            <h1 className="text-xl font-semibold text-gray-900 mb-6 max-w-6xl mx-auto">
+                Account Settings
+            </h1>
 
-                    {/* desktop tab bar (hidden mobile) */}
-                    <div id="pf-desktoptabs" style={{ gap: 4, marginTop: 12 }}>
-                        {TABS.map((t, i) => {
-                            const a = tab === t.key;
+            <div className="max-w-6xl mx-auto flex gap-8 items-start">
+                {/* ── Sidebar ───────────────────────────────── */}
+                <motion.aside
+                    initial={{ opacity: 0, x: -16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                    className="w-48 flex-shrink-0"
+                >
+                    <nav className="flex flex-col gap-0.5">
+                        {NAV_ITEMS.map(({ key, label }) => {
+                            const isActive = activeTab === key;
                             return (
-                                <motion.button
-                                    key={t.key}
-                                    onClick={() => setTab(t.key)}
-                                    initial={{ opacity: 0, y: 5 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.2 + i * 0.04 }}
-                                    style={{
-                                        position: "relative",
-                                        padding: "10px 22px",
-                                        border: "none",
-                                        borderRadius: "10px 10px 0 0",
-                                        cursor: "pointer",
-                                        fontFamily: "Syne,sans-serif",
-                                        fontSize: 14,
-                                        fontWeight: 600,
-                                        background: a ? WH : "transparent",
-                                        color: a ? B : "rgba(200,215,255,0.85)",
-                                        transition: "all 0.15s",
-                                    }}
+                                <button
+                                    key={key}
+                                    onClick={() => setActiveTab(key)}
+                                    className={`relative text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
+                                        ${
+                                            isActive
+                                                ? "text-blue-600 bg-blue-50"
+                                                : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+                                        }`}
                                 >
-                                    {t.label}
-                                    {a && (
+                                    {isActive && (
                                         <motion.span
-                                            layoutId="dd"
-                                            style={{
-                                                position: "absolute",
-                                                bottom: 7,
-                                                left: "50%",
-                                                transform: "translateX(-50%)",
-                                                width: 4,
-                                                height: 4,
-                                                borderRadius: "50%",
-                                                background: B,
-                                                display: "block",
+                                            layoutId="nav-pill"
+                                            className="absolute inset-0 bg-blue-50 rounded-xl -z-10"
+                                            transition={{
+                                                type: "spring",
+                                                stiffness: 400,
+                                                damping: 32,
                                             }}
                                         />
                                     )}
-                                </motion.button>
+                                    {label}
+                                </button>
                             );
                         })}
-                    </div>
+
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                            <button className="text-left px-4 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 w-full transition-colors">
+                                Delete Account
+                            </button>
+                        </div>
+                    </nav>
+                </motion.aside>
+
+                {/* ── Main content ──────────────────────────── */}
+                <div className="flex-1 min-w-0">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={activeTab}
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                            className="space-y-4"
+                        >
+                            {/* ── MY PROFILE TAB ── */}
+                            {activeTab === "info" && (
+                                <>
+                                    <p className="text-base font-semibold text-gray-900 mb-4">
+                                        My Profile
+                                    </p>
+
+                                    {/* Profile card */}
+                                    <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                <img
+                                                    src={User?.profile || defaultUp}
+                                                    className="h-14 w-14 rounded-full object-cover ring-2 ring-gray-100"
+                                                />
+                                                <div>
+                                                    <p className="text-base font-semibold text-gray-900">
+                                                        {displayName}
+                                                    </p>
+                                                    <p className="text-sm text-gray-500 mt-0.5">
+                                                        {User?.bio || "No bio added"}
+                                                    </p>
+                                                    <p className="text-sm text-gray-400 mt-0.5">
+                                                        {[
+                                                            User?.address?.city,
+                                                            User?.address?.country,
+                                                        ]
+                                                            .filter(Boolean)
+                                                            .join(", ") || "No location set"}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <EditBtn onClick={() => setEditSection("profile")} />
+                                        </div>
+                                    </div>
+
+                                    {/* Personal Information card */}
+                                    <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                                        <div className="flex items-center justify-between mb-5">
+                                            <p className="text-sm font-semibold text-gray-800">
+                                                Personal Information
+                                            </p>
+                                            <EditBtn onClick={() => setEditSection("personal")} />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+                                            <InfoField label="First Name" value={User?.firstName} />
+                                            <InfoField label="Last Name" value={User?.lastName} />
+                                            <InfoField label="Email Address" value={User?.email} />
+                                            <InfoField label="Phone" value={User?.phone} />
+                                            <InfoField
+                                                label="Username"
+                                                value={`@${User?.username}`}
+                                            />
+                                            <InfoField
+                                                label="Account Status"
+                                                value={User?.status || "Active"}
+                                                valueClass="text-emerald-600 font-semibold"
+                                            />
+                                            <div className="col-span-2">
+                                                <InfoField label="Bio" value={User?.bio} />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Address card */}
+                                    <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                                        <div className="flex items-center justify-between mb-5">
+                                            <p className="text-sm font-semibold text-gray-800">
+                                                Address
+                                            </p>
+                                            <EditBtn onClick={() => setEditSection("address")} />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+                                            <InfoField
+                                                label="Country"
+                                                value={User?.address?.country}
+                                            />
+                                            <InfoField
+                                                label="City / State"
+                                                value={[User?.address?.city, User?.address?.state]
+                                                    .filter(Boolean)
+                                                    .join(", ")}
+                                            />
+                                            <InfoField
+                                                label="Street"
+                                                value={User?.address?.street}
+                                            />
+                                            <InfoField
+                                                label="Postal Code"
+                                                value={User?.address?.pin}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Meta */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-white rounded-2xl border border-gray-200 p-5">
+                                            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">
+                                                Member Since
+                                            </p>
+                                            <p className="text-sm font-semibold text-gray-800">
+                                                {User?.createdAt
+                                                    ? new Date(User.createdAt).toLocaleDateString(
+                                                          "en-GB",
+                                                          {
+                                                              day: "numeric",
+                                                              month: "long",
+                                                              year: "numeric",
+                                                          },
+                                                      )
+                                                    : "—"}
+                                            </p>
+                                        </div>
+                                        <div className="bg-white rounded-2xl border border-gray-200 p-5">
+                                            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">
+                                                Verified
+                                            </p>
+                                            <p
+                                                className={`text-sm font-semibold ${User?.isVerified ? "text-emerald-600" : "text-red-500"}`}
+                                            >
+                                                {User?.isVerified
+                                                    ? "Verified Account"
+                                                    : "Not Verified"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            {/* ── OVERVIEW TAB ── */}
+                            {activeTab === "overview" && (
+                                <>
+                                    <p className="text-base font-semibold text-gray-900 mb-4">
+                                        Overview
+                                    </p>
+                                    <div className="grid grid-cols-3 gap-4 mb-4">
+                                        {[
+                                            {
+                                                label: "Total Auctions",
+                                                val: User?.auctionCount || 0,
+                                            },
+                                            { label: "Total Bids", val: User?.bidCount || 0 },
+                                            {
+                                                label: "Account Status",
+                                                val: User?.status || "Active",
+                                            },
+                                        ].map((s, i) => (
+                                            <motion.div
+                                                key={s.label}
+                                                variants={fadeUp}
+                                                custom={i}
+                                                initial="hidden"
+                                                animate="show"
+                                                className="bg-white rounded-2xl border border-gray-200 p-5"
+                                            >
+                                                <p className="text-2xl font-bold text-blue-600">
+                                                    {s.val}
+                                                </p>
+                                                <p className="text-xs text-gray-400 font-medium mt-1 uppercase tracking-wider">
+                                                    {s.label}
+                                                </p>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                    <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                                        <p className="text-sm font-semibold text-gray-800 mb-4">
+                                            Recent Bids
+                                        </p>
+                                        {loadingData ? (
+                                            <Skeleton />
+                                        ) : bids.length === 0 ? (
+                                            <Empty msg="No recent activity" />
+                                        ) : (
+                                            bids.slice(0, 3).map((bid, i) => (
+                                                <motion.div
+                                                    key={bid._id}
+                                                    variants={fadeUp}
+                                                    custom={i}
+                                                    initial="hidden"
+                                                    animate="show"
+                                                    className="flex items-center justify-between py-3.5 border-b border-gray-100 last:border-0"
+                                                >
+                                                    <div>
+                                                        <p className="text-sm font-medium text-gray-800">
+                                                            {bid.auction?.title}
+                                                        </p>
+                                                        <p className="text-xs text-gray-400 mt-0.5">
+                                                            Recent bid
+                                                        </p>
+                                                    </div>
+                                                    <span className="text-sm font-bold text-blue-600">
+                                                        ₹{bid.amount}
+                                                    </span>
+                                                </motion.div>
+                                            ))
+                                        )}
+                                    </div>
+                                </>
+                            )}
+
+                            {/* ── ORDERS TAB ── */}
+                            {activeTab === "orders" && (
+                                <>
+                                    <p className="text-base font-semibold text-gray-900 mb-4">
+                                        My Orders
+                                    </p>
+                                    <div className="grid sm:grid-cols-2 gap-4">
+                                        {[1, 2].map((_, i) => (
+                                            <motion.div
+                                                key={i}
+                                                variants={fadeUp}
+                                                custom={i}
+                                                initial="hidden"
+                                                animate="show"
+                                                whileHover={{ y: -2 }}
+                                                className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200"
+                                            >
+                                                <div className="h-36 bg-gradient-to-br from-blue-50 to-indigo-100" />
+                                                <div className="p-4">
+                                                    <p className="font-semibold text-gray-800 text-sm">
+                                                        Item Name
+                                                    </p>
+                                                    <p className="text-xs text-emerald-600 mt-1 font-semibold">
+                                                        Delivered
+                                                    </p>
+                                                    <button className="mt-3 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+                                                        View Details
+                                                    </button>
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+
+                            {/* ── BIDS TAB ── */}
+                            {activeTab === "bids" && (
+                                <>
+                                    <p className="text-base font-semibold text-gray-900 mb-4">
+                                        My Bids
+                                    </p>
+                                    <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100">
+                                        {loadingData ? (
+                                            <div className="p-6">
+                                                <Skeleton />
+                                            </div>
+                                        ) : bids.length === 0 ? (
+                                            <div className="p-6">
+                                                <Empty msg="No bids placed yet" />
+                                            </div>
+                                        ) : (
+                                            bids.map((bid, i) => (
+                                                <motion.div
+                                                    key={bid._id}
+                                                    variants={fadeUp}
+                                                    custom={i}
+                                                    initial="hidden"
+                                                    animate="show"
+                                                    className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
+                                                >
+                                                    <div>
+                                                        <p className="text-sm font-medium text-gray-800">
+                                                            {bid.auction?.title || "Auction Item"}
+                                                        </p>
+                                                        <span className="inline-block mt-1 text-[10px] font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                                                            Active
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-sm font-bold text-orange-500">
+                                                        ₹{bid.amount}
+                                                    </span>
+                                                </motion.div>
+                                            ))
+                                        )}
+                                    </div>
+                                </>
+                            )}
+
+                            {/* ── AUCTIONS TAB ── */}
+                            {activeTab === "auctions" && (
+                                <>
+                                    <p className="text-base font-semibold text-gray-900 mb-4">
+                                        My Auctions
+                                    </p>
+                                    <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100">
+                                        {loadingData ? (
+                                            <div className="p-6">
+                                                <Skeleton />
+                                            </div>
+                                        ) : auctions.length === 0 ? (
+                                            <div className="p-6">
+                                                <Empty msg="No auctions created yet" />
+                                            </div>
+                                        ) : (
+                                            auctions.map((auction, i) => {
+                                                const image = auction?.media?.[0]?.[0];
+                                                return (
+                                                    <motion.div
+                                                        key={auction._id}
+                                                        variants={fadeUp}
+                                                        custom={i}
+                                                        initial="hidden"
+                                                        animate="show"
+                                                        whileHover={{ backgroundColor: "#F9FAFB" }}
+                                                        onClick={() =>
+                                                            navigate(`/auction/${auction._id}`)
+                                                        }
+                                                        className="flex items-center justify-between gap-4 px-6 py-4 cursor-pointer transition-colors"
+                                                    >
+                                                        <div className="flex items-center gap-4">
+                                                            {image ? (
+                                                                <img
+                                                                    src={image}
+                                                                    className="h-12 w-12 rounded-xl object-cover"
+                                                                />
+                                                            ) : (
+                                                                <div className="h-12 w-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center">
+                                                                    <svg
+                                                                        width="18"
+                                                                        height="18"
+                                                                        viewBox="0 0 24 24"
+                                                                        fill="none"
+                                                                        stroke="#93C5FD"
+                                                                        strokeWidth="1.5"
+                                                                    >
+                                                                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                                                                    </svg>
+                                                                </div>
+                                                            )}
+                                                            <div>
+                                                                <p className="text-sm font-semibold text-gray-800">
+                                                                    {auction.name}
+                                                                </p>
+                                                                <p className="text-xs text-gray-400 mt-0.5 line-clamp-1 max-w-xs">
+                                                                    {auction.description}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-5 flex-shrink-0">
+                                                            <span
+                                                                className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border
+                                                            ${
+                                                                auction.status === "live"
+                                                                    ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                                                                    : auction.status === "draft"
+                                                                      ? "text-gray-500 bg-gray-100 border-gray-200"
+                                                                      : "text-red-600 bg-red-50 border-red-200"
+                                                            }`}
+                                                            >
+                                                                {auction.status}
+                                                            </span>
+                                                            <div className="text-right">
+                                                                <p className="text-sm font-bold text-blue-600">
+                                                                    ₹
+                                                                    {auction.currentHighestBid > 0
+                                                                        ? auction.currentHighestBid
+                                                                        : auction.startPrice}
+                                                                </p>
+                                                                <p className="text-xs text-gray-400 mt-0.5">
+                                                                    {auction.bidCount} bids
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </motion.div>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+                                </>
+                            )}
+
+                            {/* ── SECURITY TAB ── */}
+                            {activeTab === "settings" && (
+                                <>
+                                    <p className="text-base font-semibold text-gray-900 mb-4">
+                                        Security
+                                    </p>
+                                    <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                                        <div className="flex items-center justify-between mb-5">
+                                            <p className="text-sm font-semibold text-gray-800">
+                                                Account Credentials
+                                            </p>
+                                            <EditBtn onClick={() => setEditSection("personal")} />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+                                            <InfoField label="Username" value={User?.username} />
+                                            <InfoField label="Email" value={User?.email} />
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </motion.div>
+                    </AnimatePresence>
                 </div>
             </div>
 
-            {/* ══ CONTENT ══════════════════════════════════════════════ */}
-            <div style={{ maxWidth: 760, margin: "0 auto", padding: "14px 12px 0" }}>
-                <AnimatePresence mode="wait">
-                    {/* ── PROFILE TAB ─────────────────────────────────── */}
-                    {tab === "profile" && (
-                        <Fade key="profile">
-                            {/* single scrollable form card — no separate avatar card */}
-                            <div
-                                style={{
-                                    background: WH,
-                                    borderRadius: 20,
-                                    border: `1.5px solid ${BD}`,
-                                    boxShadow: "0 2px 16px rgba(26,59,219,0.07)",
-                                    overflow: "hidden",
-                                }}
-                            >
-                                {/* avatar section — horizontal compact */}
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 14,
-                                        padding: "16px 16px 14px",
-                                        borderBottom: `1.5px solid ${BD}`,
-                                    }}
-                                >
-                                    <div style={{ position: "relative", flexShrink: 0 }}>
-                                        <img
-                                            src={preview || User?.profile || "/default.png"}
-                                            alt="avatar"
-                                            style={{
-                                                width: 60,
-                                                height: 60,
-                                                borderRadius: 14,
-                                                objectFit: "cover",
-                                                border: `2px solid ${BLT}`,
-                                            }}
-                                        />
-                                        <label
-                                            style={{
-                                                position: "absolute",
-                                                bottom: -6,
-                                                right: -6,
-                                                width: 24,
-                                                height: 24,
-                                                borderRadius: 8,
-                                                background: B,
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                cursor: "pointer",
-                                                boxShadow: `0 3px 8px ${B}55`,
-                                            }}
-                                        >
-                                            <IcUpload />
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                style={{ display: "none" }}
-                                                onChange={(e) => setProfileFile(e.target.files[0])}
-                                            />
-                                        </label>
-                                    </div>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <p
-                                            style={{
-                                                fontFamily: "Syne,sans-serif",
-                                                fontWeight: 700,
-                                                fontSize: 15,
-                                                color: GR,
-                                                margin: 0,
-                                            }}
-                                        >
-                                            {displayName}
-                                        </p>
-                                        <p style={{ fontSize: 12, color: SB, marginTop: 2 }}>
-                                            {User?.email}
-                                        </p>
-                                    </div>
-                                    <span
-                                        style={{
-                                            fontSize: 11,
-                                            fontWeight: 600,
-                                            padding: "4px 12px",
-                                            borderRadius: 20,
-                                            background: BLT,
-                                            color: B,
-                                            textTransform: "capitalize",
-                                            flexShrink: 0,
-                                        }}
-                                    >
-                                        {User?.role}
-                                    </span>
-                                </div>
-
-                                {/* form body */}
-                                <form onSubmit={handleSubmit} style={{ padding: "16px" }}>
-                                    <p
-                                        style={{
-                                            fontSize: 10,
-                                            fontWeight: 700,
-                                            letterSpacing: "0.18em",
-                                            textTransform: "uppercase",
-                                            color: SB,
-                                            marginBottom: 14,
-                                        }}
-                                    >
-                                        Personal Information
+            {/* ── Edit Modal ───────────────────────────────── */}
+            <AnimatePresence>
+                {editSection && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.18 }}
+                        className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[2px] flex items-center justify-center px-4"
+                        onClick={(e) => e.target === e.currentTarget && setEditSection(null)}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.97, y: 16 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.97, y: 16 }}
+                            transition={{ type: "spring", stiffness: 360, damping: 30 }}
+                            className="w-full max-w-lg bg-white rounded-2xl border border-gray-200 shadow-2xl"
+                        >
+                            {/* Modal header */}
+                            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+                                <div>
+                                    <h3 className="text-base font-semibold text-gray-900">
+                                        {editSection === "profile" && "Edit Profile"}
+                                        {editSection === "personal" && "Edit Personal Information"}
+                                        {editSection === "address" && "Edit Address"}
+                                    </h3>
+                                    <p className="text-xs text-gray-400 mt-0.5">
+                                        Update your information below
                                     </p>
+                                </div>
+                                <button
+                                    onClick={() => setEditSection(null)}
+                                    className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors"
+                                >
+                                    <XIcon />
+                                </button>
+                            </div>
 
-                                    <div
-                                        style={{
-                                            display: "grid",
-                                            gridTemplateColumns: "1fr 1fr",
-                                            gap: 10,
-                                            marginBottom: 10,
-                                        }}
-                                    >
-                                        <Fld
+                            <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+                                {/* Profile section */}
+                                {editSection === "profile" && (
+                                    <>
+                                        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                            <img
+                                                src={preview || User?.profile || defaultUp}
+                                                className="h-14 w-14 rounded-full object-cover ring-2 ring-white shadow"
+                                            />
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-700 mb-1">
+                                                    Profile photo
+                                                </p>
+                                                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                                                    <UploadIcon /> Upload Photo
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        className="hidden"
+                                                        onChange={(e) =>
+                                                            setProfileFile(e.target.files[0])
+                                                        }
+                                                    />
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <FieldInput
+                                            label="Bio"
+                                            name="bio"
+                                            value={form.bio || ""}
+                                            onChange={handleChange}
+                                        />
+                                    </>
+                                )}
+
+                                {/* Personal section */}
+                                {editSection === "personal" && (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <FieldInput
                                             label="First Name"
                                             name="firstName"
-                                            value={form.firstName}
+                                            value={form.firstName || ""}
                                             onChange={handleChange}
                                         />
-                                        <Fld
+                                        <FieldInput
                                             label="Last Name"
                                             name="lastName"
-                                            value={form.lastName}
+                                            value={form.lastName || ""}
                                             onChange={handleChange}
                                         />
-                                    </div>
-                                    <div
-                                        style={{
-                                            display: "grid",
-                                            gridTemplateColumns: "1fr 1fr",
-                                            gap: 10,
-                                            marginBottom: 10,
-                                        }}
-                                    >
-                                        <Fld
-                                            label="Username"
-                                            name="username"
-                                            value={form.username}
-                                            onChange={handleChange}
-                                        />
-                                        <Fld
+                                        <FieldInput
                                             label="Email"
                                             name="email"
-                                            value={form.email}
+                                            value={form.email || ""}
                                             onChange={handleChange}
                                             type="email"
                                         />
-                                    </div>
-
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 10,
-                                        }}
-                                    >
-                                        <button
-                                            type="submit"
-                                            style={{
-                                                height: 42,
-                                                padding: "0 24px",
-                                                borderRadius: 11,
-                                                border: "none",
-                                                background: B,
-                                                color: WH,
-                                                fontSize: 14,
-                                                fontWeight: 600,
-                                                fontFamily: "Syne,sans-serif",
-                                                cursor: "pointer",
-                                                boxShadow: `0 4px 14px ${B}40`,
-                                                flexShrink: 0,
-                                            }}
-                                        >
-                                            Save Changes
-                                        </button>
-                                        <AnimatePresence>
-                                            {saved && (
-                                                <motion.span
-                                                    initial={{ opacity: 0, x: -6 }}
-                                                    animate={{ opacity: 1, x: 0 }}
-                                                    exit={{ opacity: 0 }}
-                                                    style={{
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        gap: 6,
-                                                        fontSize: 13,
-                                                        fontWeight: 500,
-                                                        color: "#059669",
-                                                    }}
-                                                >
-                                                    <span
-                                                        style={{
-                                                            width: 18,
-                                                            height: 18,
-                                                            borderRadius: "50%",
-                                                            background: "#D1FAE5",
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                            justifyContent: "center",
-                                                            fontSize: 10,
-                                                            fontWeight: 700,
-                                                        }}
-                                                    >
-                                                        ✓
-                                                    </span>
-                                                    Saved!
-                                                </motion.span>
-                                            )}
-                                        </AnimatePresence>
-                                    </div>
-                                </form>
-
-                                {/* danger zone — inline at bottom */}
-                                <div
-                                    style={{
-                                        margin: "0 16px 16px",
-                                        padding: "12px 14px",
-                                        borderRadius: 12,
-                                        background: "#FAFAFA",
-                                        border: "1.5px solid #E5E7EB",
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "space-between",
-                                            gap: 12,
-                                            flexWrap: "wrap",
-                                        }}
-                                    >
-                                        <div>
-                                            <p
-                                                style={{
-                                                    fontSize: 10,
-                                                    fontWeight: 700,
-                                                    letterSpacing: "0.15em",
-                                                    textTransform: "uppercase",
-                                                    color: "#6B7280",
-                                                    marginBottom: 3,
-                                                }}
-                                            >
-                                                Account Deletion
-                                            </p>
-
-                                            <p
-                                                style={{
-                                                    fontSize: 12,
-                                                    color: SB,
-                                                    lineHeight: 1.5,
-                                                }}
-                                            >
-                                                Self-service account deletion is not available at
-                                                this time. Please contact support if you need
-                                                assistance with account management.
-                                            </p>
-                                        </div>
-
-                                        <button
-                                            disabled
-                                            style={{
-                                                height: 36,
-                                                padding: "0 16px",
-                                                borderRadius: 9,
-                                                border: "1.5px solid #D1D5DB",
-                                                background: "#F3F4F6",
-                                                color: "#9CA3AF",
-                                                fontSize: 12,
-                                                fontWeight: 600,
-                                                cursor: "not-allowed",
-                                                opacity: 0.8,
-                                            }}
-                                        >
-                                            Coming Soon
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </Fade>
-                    )}
-
-                    {/* ── ORDERS TAB ──────────────────────────────────── */}
-                    {tab === "orders" && (
-                        <Fade key="orders">
-                            <SecHead title="Orders" count={counts.orders} />
-                            {loadingData ? (
-                                <Skel />
-                            ) : counts.orders === 0 ? (
-                                <Empty icon="🛍" label="No orders yet" />
-                            ) : (
-                                <List>
-                                    {orders.map((o, i) => (
-                                        <ACard
-                                            key={o._id}
-                                            index={i}
-                                            image={o?.auctionId?.media?.flat()[0]}
-                                            title={o?.auctionId?.name}
-                                            badge={o.orderStatus}
-                                            badgeColor="blue"
-                                            rows={[
-                                                ["Final Price", `₹${o.finalPrice}`],
-                                                ["Payment", o.paymentStatus],
-                                                [
-                                                    "Seller",
-                                                    o?.sellerId?.username ||
-                                                        o?.sellerId?.email ||
-                                                        "N/A",
-                                                ],
-                                            ]}
-                                            cta="View Order"
-                                            onClick={() => navigate(`/orders/${o._id}`)}
+                                        <FieldInput
+                                            label="Phone"
+                                            name="phone"
+                                            value={form.phone || ""}
+                                            onChange={handleChange}
+                                            type="tel"
                                         />
-                                    ))}
-                                </List>
-                            )}
-                        </Fade>
-                    )}
-
-                    {/* ── BIDS TAB ────────────────────────────────────── */}
-                    {tab === "bids" && (
-                        <Fade key="bids">
-                            <SecHead title="My Bids" count={counts.bids} />
-                            {loadingData ? (
-                                <Skel />
-                            ) : counts.bids === 0 ? (
-                                <Empty icon="📈" label="No bids placed yet" />
-                            ) : (
-                                <List>
-                                    {bids.map((b, i) => {
-                                        const leading =
-                                            b.amount >= (b?.auctionId?.currentHighestBid || 0);
-                                        return (
-                                            <ACard
-                                                key={b._id}
-                                                index={i}
-                                                image={b?.auctionId?.media?.[0]}
-                                                title={b?.auctionId?.name}
-                                                badge={b?.auctionId?.status}
-                                                badgeColor="orange"
-                                                extraBadge={
-                                                    leading
-                                                        ? {
-                                                              label: "Leading ↑",
-                                                              bg: "#D1FAE5",
-                                                              color: "#059669",
-                                                          }
-                                                        : null
-                                                }
-                                                rows={[
-                                                    ["Your Bid", `₹${b.amount}`],
-                                                    [
-                                                        "Highest",
-                                                        `₹${b?.auctionId?.currentHighestBid || 0}`,
-                                                    ],
-                                                    [
-                                                        "Ends",
-                                                        b?.auctionId?.endTime
-                                                            ? fmtDate(b.auctionId.endTime)
-                                                            : "N/A",
-                                                    ],
-                                                ]}
-                                                cta="View Auction"
-                                                onClick={() =>
-                                                    navigate(`/auction/${b?.auctionId?._id}`)
-                                                }
+                                        <div className="col-span-2">
+                                            <FieldInput
+                                                label="Username"
+                                                name="username"
+                                                value={form.username || ""}
+                                                onChange={handleChange}
                                             />
-                                        );
-                                    })}
-                                </List>
-                            )}
-                        </Fade>
-                    )}
+                                        </div>
+                                    </div>
+                                )}
 
-                    {/* ── AUCTIONS TAB ────────────────────────────────── */}
-                    {tab === "auctions" && (
-                        <Fade key="auctions">
-                            <SecHead title="My Auctions" count={counts.auctions} />
-                            {loadingData ? (
-                                <Skel />
-                            ) : counts.auctions === 0 ? (
-                                <Empty icon="🏷" label="No auctions created" />
-                            ) : (
-                                <List>
-                                    {auctions.map((a, i) => (
-                                        <ACard
-                                            key={a._id}
-                                            index={i}
-                                            image={a?.media?.flat()[0]}
-                                            title={a?.name}
-                                            badge={a.status}
-                                            badgeColor="blue"
-                                            rows={[
-                                                ["Start Price", `₹${a.startPrice}`],
-                                                ["Highest Bid", `₹${a.currentHighestBid || 0}`],
-                                                ["Ends", a?.endTime ? fmtDate(a.endTime) : "N/A"],
-                                            ]}
-                                            cta="Manage"
-                                            onClick={() => navigate(`/auction/${a._id}`)}
+                                {/* Address section */}
+                                {editSection === "address" && (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <FieldInput
+                                            label="Country"
+                                            name="country"
+                                            value={form.address?.country || ""}
+                                            onChange={handleAddressChange}
                                         />
-                                    ))}
-                                </List>
-                            )}
-                        </Fade>
-                    )}
-                </AnimatePresence>
-            </div>
+                                        <FieldInput
+                                            label="City"
+                                            name="city"
+                                            value={form.address?.city || ""}
+                                            onChange={handleAddressChange}
+                                        />
+                                        <FieldInput
+                                            label="State"
+                                            name="state"
+                                            value={form.address?.state || ""}
+                                            onChange={handleAddressChange}
+                                        />
+                                        <FieldInput
+                                            label="Postal Code"
+                                            name="pin"
+                                            value={form.address?.pin || ""}
+                                            onChange={handleAddressChange}
+                                        />
+                                        <div className="col-span-2">
+                                            <FieldInput
+                                                label="Street Address"
+                                                name="street"
+                                                value={form.address?.street || ""}
+                                                onChange={handleAddressChange}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
 
-            {/* ══ MOBILE BOTTOM TAB BAR — truly fixed, no Tailwind ════ */}
-            <div
-                id="pf-tabbar"
-                style={{
-                    position: "fixed",
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    zIndex: 9999,
-                    background: WH,
-                    borderTop: `1px solid ${BD}`,
-                    boxShadow: "0 -4px 20px rgba(26,59,219,0.09)",
-                    paddingBottom: "env(safe-area-inset-bottom)",
-                }}
-            >
-                {TABS.map((t) => {
-                    const a = tab === t.key;
-                    return (
-                        <button
-                            key={t.key}
-                            onClick={() => setTab(t.key)}
-                            style={{
-                                flex: 1,
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                gap: 4,
-                                padding: "10px 4px",
-                                border: "none",
-                                background: "transparent",
-                                cursor: "pointer",
-                                minHeight: 56,
-                                WebkitTapHighlightColor: "transparent",
-                                position: "relative",
-                            }}
-                        >
-                            {a && (
-                                <motion.div
-                                    layoutId="mbl"
-                                    style={{
-                                        position: "absolute",
-                                        top: 0,
-                                        left: "20%",
-                                        right: "20%",
-                                        height: 2.5,
-                                        borderRadius: 2,
-                                        background: B,
-                                    }}
-                                />
-                            )}
-                            <TabIco name={t.key} active={a} />
-                            <span
-                                style={{
-                                    fontSize: 10,
-                                    fontWeight: a ? 600 : 500,
-                                    color: a ? B : "#9CA3AF",
-                                    letterSpacing: "0.01em",
-                                }}
-                            >
-                                {t.label}
-                            </span>
-                        </button>
-                    );
-                })}
-            </div>
+                                <div className="flex justify-end gap-3 pt-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditSection(null)}
+                                        className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <motion.button
+                                        type="submit"
+                                        whileHover={{ y: -1 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        className="px-5 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium shadow-sm hover:bg-blue-700 transition-colors"
+                                    >
+                                        Save Changes
+                                    </motion.button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
 
-/* ════════════════════════════════════════════════════════════════
-   ACTION CARD — different layout mobile vs desktop
-═══════════════════════════════════════════════════════════════════ */
-function ACard({ index, image, title, badge, badgeColor, extraBadge, rows, cta, onClick }) {
-    const [hov, setHov] = useState(false);
+/* ── Sub-components ─────────────────────────────────────────────────────────── */
 
-    const badgeStyle =
-        badgeColor === "orange" ? { background: OLT, color: OR } : { background: BLT, color: B };
-
+function EditBtn({ onClick }) {
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, delay: index * 0.04 }}
+        <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
             onClick={onClick}
-            onMouseEnter={() => setHov(true)}
-            onMouseLeave={() => setHov(false)}
-            style={{
-                background: WH,
-                borderRadius: 16,
-                overflow: "hidden",
-                border: `1.5px solid ${hov ? `${B}28` : BD}`,
-                boxShadow: hov ? "0 6px 24px rgba(26,59,219,0.1)" : "0 1px 4px rgba(0,0,0,0.04)",
-                cursor: "pointer",
-                transition: "all 0.18s",
-                transform: hov ? "translateY(-1px)" : "none",
-            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-medium text-gray-600 hover:border-gray-300 hover:text-gray-900 hover:shadow-sm transition-all"
         >
-            {/* ── Mobile: card layout ── */}
-            <div className="sm:hidden">
-                <div style={{ display: "flex", gap: 12, padding: "12px 12px 10px" }}>
-                    {/* thumb */}
-                    <div
-                        style={{
-                            width: 56,
-                            height: 56,
-                            borderRadius: 12,
-                            overflow: "hidden",
-                            flexShrink: 0,
-                            background: BLT,
-                        }}
-                    >
-                        {image ? (
-                            <img
-                                src={image}
-                                alt={title}
-                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                            />
-                        ) : (
-                            <div
-                                style={{
-                                    width: "100%",
-                                    height: "100%",
-                                    background: `linear-gradient(135deg,${BLT},${BML})`,
-                                }}
-                            />
-                        )}
-                    </div>
-                    {/* title + badges */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                        <p
-                            style={{
-                                fontFamily: "Syne,sans-serif",
-                                fontWeight: 700,
-                                fontSize: 14,
-                                color: GR,
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                marginBottom: 6,
-                            }}
-                        >
-                            {title || "Untitled"}
-                        </p>
-                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                            {badge && (
-                                <span
-                                    style={{
-                                        fontSize: 10,
-                                        fontWeight: 700,
-                                        padding: "2px 9px",
-                                        borderRadius: 20,
-                                        textTransform: "capitalize",
-                                        ...badgeStyle,
-                                    }}
-                                >
-                                    {badge}
-                                </span>
-                            )}
-                            {extraBadge && (
-                                <span
-                                    style={{
-                                        fontSize: 10,
-                                        fontWeight: 700,
-                                        padding: "2px 9px",
-                                        borderRadius: 20,
-                                        background: extraBadge.bg,
-                                        color: extraBadge.color,
-                                    }}
-                                >
-                                    {extraBadge.label}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-                    {/* arrow */}
-                    <div
-                        style={{
-                            flexShrink: 0,
-                            width: 30,
-                            height: 30,
-                            borderRadius: 9,
-                            background: hov ? B : BLT,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            transition: "background 0.15s",
-                            alignSelf: "center",
-                        }}
-                    >
-                        <IcArr color={hov ? WH : B} />
-                    </div>
-                </div>
-
-                {/* stats row */}
-                <div style={{ display: "flex", borderTop: `1px solid ${BD}` }}>
-                    {rows.map(([lbl, val], i) => (
-                        <div
-                            key={i}
-                            style={{
-                                flex: 1,
-                                padding: "8px 0 8px 12px",
-                                borderRight: i < rows.length - 1 ? `1px solid ${BD}` : "none",
-                            }}
-                        >
-                            <p
-                                style={{
-                                    fontSize: 9,
-                                    fontWeight: 600,
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.1em",
-                                    color: SB,
-                                    marginBottom: 2,
-                                }}
-                            >
-                                {lbl}
-                            </p>
-                            <p
-                                style={{
-                                    fontSize: 12.5,
-                                    fontWeight: 600,
-                                    color: GR,
-                                    textTransform: "capitalize",
-                                }}
-                            >
-                                {val}
-                            </p>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* ── Desktop: row layout ── */}
-            <div className="hidden sm:flex" style={{ alignItems: "center", gap: 14, padding: 14 }}>
-                <div
-                    style={{
-                        width: 68,
-                        height: 68,
-                        borderRadius: 12,
-                        overflow: "hidden",
-                        flexShrink: 0,
-                        background: BLT,
-                    }}
-                >
-                    {image ? (
-                        <img
-                            src={image}
-                            alt={title}
-                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                        />
-                    ) : (
-                        <div
-                            style={{
-                                width: "100%",
-                                height: "100%",
-                                background: `linear-gradient(135deg,${BLT},${BML})`,
-                            }}
-                        />
-                    )}
-                </div>
-                <div style={{ flexShrink: 0, width: 150 }}>
-                    <p
-                        style={{
-                            fontFamily: "Syne,sans-serif",
-                            fontWeight: 600,
-                            fontSize: 14,
-                            color: GR,
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            marginBottom: 6,
-                        }}
-                    >
-                        {title || "Untitled"}
-                    </p>
-                    <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                        {badge && (
-                            <span
-                                style={{
-                                    fontSize: 10,
-                                    fontWeight: 700,
-                                    padding: "2px 9px",
-                                    borderRadius: 20,
-                                    textTransform: "capitalize",
-                                    ...badgeStyle,
-                                }}
-                            >
-                                {badge}
-                            </span>
-                        )}
-                        {extraBadge && (
-                            <span
-                                style={{
-                                    fontSize: 10,
-                                    fontWeight: 700,
-                                    padding: "2px 9px",
-                                    borderRadius: 20,
-                                    background: extraBadge.bg,
-                                    color: extraBadge.color,
-                                }}
-                            >
-                                {extraBadge.label}
-                            </span>
-                        )}
-                    </div>
-                </div>
-                <div style={{ width: 1, height: 40, background: BD, flexShrink: 0 }} />
-                <div
-                    style={{
-                        flex: 1,
-                        display: "grid",
-                        gridTemplateColumns: "repeat(3,1fr)",
-                        gap: "0 8px",
-                    }}
-                >
-                    {rows.map(([lbl, val], i) => (
-                        <div key={i}>
-                            <p
-                                style={{
-                                    fontSize: 10,
-                                    fontWeight: 600,
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.1em",
-                                    color: SB,
-                                    marginBottom: 2,
-                                }}
-                            >
-                                {lbl}
-                            </p>
-                            <p
-                                style={{
-                                    fontSize: 13,
-                                    fontWeight: 600,
-                                    color: GR,
-                                    textTransform: "capitalize",
-                                }}
-                            >
-                                {val}
-                            </p>
-                        </div>
-                    ))}
-                </div>
-                <div
-                    style={{
-                        flexShrink: 0,
-                        width: 34,
-                        height: 34,
-                        borderRadius: 10,
-                        background: hov ? B : BLT,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        transition: "background 0.15s",
-                    }}
-                >
-                    <IcArr color={hov ? WH : B} />
-                </div>
-            </div>
-        </motion.div>
+            Edit <PencilIcon />
+        </motion.button>
     );
 }
 
-/* ════════════════════════════════════════════════════════════════
-   SMALL REUSABLES
-═══════════════════════════════════════════════════════════════════ */
-const lbStyle = {
-    display: "block",
-    fontSize: 10,
-    fontWeight: 600,
-    letterSpacing: "0.13em",
-    textTransform: "uppercase",
-    color: SB,
-    marginBottom: 6,
-};
-
-function Fld({ label, name, value, onChange, type = "text" }) {
-    const [f, setF] = useState(false);
+function InfoField({ label, value, valueClass = "" }) {
     return (
         <div>
-            <label style={lbStyle}>{label}</label>
+            <p className="text-xs text-gray-400 font-medium mb-0.5">{label}</p>
+            <p className={`text-sm font-medium text-gray-800 ${valueClass}`}>{value || "—"}</p>
+        </div>
+    );
+}
+
+function FieldInput({ label, name, value, onChange, type = "text" }) {
+    return (
+        <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-gray-500">{label}</label>
             <input
                 type={type}
                 name={name}
                 value={value}
                 onChange={onChange}
-                onFocus={() => setF(true)}
-                onBlur={() => setF(false)}
-                style={{
-                    height: 42,
-                    width: "100%",
-                    borderRadius: 10,
-                    padding: "0 12px",
-                    fontSize: 16,
-                    color: GR,
-                    border: `1.5px solid ${f ? B : BD}`,
-                    boxShadow: f ? `0 0 0 3px ${B}18` : "none",
-                    background: "#FAFBFF",
-                    outline: "none",
-                    fontFamily: "Inter,sans-serif",
-                    boxSizing: "border-box",
-                    transition: "border-color 0.15s,box-shadow 0.15s",
-                }}
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-800 outline-none
+                    focus:border-blue-400 focus:ring-4 focus:ring-blue-50 focus:bg-white transition-all duration-150 placeholder:text-gray-300"
             />
         </div>
     );
 }
 
-function Fade({ children }) {
+function Skeleton() {
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.22 }}
-        >
-            {children}
-        </motion.div>
-    );
-}
-
-function SecHead({ title, count }) {
-    return (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-            <h2
-                style={{
-                    fontFamily: "Syne,sans-serif",
-                    fontSize: 18,
-                    fontWeight: 700,
-                    color: GR,
-                    margin: 0,
-                }}
-            >
-                {title}
-            </h2>
-            <span
-                style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    padding: "2px 9px",
-                    borderRadius: 20,
-                    background: B,
-                    color: WH,
-                }}
-            >
-                {count}
-            </span>
-        </div>
-    );
-}
-
-function List({ children }) {
-    return <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{children}</div>;
-}
-
-function Skel() {
-    return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-                <div
-                    key={i}
-                    style={{
-                        height: 90,
-                        borderRadius: 16,
-                        background: WH,
-                        border: `1.5px solid ${BD}`,
-                        opacity: 0.6,
-                        animation: "pu 1.4s ease-in-out infinite",
-                    }}
-                >
-                    <style>{`@keyframes pu{0%,100%{opacity:.6}50%{opacity:.3}}`}</style>
-                </div>
+                <div key={i} className="h-12 rounded-xl bg-gray-100 animate-pulse" />
             ))}
         </div>
     );
 }
 
-function Empty({ icon, label }) {
+function Empty({ msg }) {
     return (
-        <div
-            style={{
-                textAlign: "center",
-                padding: "44px 20px",
-                background: WH,
-                borderRadius: 18,
-                border: `2px dashed ${BML}`,
-            }}
-        >
-            <div style={{ fontSize: 32, marginBottom: 10 }}>{icon}</div>
-            <p style={{ fontSize: 14, color: SB }}>{label}</p>
+        <div className="rounded-xl border border-dashed border-gray-200 py-12 text-center">
+            <p className="text-sm text-gray-400 font-medium">{msg}</p>
         </div>
     );
-}
-
-function Spin() {
-    return (
-        <div
-            style={{
-                width: 28,
-                height: 28,
-                borderRadius: "50%",
-                border: `2px solid ${BLT}`,
-                borderTopColor: B,
-                animation: "sp 0.7s linear infinite",
-            }}
-        >
-            <style>{`@keyframes sp{to{transform:rotate(360deg)}}`}</style>
-        </div>
-    );
-}
-
-/* ── Icons ─────────────────────────────────────────────────────── */
-function IcArr({ color = B }) {
-    return (
-        <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke={color}
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <line x1="5" y1="12" x2="19" y2="12" />
-            <polyline points="12 5 19 12 12 19" />
-        </svg>
-    );
-}
-function IcUpload() {
-    return (
-        <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="white"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-            <polyline points="17 8 12 3 7 8" />
-            <line x1="12" y1="3" x2="12" y2="15" />
-        </svg>
-    );
-}
-function TabIco({ name, active }) {
-    const c = active ? B : "#9CA3AF";
-    const sw = 1.9;
-    if (name === "profile")
-        return (
-            <svg
-                width="21"
-                height="21"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke={c}
-                strokeWidth={sw}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            >
-                <circle cx="12" cy="8" r="4" />
-                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-            </svg>
-        );
-    if (name === "orders")
-        return (
-            <svg
-                width="21"
-                height="21"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke={c}
-                strokeWidth={sw}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            >
-                <rect x="4" y="3" width="16" height="18" rx="2" />
-                <path d="M9 8h6M9 12h6M9 16h4" />
-            </svg>
-        );
-    if (name === "bids")
-        return (
-            <svg
-                width="21"
-                height="21"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke={c}
-                strokeWidth={sw}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            >
-                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-                <polyline points="16 7 22 7 22 13" />
-            </svg>
-        );
-    if (name === "auctions")
-        return (
-            <svg
-                width="21"
-                height="21"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke={c}
-                strokeWidth={sw}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            >
-                <path d="M15 3l6 6-10 10-6-6z" />
-                <path d="M3 21l4-4" />
-                <line x1="9.5" y1="9.5" x2="14.5" y2="14.5" />
-            </svg>
-        );
-    return null;
 }
