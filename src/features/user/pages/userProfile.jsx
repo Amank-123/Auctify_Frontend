@@ -11,7 +11,6 @@ const NAV_ITEMS = [
     { key: "orders", label: "My Orders" },
     { key: "bids", label: "My Bids" },
     { key: "auctions", label: "My Auctions" },
-    { key: "settings", label: "Security" },
 ];
 
 const fadeUp = {
@@ -123,7 +122,7 @@ export default function Profile() {
 
     const buildFormData = (form, file) => {
         const fd = new FormData();
-        ["username", "email", "firstName", "lastName", "phone", "bio"].forEach((k) => {
+        ["username", "email", "firstName", "lastName"].forEach((k) => {
             if (form[k] !== undefined && form[k] !== null) fd.append(k, form[k]);
         });
         if (form.address) {
@@ -263,9 +262,7 @@ export default function Profile() {
                                                     <p className="text-base font-semibold text-gray-900">
                                                         {displayName}
                                                     </p>
-                                                    <p className="text-sm text-gray-500 mt-0.5">
-                                                        {User?.bio || "No bio added"}
-                                                    </p>
+
                                                     <p className="text-sm text-gray-400 mt-0.5">
                                                         {[
                                                             User?.address?.city,
@@ -292,7 +289,6 @@ export default function Profile() {
                                             <InfoField label="First Name" value={User?.firstName} />
                                             <InfoField label="Last Name" value={User?.lastName} />
                                             <InfoField label="Email Address" value={User?.email} />
-                                            <InfoField label="Phone" value={User?.phone} />
                                             <InfoField
                                                 label="Username"
                                                 value={`@${User?.username}`}
@@ -302,9 +298,6 @@ export default function Profile() {
                                                 value={User?.status || "Active"}
                                                 valueClass="text-emerald-600 font-semibold"
                                             />
-                                            <div className="col-span-2">
-                                                <InfoField label="Bio" value={User?.bio} />
-                                            </div>
                                         </div>
                                     </div>
 
@@ -614,27 +607,6 @@ export default function Profile() {
                                     </div>
                                 </>
                             )}
-
-                            {/* ── SECURITY TAB ── */}
-                            {activeTab === "settings" && (
-                                <>
-                                    <p className="text-base font-semibold text-gray-900 mb-4">
-                                        Security
-                                    </p>
-                                    <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                                        <div className="flex items-center justify-between mb-5">
-                                            <p className="text-sm font-semibold text-gray-800">
-                                                Account Credentials
-                                            </p>
-                                            <EditBtn onClick={() => setEditSection("personal")} />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-x-8 gap-y-5">
-                                            <InfoField label="Username" value={User?.username} />
-                                            <InfoField label="Email" value={User?.email} />
-                                        </div>
-                                    </div>
-                                </>
-                            )}
                         </motion.div>
                     </AnimatePresence>
                 </div>
@@ -704,12 +676,6 @@ export default function Profile() {
                                                 </label>
                                             </div>
                                         </div>
-                                        <FieldInput
-                                            label="Bio"
-                                            name="bio"
-                                            value={form.bio || ""}
-                                            onChange={handleChange}
-                                        />
                                     </>
                                 )}
 
@@ -738,14 +704,7 @@ export default function Profile() {
                                             type="email"
                                             error={errors.email}
                                         />
-                                        <FieldInput
-                                            label="Phone"
-                                            name="phone"
-                                            value={form.phone || ""}
-                                            onChange={handleChange}
-                                            type="tel"
-                                            error={errors.phone}
-                                        />
+
                                         <div className="col-span-2">
                                             <FieldInput
                                                 label="Username"
