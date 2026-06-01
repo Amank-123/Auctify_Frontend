@@ -14,9 +14,9 @@ const AuthSuccess = () => {
             console.log("User log from authsuccess: ", User);
             if (User) {
                 showSuccess("User successfully logged in");
-                navigate("/", { replace: true });
+                // navigate("/", { replace: true });
             } else {
-                navigate("/auth/login");
+                // navigate("/auth/login");
             }
         }
     }, [User, Loading, navigate]);
