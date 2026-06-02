@@ -29,10 +29,17 @@ import { api } from "@/shared/services/axios";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const FILTERS = [
+const ORDER_FILTERS = [
     { key: "all", label: "All", icon: ShoppingBag },
     { key: "confirmed", label: "Confirmed", icon: BadgeCheck },
     { key: "delivered", label: "Delivered", icon: Truck },
+];
+
+const AUCTION_FILTERS = [
+    { key: "all", label: "All", icon: ShoppingBag },
+    { key: "draft", label: "Draft", icon: Package },
+    { key: "live", label: "Live", icon: Gavel },
+    { key: "ended", label: "Ended", icon: CheckCircle2 },
 ];
 
 const STATUS_CONFIG = {
@@ -548,12 +555,18 @@ export default function SellerDashboard() {
                 o?.buyerId?.firstName?.toLowerCase().includes(search.toLowerCase()),
         );
 
-    const stats = {
-        auctions: auctions.length,
-        liveAuctions: auctions.filter((a) => a.status === "live").length,
-        orders: orders.length,
-        delivered: orders.filter((o) => o.orderStatus === "delivered").length,
-    };
+    const stats =
+        activeTab === "auctions"
+            ? {
+                  total: auctions.length,
+                  confirmed: auctions.filter((a) => a.status === "live").length,
+                  delivered: auctions.filter((a) => a.status === "ended").length,
+              }
+            : {
+                  total: orders.length,
+                  confirmed: orders.filter((o) => o.orderStatus === "confirmed").length,
+                  delivered: orders.filter((o) => o.orderStatus === "delivered").length,
+              };
 
     return (
         <div className="min-h-screen bg-[#F5F6FA] px-3.5 py-5 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
@@ -570,7 +583,9 @@ export default function SellerDashboard() {
                             Seller Dashboard
                         </h1>
                         <p className="text-[12px] sm:text-[13px] text-slate-500 mt-0.5">
-                            Manage deliveries and OTP verification
+                            {activeTab === "orders"
+                                ? "Manage deliveries and OTP verification"
+                                : "Manage all your auctions"}
                         </p>
                     </div>
                     <Link to="/auction/create">
@@ -651,7 +666,11 @@ export default function SellerDashboard() {
                     />
                     <input
                         type="text"
-                        placeholder="Search auction or buyer…"
+                        placeholder={
+                            activeTab === "orders"
+                                ? "Search auction or buyer..."
+                                : "Search your auctions..."
+                        }
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-[13px] text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-400 transition-all"
@@ -664,25 +683,27 @@ export default function SellerDashboard() {
                     className="flex gap-1 mb-5 p-1 bg-white rounded-xl border border-slate-100 w-fit"
                     style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
                 >
-                    {FILTERS.map(({ key, label, icon: Icon }) => (
-                        <button
-                            key={key}
-                            onClick={() => setFilter(key)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200 whitespace-nowrap"
-                            style={
-                                filter === key
-                                    ? {
-                                          background: "#111827",
-                                          color: "#f8fafc",
-                                          boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
-                                      }
-                                    : { color: "#64748b" }
-                            }
-                        >
-                            <Icon size={10} />
-                            {label}
-                        </button>
-                    ))}
+                    {(activeTab === "orders" ? FILTERS : AUCTION_FILTERS).map(
+                        ({ key, label, icon: Icon }) => (
+                            <button
+                                key={key}
+                                onClick={() => setFilter(key)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200 whitespace-nowrap"
+                                style={
+                                    filter === key
+                                        ? {
+                                              background: "#111827",
+                                              color: "#f8fafc",
+                                              boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
+                                          }
+                                        : { color: "#64748b" }
+                                }
+                            >
+                                <Icon size={10} />
+                                {label}
+                            </button>
+                        ),
+                    )}
                 </div>
 
                 {/* ── Order list ── */}
@@ -704,7 +725,7 @@ export default function SellerDashboard() {
                                 <Package size={22} className="text-slate-400" />
                             </div>
                             <h3 className="text-[15px] font-bold text-slate-800">
-                                No orders found
+                                {activeTab === "orders" ? "No orders found" : "No auctions found"}
                             </h3>
                             <p className="text-[12px] text-slate-500 mt-1">
                                 {search
@@ -723,25 +744,108 @@ export default function SellerDashboard() {
                                           onVerify={(id) => setOtpModal(id)}
                                       />
                                   ))
-                                : auctions.map((auction) => (
-                                      <div
-                                          key={auction._id}
-                                          className="bg-white rounded-2xl border border-stone-100 p-4"
-                                      >
-                                          <h3 className="font-bold">
-                                              {auction.name || auction.title}
-                                          </h3>
+                                : auctions
+                                      .filter((auction) => {
+                                          const q = search.toLowerCase();
 
-                                          <p className="text-sm text-slate-500">
-                                              Status: {auction.status}
-                                          </p>
+                                          const matchesSearch = (auction?.name || "")
+                                              .toLowerCase()
+                                              .includes(q);
 
-                                          <p className="text-sm text-slate-500">
-                                              Current Bid: ₹
-                                              {auction.currentBid || auction.highestBid || 0}
-                                          </p>
-                                      </div>
-                                  ))}
+                                          const matchesFilter =
+                                              filter === "all" ? true : auction?.status === filter;
+
+                                          return matchesSearch && matchesFilter;
+                                      })
+                                      .map((auction) => {
+                                          const image =
+                                              auction?.media?.[0]?.[0] ||
+                                              auction?.media?.[0] ||
+                                              null;
+
+                                          const currentPrice =
+                                              auction?.currentHighestBid > 0
+                                                  ? auction.currentHighestBid
+                                                  : auction?.startPrice || 0;
+
+                                          return (
+                                              <motion.div
+                                                  key={auction._id}
+                                                  layout
+                                                  whileHover={{ y: -2 }}
+                                                  className="bg-white rounded-2xl overflow-hidden border border-stone-100"
+                                                  style={{
+                                                      boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+                                                  }}
+                                              >
+                                                  <div className="flex">
+                                                      <div className="w-28 h-28 shrink-0">
+                                                          {image ? (
+                                                              <img
+                                                                  src={image}
+                                                                  alt={auction.name}
+                                                                  className="w-full h-full object-cover"
+                                                              />
+                                                          ) : (
+                                                              <div className="w-full h-full bg-stone-100 flex items-center justify-center">
+                                                                  <Package
+                                                                      size={22}
+                                                                      className="text-stone-300"
+                                                                  />
+                                                              </div>
+                                                          )}
+                                                      </div>
+
+                                                      <div className="flex-1 p-4">
+                                                          <div className="flex justify-between items-start gap-2">
+                                                              <h3 className="font-bold text-stone-900 line-clamp-2">
+                                                                  {auction.name}
+                                                              </h3>
+
+                                                              <span
+                                                                  className={`px-2 py-1 rounded-full text-[10px] font-bold
+                                ${
+                                    auction.status === "live"
+                                        ? "bg-green-100 text-green-700"
+                                        : auction.status === "draft"
+                                          ? "bg-gray-100 text-gray-600"
+                                          : "bg-red-100 text-red-600"
+                                }`}
+                                                              >
+                                                                  {auction.status}
+                                                              </span>
+                                                          </div>
+
+                                                          <p className="text-xs text-stone-500 mt-1 line-clamp-2">
+                                                              {auction.description}
+                                                          </p>
+
+                                                          <div className="flex justify-between items-end mt-4">
+                                                              <div>
+                                                                  <p className="text-xs text-stone-400">
+                                                                      Current Price
+                                                                  </p>
+
+                                                                  <p className="text-lg font-black text-blue-600">
+                                                                      ₹{fmt(currentPrice)}
+                                                                  </p>
+                                                              </div>
+
+                                                              <div className="text-right">
+                                                                  <p className="text-xs text-stone-400">
+                                                                      Bids
+                                                                  </p>
+
+                                                                  <p className="font-bold">
+                                                                      {auction.bidCount || 0}
+                                                                  </p>
+                                                              </div>
+                                                          </div>
+                                                      </div>
+                                                  </div>
+                                              </motion.div>
+                                          );
+                                      })}
                         </AnimatePresence>
                     )}
                 </div>
