@@ -166,55 +166,41 @@ export default function Profile() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* ── Mobile: user identity strip + underline tab bar ── */}
+            {/* ── Mobile: heading + underline tab bar ── */}
             <div className="md:hidden bg-white border-b border-gray-200">
-                {/* Identity row */}
-                <div className="flex items-center gap-3 px-4 pt-4 pb-3">
-                    <img
-                        src={User?.profile || defaultUp}
-                        className="h-9 w-9 rounded-full object-cover ring-2 ring-gray-100 flex-shrink-0"
-                    />
-                    <div className="min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 truncate leading-tight">
-                            {displayName}
-                        </p>
-                        <p className="text-xs text-gray-400 truncate">{User?.email}</p>
-                    </div>
+                {/* Page heading */}
+                <div className="px-4 pt-4 pb-2">
+                    <h1 className="text-lg font-bold text-gray-900 tracking-tight">
+                        Account Settings
+                    </h1>
                 </div>
 
-                {/* ── Underline tab bar (no scrollbar, no pills) ── */}
+                {/* Underline tab bar */}
+                <style>{`.mobile-tabs::-webkit-scrollbar { display: none; }`}</style>
                 <div
-                    className="flex overflow-x-auto"
-                    style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                    className="mobile-tabs flex overflow-x-auto"
+                    style={{ scrollbarWidth: "none" }}
                 >
-                    <style>{`.mobile-tabs::-webkit-scrollbar { display: none; }`}</style>
-                    <div className="mobile-tabs flex overflow-x-auto w-full">
-                        {NAV_ITEMS.map(({ key, label }) => {
-                            const isActive = activeTab === key;
-                            return (
-                                <button
-                                    key={key}
-                                    onClick={() => setActiveTab(key)}
-                                    className="relative flex-shrink-0 px-4 py-2.5 text-xs font-semibold transition-colors duration-150"
-                                    style={{ color: isActive ? "#2563eb" : "#6b7280" }}
-                                >
-                                    {label}
-                                    {/* animated underline */}
-                                    {isActive && (
-                                        <motion.span
-                                            layoutId="mobile-tab-underline"
-                                            className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"
-                                            transition={{
-                                                type: "spring",
-                                                stiffness: 500,
-                                                damping: 40,
-                                            }}
-                                        />
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
+                    {NAV_ITEMS.map(({ key, label }) => {
+                        const isActive = activeTab === key;
+                        return (
+                            <button
+                                key={key}
+                                onClick={() => setActiveTab(key)}
+                                className="relative flex-shrink-0 px-4 py-3 text-sm font-medium transition-colors duration-150 whitespace-nowrap"
+                                style={{ color: isActive ? "#2563eb" : "#9ca3af" }}
+                            >
+                                {label}
+                                {isActive && (
+                                    <motion.span
+                                        layoutId="mobile-tab-underline"
+                                        className="absolute bottom-0 left-0 right-0 h-[2px] bg-blue-600"
+                                        transition={{ type: "spring", stiffness: 500, damping: 40 }}
+                                    />
+                                )}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
