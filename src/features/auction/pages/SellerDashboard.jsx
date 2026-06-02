@@ -683,7 +683,7 @@ export default function SellerDashboard() {
                     className="flex gap-1 mb-5 p-1 bg-white rounded-xl border border-slate-100 w-fit"
                     style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
                 >
-                    {(activeTab === "orders" ? FILTERS : AUCTION_FILTERS).map(
+                    {(activeTab === "orders" ? ORDER_FILTERS : AUCTION_FILTERS).map(
                         ({ key, label, icon: Icon }) => (
                             <button
                                 key={key}
