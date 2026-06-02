@@ -11,7 +11,7 @@ export const useAuctionDetails = (id) => {
                 const res = await getAuctionById(id);
                 setAuction(res?.data || res);
             } catch (err) {
-                console.error(err);
+                //console.error(err);
             } finally {
                 setLoading(false);
             }

@@ -84,7 +84,7 @@ export default function HeroBannerSlider() {
             const res = await api.get("/api/banner/get");
             setBanners(res.data.data || []);
         } catch (error) {
-            console.log(error?.response?.data);
+            //console.log(error?.response?.data);
         }
     };
 

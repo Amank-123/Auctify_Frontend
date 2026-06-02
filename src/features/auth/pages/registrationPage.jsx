@@ -51,11 +51,11 @@ export default function SignupPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        console.log("====== FORM SUBMIT START ======");
-        console.log("🧾 FULL FORM:", form);
+        //console.log("====== FORM SUBMIT START ======");
+        //console.log("🧾 FULL FORM:", form);
 
         if (form.password !== form.confirmPassword) {
-            console.log("❌ Password mismatch");
+            //console.log("❌ Password mismatch");
             showError("Passwords do not match");
             return;
         }

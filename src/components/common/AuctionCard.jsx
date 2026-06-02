@@ -194,7 +194,7 @@ function FavBtn({ auctionId, sellerId }) {
                 const { data } = await api.get(API_ENDPOINTS.User.FETCH_WATCHLIST);
                 setOn(data?.data?.some((item) => item?._id === auctionId));
             } catch (e) {
-                console.error(e);
+                //console.error(e);
             }
         })();
     }, [auctionId, User?._id]);

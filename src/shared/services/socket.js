@@ -13,15 +13,15 @@ export const socket = io(SOCKET_URL, {
 
 // Optional: Add useful logs
 socket.on("connect", () => {
-    console.log("✅ Socket connected successfully:", socket.id);
+    //console.log("✅ Socket connected successfully:", socket.id);
 });
 
 socket.on("disconnect", (reason) => {
-    console.log("❌ Socket disconnected. Reason:", reason);
+    //console.log("❌ Socket disconnected. Reason:", reason);
 });
 
 socket.on("connect_error", (error) => {
-    console.error("Socket connection error:", error.message);
+    //console.error("Socket connection error:", error.message);
 });
 
 export default socket;

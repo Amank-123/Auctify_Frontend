@@ -83,7 +83,7 @@ export default function CreateAuction() {
                 const res = await api.get("/api/category/get");
                 setCategories(res.data.data || []);
             } catch (e) {
-                console.log(e);
+                //console.log(e);
             }
         })();
     }, []);

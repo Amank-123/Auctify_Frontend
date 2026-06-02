@@ -10,26 +10,26 @@ export const syncServerTime = async () => {
 
         const end = Date.now();
 
-        console.log("FULL RESPONSE:", res.data);
+        // //console.log("FULL RESPONSE:", res.data);
 
         const serverTime = res.data.serverTime;
 
-        console.log("SERVER TIME:", serverTime);
+        // //console.log("SERVER TIME:", serverTime);
 
         const latency = (end - start) / 2;
 
         timeOffset = serverTime + latency - end;
 
-        console.log({
-            start,
-            end,
-            latency,
-            offset: timeOffset,
-            system: Date.now(),
-            synced: Date.now() + timeOffset,
-        });
+        //console.log({
+        //     start,
+        //     end,
+        //     latency,
+        //     offset: timeOffset,
+        //     system: Date.now(),
+        //     synced: Date.now() + timeOffset,
+        // });
     } catch (err) {
-        console.error("Time sync failed", err);
+        //console.error("Time sync failed", err);
     }
 };
 

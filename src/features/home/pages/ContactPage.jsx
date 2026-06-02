@@ -14,7 +14,7 @@ export default function ContactPage() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log(form);
+        //console.log(form);
 
         // connect your backend here
         alert("Message sent successfully!");

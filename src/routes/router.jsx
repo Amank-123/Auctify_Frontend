@@ -32,7 +32,6 @@ import CategoryFormPage from "../features/admin/pages/CategoryFormPage.jsx";
 import UserPage from "../features/admin/pages/UsersPage.jsx";
 import BannerPage from "../features/admin/pages/banner.jsx";
 import ResetPasswordPage from "@/features/setting/resetPassword.jsx";
-import RoomPage from "../components/common/room.jsx";
 import AdminDashboard from "@/features/admin/pages/AdminDashboard.jsx";
 import ProtectRoute from "../components/auth/ProtectRoute.jsx";
 import ForgotPasswordPage from "../features/auth/pages/ForgotPasswordPage.jsx";
@@ -41,6 +40,9 @@ import ResetForgotPasswordPage from "../features/auth/pages/ResetPasswordPage.js
 import OrderDetailsPage from "../features/order/pages/orderPage.jsx";
 import MyOrdersPage from "../features/order/pages/myOrderPage.jsx";
 import KnowledgeBaseAdmin from "../features/admin/pages/KnowledgeBase.jsx";
+import ChatRoom from "../features/chat/pages/ChatRoom.jsx";
+import RoomPage from "../features/chat/pages/room.jsx";
+import EmptyState from "../features/chat/pages/EmptyState.jsx";
 const router = createBrowserRouter([
     {
         path: "/",
@@ -82,11 +84,19 @@ const router = createBrowserRouter([
     {
         path: "/chats",
         element: <ProtectRoute />,
-        // errorElement: <NotFound />,
         children: [
             {
-                index: true,
                 element: <RoomPage />,
+                children: [
+                    {
+                        index: true,
+                        element: <EmptyState />,
+                    },
+                    {
+                        path: ":roomId",
+                        element: <ChatRoom />,
+                    },
+                ],
             },
         ],
     },
@@ -95,8 +105,6 @@ const router = createBrowserRouter([
         // errorElement: <NotFound />,
         element: <RootLayout />,
         children: [
-            { path: "room/:roomId", element: <ChatRoomPage /> },
-
             {
                 element: <ProtectRoute />,
                 children: [

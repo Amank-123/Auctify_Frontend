@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import defaultUp from "@/assets/default.png";
-import { getMyAuctions, getMyBids, updateUserProfile } from "../userAPI";
+import { getMyAuctions, getMyBids, myOrders, updateUserProfile } from "../userAPI";
 import { useNavigate } from "react-router-dom";
 
 const NAV_ITEMS = [
@@ -83,14 +83,21 @@ export default function Profile() {
     const [preview, setPreview] = useState("");
     const [bids, setBids] = useState([]);
     const [auctions, setAuctions] = useState([]);
+    const [orders, setOrders] = useState([]);
     const [loadingData, setLoadingData] = useState(true);
 
     useEffect(() => {
         (async () => {
             try {
-                const [bidsRes, auctionsRes] = await Promise.all([getMyBids(), getMyAuctions()]);
+                const [bidsRes, auctionsRes, ordersRes] = await Promise.all([
+                    getMyBids(),
+                    getMyAuctions(),
+                    myOrders(),
+                ]);
+
                 setBids(bidsRes?.data || []);
                 setAuctions(auctionsRes?.data || []);
+                setOrders(ordersRes || []);
             } catch (err) {
                 console.error(err);
             } finally {
@@ -486,32 +493,85 @@ export default function Profile() {
                                         <p className="hidden md:block text-base font-semibold text-gray-900 mb-4">
                                             My Orders
                                         </p>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            {[1, 2].map((_, i) => (
-                                                <motion.div
-                                                    key={i}
-                                                    variants={fadeUp}
-                                                    custom={i}
-                                                    initial="hidden"
-                                                    animate="show"
-                                                    whileHover={{ y: -2 }}
-                                                    className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200"
-                                                >
-                                                    <div className="h-36 bg-gradient-to-br from-blue-50 to-indigo-100" />
-                                                    <div className="p-4">
-                                                        <p className="font-semibold text-gray-800 text-sm">
-                                                            Item Name
-                                                        </p>
-                                                        <p className="text-xs text-emerald-600 mt-1 font-semibold">
-                                                            Delivered
-                                                        </p>
-                                                        <button className="mt-3 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors">
-                                                            View Details
-                                                        </button>
-                                                    </div>
-                                                </motion.div>
-                                            ))}
-                                        </div>
+
+                                        {loadingData ? (
+                                            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                                                <Skeleton />
+                                            </div>
+                                        ) : orders.length === 0 ? (
+                                            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                                                <Empty msg="No orders found" />
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                {orders.map((order, i) => {
+                                                    const auction = order?.auctionId;
+
+                                                    const image =
+                                                        auction?.media?.[0]?.[0] ||
+                                                        auction?.media?.[0] ||
+                                                        defaultUp;
+
+                                                    const statusColor =
+                                                        order?.orderStatus === "delivered"
+                                                            ? "text-emerald-600"
+                                                            : order?.orderStatus === "cancelled"
+                                                              ? "text-red-600"
+                                                              : order?.orderStatus === "shipped"
+                                                                ? "text-blue-600"
+                                                                : "text-amber-600";
+
+                                                    return (
+                                                        <motion.div
+                                                            key={order._id}
+                                                            variants={fadeUp}
+                                                            custom={i}
+                                                            initial="hidden"
+                                                            animate="show"
+                                                            whileHover={{ y: -2 }}
+                                                            className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200"
+                                                        >
+                                                            <img
+                                                                src={image}
+                                                                alt={auction?.name}
+                                                                className="h-40 w-full object-cover"
+                                                            />
+
+                                                            <div className="p-4">
+                                                                <p className="font-semibold text-gray-800 text-sm line-clamp-1">
+                                                                    {auction?.name ||
+                                                                        "Auction Item"}
+                                                                </p>
+
+                                                                <p className="text-xs text-gray-500 mt-1">
+                                                                    ₹
+                                                                    {Number(
+                                                                        order?.finalPrice || 0,
+                                                                    ).toLocaleString("en-IN")}
+                                                                </p>
+
+                                                                <p
+                                                                    className={`mt-2 text-xs font-semibold capitalize ${statusColor}`}
+                                                                >
+                                                                    {order?.orderStatus}
+                                                                </p>
+
+                                                                <button
+                                                                    onClick={() =>
+                                                                        navigate(
+                                                                            `/orders/${order._id}`,
+                                                                        )
+                                                                    }
+                                                                    className="mt-3 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors"
+                                                                >
+                                                                    View Details
+                                                                </button>
+                                                            </div>
+                                                        </motion.div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
                                     </>
                                 )}
 
@@ -751,14 +811,14 @@ export default function Profile() {
                                             onChange={handleChange}
                                             error={errors.lastName}
                                         />
-                                        <FieldInput
-                                            label="Email"
-                                            name="email"
-                                            value={form.email || ""}
-                                            onChange={handleChange}
-                                            type="email"
-                                            error={errors.email}
-                                        />
+                                        {/* <FieldInput
+                                                    label="Email"
+                                                    name="email"
+                                                    value={form.email || ""}
+                                                    onChange={handleChange}
+                                                    type="email"
+                                                    error={errors.email}
+                                                /> */}
                                         <div className="sm:col-span-2">
                                             <FieldInput
                                                 label="Username"

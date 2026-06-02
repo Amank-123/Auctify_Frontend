@@ -273,7 +273,7 @@ export default function AuctionDetails() {
                 const order = data?.data?.find((o) => o.auctionId?._id === auction._id);
                 if (order) setWinnerOrder(order);
             } catch (err) {
-                console.error(err);
+                //console.error(err);
             }
         })();
     }, [auction?._id, isWinner]);
@@ -673,8 +673,8 @@ export default function AuctionDetails() {
                                         View Order
                                     </button>
                                     <button
-                                        onClick={() => navigate("/chats")}
-                                        className="h-8 px-4 rounded-lg border border-emerald-200 bg-white text-emerald-700 text-xs font-semibold hover:bg-emerald-50 transition-colors flex items-center gap-1.5"
+                                        onClick={() => navigate(`/chats/${auction._id}`)}
+                                        className="h-8 px-4 rounded-lg border cursor-pointer border-emerald-200 bg-white text-emerald-700 text-xs font-semibold hover:bg-emerald-50 transition-colors flex items-center gap-1.5"
                                     >
                                         <MessageCircle size={13} />
                                         Contact Seller

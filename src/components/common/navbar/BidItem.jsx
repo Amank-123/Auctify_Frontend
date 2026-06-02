@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 
 export default function BidItem({ bid, onClick }) {
-    console.log(bid);
+    //console.log(bid);
 
     const id = bid?._id || bid?.id;
     const auctionId = bid?.auctionId?._id || bid?.auctionId;

@@ -4,10 +4,10 @@ import { API_ENDPOINTS } from "../../shared/constants/apiEndpoints";
 //  User
 
 export const updateUserProfile = async (formData) => {
-    console.log("Log reached update ", formData);
+    //console.log("Log reached update ", formData);
 
     const res = await api.post(API_ENDPOINTS.User.UPDATE, formData);
-    console.log("Log from userApi: ", res);
+    //console.log("Log from userApi: ", res);
 
     return res.data;
 };
@@ -30,4 +30,13 @@ export const getMyAuctions = async () => {
 export const getMyBids = async () => {
     const res = await api.get(API_ENDPOINTS.Bid.GET_USER_BIDS);
     return res.data;
+};
+
+export const myOrders = async () => {
+    try {
+        const res = await api.get(API_ENDPOINTS.Order.GET_MY_ORDERS);
+        return res.data.data;
+    } catch (err) {
+        throw err;
+    }
 };

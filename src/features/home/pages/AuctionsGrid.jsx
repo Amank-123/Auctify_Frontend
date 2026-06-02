@@ -131,7 +131,7 @@ export default function AuctionsGrid({
 
                 setPage(nextPage);
             } catch (err) {
-                console.log(err);
+                //console.log(err);
             } finally {
                 setLoading(false);
             }

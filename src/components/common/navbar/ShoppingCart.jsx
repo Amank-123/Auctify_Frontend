@@ -61,7 +61,7 @@ const OrderButton = ({ refreshKey }) => {
 
             setOrderCount(activeOrders.length);
         } catch (error) {
-            console.log(error);
+            //console.log(error);
         }
     }, [User]);
 

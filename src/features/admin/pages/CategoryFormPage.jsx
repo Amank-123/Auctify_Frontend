@@ -47,7 +47,7 @@ const CategoryPage = () => {
 
             setCategories(res.data.data || []);
         } catch (error) {
-            console.log(error.response?.data || error);
+            //console.log(error.response?.data || error);
         }
     };
 
@@ -146,7 +146,7 @@ const CategoryPage = () => {
 
             resetForm();
         } catch (error) {
-            console.log(error.response?.data || error);
+            //console.log(error.response?.data || error);
         } finally {
             setLoading(false);
         }
@@ -196,7 +196,7 @@ const CategoryPage = () => {
 
             resetForm();
         } catch (error) {
-            console.log(error.response?.data || error);
+            //console.log(error.response?.data || error);
         } finally {
             setLoading(false);
         }
@@ -213,7 +213,7 @@ const CategoryPage = () => {
 
             setCategories((prev) => prev.filter((cat) => cat._id !== id));
         } catch (error) {
-            console.log(error.response?.data || error);
+            //console.log(error.response?.data || error);
         } finally {
             setDeleteLoading(null);
         }

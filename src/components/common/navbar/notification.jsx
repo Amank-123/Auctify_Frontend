@@ -68,7 +68,7 @@ export default function NotificationDrawer({ open = false, onClose, onMarkedAllR
                 );
                 setNotificationsDB(res.data?.data || []);
             } catch (e) {
-                console.log(e);
+                //console.log(e);
             } finally {
                 setLoading(false);
             }
@@ -119,7 +119,7 @@ export default function NotificationDrawer({ open = false, onClose, onMarkedAllR
             onMarkedAllRead?.();
             onClose();
         } catch (error) {
-            console.log(error);
+            //console.log(error);
         }
     };
 
@@ -131,7 +131,7 @@ export default function NotificationDrawer({ open = false, onClose, onMarkedAllR
 
             onMarkedAllRead?.();
         } catch (error) {
-            console.log(error);
+            //console.log(error);
         }
     };
 
@@ -139,7 +139,7 @@ export default function NotificationDrawer({ open = false, onClose, onMarkedAllR
         try {
             await api.post(`/api/notify/delete/${id}`);
         } catch (error) {
-            console.log(error);
+            //console.log(error);
         }
 
         setNotificationsDB((prev) => prev.filter((item) => item._id !== id));

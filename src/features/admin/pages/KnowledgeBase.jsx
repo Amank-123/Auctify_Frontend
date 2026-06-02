@@ -55,7 +55,7 @@ export default function KnowledgeBaseAdmin() {
 
             toast.success("Knowledge base updated successfully");
         } catch (error) {
-            console.error(error);
+            //console.error(error);
 
             toast.error("Failed to upload PDF");
         }

@@ -1,20 +1,68 @@
 import { useEffect, useRef } from "react";
+import {
+    ArrowRight,
+    BadgeCheck,
+    Bolt,
+    CircleDot,
+    Gavel,
+    Search,
+    Sparkles,
+    Trophy,
+    Users,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+const toneMap = {
+    blue: {
+        pill: "bg-[#2563EB]/10 text-[#2563EB] border-[#2563EB]/15",
+        statBg: "bg-[#EFF6FF]",
+        statBorder: "border-[#BFDBFE]",
+        statText: "text-[#1D4ED8]",
+        iconBg: "bg-[#E6F1FB]",
+        iconText: "text-[#1D4ED8]",
+        button: "bg-[#2563EB] text-white hover:bg-[#1D4ED8]",
+        glow: "shadow-[0_18px_40px_rgba(37,99,235,0.18)]",
+    },
+    amber: {
+        pill: "bg-[#F59E0B]/10 text-[#854F0B] border-[#F59E0B]/20",
+        statBg: "bg-[#FAEEDA]",
+        statBorder: "border-[#FAC775]",
+        statText: "text-[#854F0B]",
+        iconBg: "bg-[#FAEEDA]",
+        iconText: "text-[#854F0B]",
+        button: "bg-[#F59E0B] text-white hover:bg-[#D97706]",
+        glow: "shadow-[0_18px_40px_rgba(245,158,11,0.18)]",
+    },
+    emerald: {
+        pill: "bg-[#10B981]/10 text-[#3B6D11] border-[#10B981]/20",
+        statBg: "bg-[#EAF3DE]",
+        statBorder: "border-[#C0DD97]",
+        statText: "text-[#3B6D11]",
+        iconBg: "bg-[#EAF3DE]",
+        iconText: "text-[#3B6D11]",
+        button: "bg-[#10B981] text-white hover:bg-[#059669]",
+        glow: "shadow-[0_18px_40px_rgba(16,185,129,0.18)]",
+    },
+};
 
 const HowItWorks = () => {
     const cardRefs = useRef([]);
+    const navigate = useNavigate();
 
     useEffect(() => {
+        if (typeof IntersectionObserver === "undefined") return;
+
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {
                     if (entry.isIntersecting) {
-                        entry.target.style.opacity = "1";
-                        entry.target.style.transform = "translateY(0)";
+                        entry.target.classList.add("opacity-100", "translate-y-0");
                     }
                 });
             },
             { threshold: 0.15 },
         );
+
         cardRefs.current.forEach((el) => el && observer.observe(el));
         return () => observer.disconnect();
     }, []);
@@ -24,489 +72,315 @@ const HowItWorks = () => {
             num: "01",
             label: "Browse",
             title: "Browse & discover",
-            desc: "Explore premium auctions by verified sellers — electronics, collectibles, vehicles, fashion and rare finds.",
-            image: "https://images.unsplash.com/photo-1515169067868-5387ec356754?auto=format&fit=crop&w=800&q=75",
+            desc: "Explore premium auctions by verified sellers. Electronics, collectibles, vehicles, fashion, and rare finds.",
+            image: "https://images.unsplash.com/photo-1515169067868-5387ec356754?auto=format&fit=crop&w=1200&q=80",
             alt: "Browse auctions",
-            iconClass: "ti ti-search",
-            accent: {
-                numBg: "#E6F1FB",
-                numColor: "#185FA5",
-                iconColor: "#185FA5",
-                statBg: "#E6F1FB",
-                statBorder: "#B5D4F4",
-                statColor: "#185FA5",
-            },
-            extra: (
-                <div>
-                    <div
-                        style={{
-                            background: "#E6F1FB",
-                            border: "0.5px solid #B5D4F4",
-                            borderRadius: 12,
-                            padding: "12px 14px",
-                            marginBottom: 10,
-                        }}
-                    >
-                        <div style={{ fontSize: 11, color: "#888", marginBottom: 3 }}>
-                            Active listings
-                        </div>
-                        <div style={{ fontSize: 22, fontWeight: 500, color: "#185FA5" }}>
-                            12,450+
-                        </div>
-                    </div>
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
-                        {["Electronics", "Cars", "Luxury", "Art"].map((tag) => (
-                            <span
-                                key={tag}
-                                style={{
-                                    fontSize: 11,
-                                    padding: "4px 10px",
-                                    borderRadius: 100,
-                                    background: "#f3f4f6",
-                                    color: "#6b7280",
-                                    border: "0.5px solid #e5e7eb",
-                                }}
-                            >
-                                {tag}
-                            </span>
-                        ))}
-                    </div>
-                </div>
-            ),
-            action: "Start exploring →",
+            icon: Search,
+            live: false,
+            statLabel: "Active listings",
+            statValue: "12,450+",
+            statTone: "blue",
+            chips: ["Electronics", "Cars", "Luxury", "Art"],
+            action: "Start exploring",
         },
         {
             num: "02",
             label: "Bid",
             title: "Bid live instantly",
-            desc: "Join real-time bidding rooms, place smart bids, set your max limit, and compete transparently.",
-            image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=75",
+            desc: "Join real-time bidding rooms, place smart bids, set your limit, and compete transparently.",
+            image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1200&q=80",
             alt: "Live bidding",
-            iconClass: "ti ti-gavel",
+            icon: Gavel,
             live: true,
-            accent: {
-                numBg: "#FAEEDA",
-                numColor: "#854F0B",
-                iconColor: "#854F0B",
-                statBg: "#FAEEDA",
-                statBorder: "#FAC775",
-                statColor: "#854F0B",
-            },
-            extra: (
-                <div>
-                    <div
-                        style={{
-                            background: "#FAEEDA",
-                            border: "0.5px solid #FAC775",
-                            borderRadius: 12,
-                            padding: "12px 14px",
-                            marginBottom: 16,
-                        }}
-                    >
-                        <div style={{ fontSize: 11, color: "#888", marginBottom: 3 }}>
-                            Current highest bid
-                        </div>
-                        <div style={{ fontSize: 22, fontWeight: 500, color: "#854F0B" }}>
-                            ₹24,750
-                        </div>
-                        <div style={{ fontSize: 11, color: "#854F0B", marginTop: 2 }}>
-                            12 bids in the last hour
-                        </div>
-                    </div>
-                </div>
-            ),
-            action: "Place a bid →",
+            statLabel: "Current highest bid",
+            statValue: "₹24,750",
+            statSub: "12 bids in the last hour",
+            statTone: "amber",
+            action: "Place a bid",
         },
         {
             num: "03",
             label: "Win",
             title: "Win & connect",
-            desc: "Winning buyers connect directly with sellers to finalize payment and delivery with total flexibility.",
-            image: "https://images.unsplash.com/photo-1607082349566-187342175e2f?auto=format&fit=crop&w=800&q=75",
+            desc: "Winning buyers connect directly with sellers to finalize payment and delivery with flexibility.",
+            image: "https://images.unsplash.com/photo-1607082349566-187342175e2f?auto=format&fit=crop&w=1200&q=80",
             alt: "Win and connect",
-            iconClass: "ti ti-trophy",
-            accent: {
-                numBg: "#EAF3DE",
-                numColor: "#3B6D11",
-                iconColor: "#3B6D11",
-                statBg: "#EAF3DE",
-                statBorder: "#C0DD97",
-                statColor: "#3B6D11",
-            },
-            extra: (
-                <div>
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                            background: "#EAF3DE",
-                            border: "0.5px solid #C0DD97",
-                            borderRadius: 10,
-                            padding: "10px 12px",
-                            marginBottom: 8,
-                            fontSize: 12,
-                            color: "#3B6D11",
-                            fontWeight: 500,
-                        }}
-                    >
-                        <span
-                            style={{
-                                width: 8,
-                                height: 8,
-                                borderRadius: "50%",
-                                background: "#639922",
-                                display: "inline-block",
-                                animation: "pulse 1.5s infinite",
-                            }}
-                        />
-                        Highest bidder confirmed
-                    </div>
-                    <div
-                        style={{
-                            background: "#f9fafb",
-                            border: "0.5px solid #e5e7eb",
-                            borderRadius: 10,
-                            padding: "10px 12px",
-                            marginBottom: 16,
-                            fontSize: 12,
-                            color: "#6b7280",
-                        }}
-                    >
-                        <strong
-                            style={{
-                                color: "#111827",
-                                fontWeight: 500,
-                                display: "block",
-                                fontSize: 13,
-                            }}
-                        >
-                            Direct seller contact
-                        </strong>
-                        Secure, flexible post-auction communication
-                    </div>
-                </div>
-            ),
-            action: "You won →",
+            icon: Trophy,
+            live: false,
+            statLabel: "Winning status",
+            statValue: "Confirmed",
+            statTone: "emerald",
+            badge: "Highest bidder confirmed",
+            infoTitle: "Direct seller contact",
+            infoText: "Secure, flexible post-auction communication",
+            action: "You won",
         },
     ];
 
     const features = [
         {
-            icon: "ti ti-badge",
+            icon: BadgeCheck,
             title: "Verified sellers",
             desc: "Seller profiles and listings designed to create trust from day one.",
-            iconBg: "#E6F1FB",
-            iconColor: "#185FA5",
+            tone: "blue",
         },
         {
-            icon: "ti ti-bolt",
+            icon: Bolt,
             title: "Real-time bidding",
             desc: "Live updates so every participant competes on a level playing field.",
-            iconBg: "#FAEEDA",
-            iconColor: "#854F0B",
+            tone: "amber",
         },
         {
-            icon: "ti ti-users",
+            icon: Users,
             title: "Direct connection",
             desc: "Winners communicate directly with sellers after the auction closes.",
-            iconBg: "#EAF3DE",
-            iconColor: "#3B6D11",
+            tone: "emerald",
         },
     ];
 
     return (
         <>
             <style>{`
-        @import url('https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/tabler-icons.min.css');
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        .hiw-card { transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease; }
-        .hiw-card:hover { transform: translateY(-7px) !important; box-shadow: 0 16px 40px rgba(0,0,0,0.08) !important; border-color: #d1d5db !important; }
-        .hiw-card:hover .hiw-card-img { transform: scale(1.05); }
-        .hiw-card-img { transition: transform 0.45s ease; }
-        .hiw-feat { transition: transform 0.2s ease, background 0.2s ease; }
-        .hiw-feat:hover { transform: translateY(-4px); background: #ffffff !important; }
-        .hiw-cta-btn { transition: background 0.2s ease; cursor: pointer; }
-        .hiw-cta-btn:hover { background: #f3f4f6 !important; }
-        .hiw-banner-btn { transition: background 0.2s ease; cursor: pointer; }
-        .hiw-banner-btn:hover { background: rgba(255,255,255,0.22) !important; }
-      `}</style>
+                .hiw-card {
+                    transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease, opacity .5s ease, translate .5s ease;
+                }
+                .hiw-card:hover {
+                    transform: translateY(-8px) scale(1.01);
+                    box-shadow: 0 24px 50px rgba(15, 23, 42, 0.11);
+                    border-color: #D1D5DB;
+                }
+                .hiw-card-img {
+                    transition: transform .65s ease;
+                }
+                .hiw-card:hover .hiw-card-img {
+                    transform: scale(1.06);
+                }
+                .hiw-btn {
+                    transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+                }
+                .hiw-btn:hover {
+                    transform: translateY(-1px);
+                }
+                .hiw-btn:active {
+                    transform: translateY(0);
+                }
+                @keyframes hiwFloat {
+                    0%, 100% { transform: translateY(0px); }
+                    50% { transform: translateY(-6px); }
+                }
+                @keyframes hiwPulse {
+                    0%, 100% { opacity: 1; transform: scale(1); }
+                    50% { opacity: .45; transform: scale(.92); }
+                }
+                .hiw-float {
+                    animation: hiwFloat 5.5s ease-in-out infinite;
+                }
+            `}</style>
 
-            <section
-                style={{
-                    padding: "5rem 1.5rem",
-                    background: "#fafafa",
-                    fontFamily: "system-ui, sans-serif",
-                }}
-            >
-                <div style={{ maxWidth: 1080, margin: "0 auto" }}>
-                    {/* Header */}
-                    <div style={{ textAlign: "center", marginBottom: "3.5rem" }}>
-                        <div
-                            style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 8,
-                                padding: "6px 16px",
-                                borderRadius: 100,
-                                background: "#fff",
-                                border: "0.5px solid #e5e7eb",
-                                fontSize: 11,
-                                fontWeight: 500,
-                                color: "#6b7280",
-                                letterSpacing: "0.05em",
-                                marginBottom: "1.25rem",
-                                textTransform: "uppercase",
-                            }}
-                        >
-                            <span
-                                style={{
-                                    width: 7,
-                                    height: 7,
-                                    borderRadius: "50%",
-                                    background: "#378ADD",
-                                    display: "inline-block",
-                                }}
-                            />
+            <section className="min-h-screen bg-[#F8F8FF] pb-16 sm:pb-20">
+                <div className="mx-auto max-w-[1240px] px-3 py-4 sm:px-4 sm:py-6 lg:px-6 lg:py-8">
+                    <div className="mx-auto mb-10 max-w-3xl text-center sm:mb-12">
+                        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B7280] shadow-sm">
+                            <span className="h-2 w-2 rounded-full bg-[#2563EB]" />
                             How it works
                         </div>
 
-                        <h2
-                            style={{
-                                fontSize: "clamp(26px, 4vw, 42px)",
-                                fontWeight: 500,
-                                lineHeight: 1.15,
-                                color: "#0f172a",
-                                marginBottom: "0.75rem",
-                            }}
-                        >
-                            Buy smart. <span style={{ color: "#185FA5" }}>Bid fast.</span> Win easy.
+                        <h2 className="mx-auto max-w-3xl text-balance text-[30px] font-extrabold tracking-tight text-[#111827] sm:text-[38px] lg:text-[46px]">
+                            Buy smart. <span className="text-[#2563EB]">Bid fast.</span> Win easy.
                         </h2>
 
-                        <p
-                            style={{
-                                fontSize: 15,
-                                color: "#6b7280",
-                                maxWidth: 460,
-                                margin: "0 auto 2.5rem",
-                                lineHeight: 1.7,
-                            }}
-                        >
-                            A premium auction experience built for trust and speed. Discover
-                            products, place live bids, and connect directly after winning.
+                        <p className="mx-auto mt-4 max-w-2xl text-[14px] font-medium leading-7 text-[#4B5563] sm:text-[15px] sm:leading-8">
+                            A premium auction experience built for trust, speed, and clarity.
+                            Discover listings, place live bids, and connect directly after winning.
                         </p>
 
-                        {/* Step connector */}
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                marginBottom: "2.5rem",
-                            }}
-                        >
-                            {["01 Browse", "02 Bid", "03 Win"].map((s, i) => {
-                                const [num, label] = s.split(" ");
-                                return (
-                                    <div key={i} style={{ display: "flex", alignItems: "center" }}>
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                flexDirection: "column",
-                                                alignItems: "center",
-                                                gap: 5,
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    width: 36,
-                                                    height: 36,
-                                                    borderRadius: "50%",
-                                                    border: "0.5px solid #d1d5db",
-                                                    background: "#fff",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    fontSize: 12,
-                                                    fontWeight: 500,
-                                                    color: "#374151",
-                                                }}
-                                            >
-                                                {num}
-                                            </div>
-                                            <span style={{ fontSize: 11, color: "#9ca3af" }}>
-                                                {label}
-                                            </span>
-                                        </div>
-                                        {i < 2 && (
-                                            <div
-                                                style={{
-                                                    width: 70,
-                                                    height: 0.5,
-                                                    background: "#d1d5db",
-                                                    margin: "0 6px",
-                                                    marginBottom: 20,
-                                                }}
-                                            />
-                                        )}
-                                    </div>
-                                );
-                            })}
+                        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                            <button
+                                onClick={() => navigate("/explore")}
+                                className="hiw-btn inline-flex items-center gap-2 rounded-xl bg-[#2563EB] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(37,99,235,0.18)] hover:bg-[#1D4ED8]"
+                            >
+                                <Sparkles className="h-4 w-4" />
+                                Explore auctions
+                            </button>
+                            <button
+                                onClick={() => navigate("/how-it-works")}
+                                className="hiw-btn inline-flex items-center gap-2 rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm font-semibold text-[#111827] hover:bg-[#F9FAFB]"
+                            >
+                                <ArrowRight className="h-4 w-4" />
+                                Learn how it works
+                            </button>
                         </div>
                     </div>
 
-                    {/* Cards */}
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-                            gap: "1.25rem",
-                            marginBottom: "1.25rem",
-                        }}
-                    >
-                        {steps.map((item, i) => (
+                    <div className="mb-6 grid grid-cols-1 gap-3 sm:mb-8 sm:grid-cols-3 sm:gap-4">
+                        {[
+                            { step: "01", label: "Browse", note: "Discover verified listings" },
+                            { step: "02", label: "Bid", note: "Live competition in real time" },
+                            { step: "03", label: "Win", note: "Connect and complete the deal" },
+                        ].map((item, index) => (
                             <div
-                                key={i}
-                                ref={(el) => (cardRefs.current[i] = el)}
-                                className="hiw-card"
-                                style={{
-                                    background: "#fff",
-                                    border: "0.5px solid #e5e7eb",
-                                    borderRadius: 20,
-                                    overflow: "hidden",
-                                    opacity: 0,
-                                    transform: "translateY(24px)",
-                                    transition: `opacity 0.5s ease ${i * 0.12}s, transform 0.5s ease ${i * 0.12}s`,
-                                    display: "flex",
-                                    flexDirection: "column",
-                                }}
+                                key={item.step}
+                                className={`hiw-float rounded-2xl border border-[#E5E7EB] bg-white px-4 py-4 shadow-sm ${
+                                    index === 1 ? "sm:translate-y-2" : ""
+                                }`}
+                                style={{ animationDelay: `${index * 0.15}s` }}
                             >
-                                {/* Image */}
-                                <div style={{ position: "relative", overflow: "hidden" }}>
-                                    <img
-                                        src={item.image}
-                                        alt={item.alt}
-                                        className="hiw-card-img"
-                                        style={{
-                                            width: "100%",
-                                            height: 165,
-                                            objectFit: "cover",
-                                            display: "block",
-                                        }}
-                                    />
-                                    <div
-                                        style={{
-                                            position: "absolute",
-                                            inset: 0,
-                                            background:
-                                                "linear-gradient(to top, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.05) 60%)",
-                                        }}
-                                    />
-                                    {item.live && (
-                                        <div
-                                            style={{
-                                                position: "absolute",
-                                                top: 12,
-                                                right: 12,
-                                                background: "#E24B4A",
-                                                color: "#fff",
-                                                fontSize: 10,
-                                                fontWeight: 500,
-                                                padding: "3px 10px",
-                                                borderRadius: 100,
-                                                letterSpacing: "0.06em",
-                                            }}
-                                        >
-                                            ● LIVE
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] text-sm font-bold text-[#111827]">
+                                        {item.step}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="text-sm font-bold text-[#111827]">
+                                            {item.label}
                                         </div>
-                                    )}
-                                    <div
-                                        style={{
-                                            position: "absolute",
-                                            bottom: 12,
-                                            left: 14,
-                                            width: 38,
-                                            height: 38,
-                                            borderRadius: 12,
-                                            background: "rgba(255,255,255,0.92)",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                        }}
-                                    >
-                                        <i
-                                            className={item.iconClass}
-                                            style={{ fontSize: 18, color: item.accent.iconColor }}
-                                        />
+                                        <div className="truncate text-xs font-medium text-[#6B7280]">
+                                            {item.note}
+                                        </div>
                                     </div>
-                                </div>
-
-                                {/* Body */}
-                                <div
-                                    style={{
-                                        padding: "1.25rem",
-                                        flex: 1,
-                                        display: "flex",
-                                        flexDirection: "column",
-                                    }}
-                                >
-                                    <span
-                                        style={{
-                                            display: "inline-block",
-                                            fontSize: 11,
-                                            fontWeight: 500,
-                                            padding: "3px 10px",
-                                            borderRadius: 100,
-                                            background: item.accent.numBg,
-                                            color: item.accent.numColor,
-                                            marginBottom: 10,
-                                        }}
-                                    >
-                                        {item.num} — {item.label}
-                                    </span>
-                                    <div
-                                        style={{
-                                            fontSize: 17,
-                                            fontWeight: 500,
-                                            color: "#0f172a",
-                                            marginBottom: 6,
-                                        }}
-                                    >
-                                        {item.title}
-                                    </div>
-                                    <p
-                                        style={{
-                                            fontSize: 13,
-                                            color: "#6b7280",
-                                            lineHeight: 1.65,
-                                            marginBottom: "1rem",
-                                        }}
-                                    >
-                                        {item.desc}
-                                    </p>
-                                    <div style={{ flex: 1 }}>{item.extra}</div>
-                                    <button
-                                        className="hiw-cta-btn"
-                                        style={{
-                                            width: "100%",
-                                            padding: "10px",
-                                            borderRadius: 12,
-                                            border: "0.5px solid #e5e7eb",
-                                            background: "transparent",
-                                            color: "#374151",
-                                            fontSize: 13,
-                                            fontWeight: 500,
-                                            fontFamily: "inherit",
-                                        }}
-                                    >
-                                        {item.action}
-                                    </button>
                                 </div>
                             </div>
                         ))}
                     </div>
 
-                    {/* Trust Section */}
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 sm:gap-5">
+                        {steps.map((item, index) => {
+                            const Icon = item.icon;
+                            const tone = toneMap[item.statTone];
+
+                            return (
+                                <article
+                                    key={item.num}
+                                    ref={(el) => (cardRefs.current[index] = el)}
+                                    className="hiw-card translate-y-6 overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white opacity-0 shadow-sm"
+                                >
+                                    <div className="relative overflow-hidden">
+                                        <img
+                                            src={item.image}
+                                            alt={item.alt}
+                                            className="hiw-card-img h-48 w-full object-cover sm:h-52 lg:h-48"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+
+                                        {item.live ? (
+                                            <div className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-[#E24B4A] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white shadow-lg">
+                                                <CircleDot className="h-2 w-2 fill-white" />
+                                                Live
+                                            </div>
+                                        ) : null}
+
+                                        <div className="absolute bottom-3 left-3 flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-white/95 shadow-lg">
+                                            <Icon className="h-5 w-5 text-[#2563EB]" />
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 sm:p-5">
+                                        <div
+                                            className={`mb-3 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] ${tone.pill}`}
+                                        >
+                                            <span>{item.num}</span>
+                                            <span className="opacity-80">{item.label}</span>
+                                        </div>
+
+                                        <h3 className="text-[20px] font-extrabold tracking-tight text-[#111827] sm:text-[22px]">
+                                            {item.title}
+                                        </h3>
+
+                                        <p className="mt-3 text-[14px] font-medium leading-7 text-[#4B5563]">
+                                            {item.desc}
+                                        </p>
+
+                                        <div className="mt-4 rounded-2xl border border-[#E5E7EB] bg-[#F9FAFB] p-3.5">
+                                            <div
+                                                className={`rounded-xl border p-3.5 ${tone.statBg} ${tone.statBorder}`}
+                                            >
+                                                <div
+                                                    className={`text-[11px] font-bold uppercase tracking-[0.14em] ${tone.label}`}
+                                                >
+                                                    {item.statLabel}
+                                                </div>
+                                                <div
+                                                    className={`mt-1.5 text-2xl font-extrabold tracking-tight ${tone.statText}`}
+                                                >
+                                                    {item.statValue}
+                                                </div>
+
+                                                {item.statSub ? (
+                                                    <div className="mt-1 text-xs font-semibold text-[#854F0B]">
+                                                        {item.statSub}
+                                                    </div>
+                                                ) : null}
+
+                                                {item.badge ? (
+                                                    <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-[#EAF3DE] px-3 py-1 text-xs font-bold text-[#3B6D11]">
+                                                        <span className="h-2 w-2 rounded-full bg-[#10B981] animate-[hiwPulse_1.5s_infinite]" />
+                                                        {item.badge}
+                                                    </div>
+                                                ) : null}
+                                            </div>
+
+                                            {item.infoTitle ? (
+                                                <div className="mt-3 rounded-xl border border-[#E5E7EB] bg-white p-3.5">
+                                                    <div className="text-sm font-bold text-[#111827]">
+                                                        {item.infoTitle}
+                                                    </div>
+                                                    <div className="mt-1 text-sm font-medium leading-6 text-[#4B5563]">
+                                                        {item.infoText}
+                                                    </div>
+                                                </div>
+                                            ) : null}
+
+                                            {item.chips ? (
+                                                <div className="mt-3 flex flex-wrap gap-2">
+                                                    {item.chips.map((chip) => (
+                                                        <span
+                                                            key={chip}
+                                                            className="rounded-full border border-[#E5E7EB] bg-white px-3 py-1 text-xs font-semibold text-[#374151]"
+                                                        >
+                                                            {chip}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            ) : null}
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            className={`hiw-btn mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold text-white shadow-[0_14px_30px_rgba(0,0,0,0.12)] ${tone.button}`}
+                                        >
+                                            {item.action}
+                                            <ArrowRight className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                </article>
+                            );
+                        })}
+                    </div>
+
+                    <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+                        {features.map((feature) => {
+                            const Icon = feature.icon;
+                            const tone = toneMap[feature.tone];
+
+                            return (
+                                <div
+                                    key={feature.title}
+                                    className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm"
+                                >
+                                    <div
+                                        className={`flex h-11 w-11 items-center justify-center rounded-2xl ${tone.iconBg}`}
+                                    >
+                                        <Icon className={`h-5 w-5 ${tone.iconText}`} />
+                                    </div>
+                                    <h4 className="mt-4 text-lg font-extrabold tracking-tight text-[#111827]">
+                                        {feature.title}
+                                    </h4>
+                                    <p className="mt-2 text-sm font-medium leading-7 text-[#4B5563]">
+                                        {feature.desc}
+                                    </p>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
             </section>
         </>

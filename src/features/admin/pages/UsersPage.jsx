@@ -86,7 +86,7 @@ const UsersPage = () => {
             setUsers(res.data.data);
             setFiltered(res.data.data);
         } catch (err) {
-            console.error(err);
+            //console.error(err);
         } finally {
             setLoading(false);
         }
@@ -113,7 +113,7 @@ const UsersPage = () => {
                 prev.map((u) => (u._id === userId ? { ...u, isBanned: !isBanned } : u)),
             );
         } catch (err) {
-            console.error(err);
+            //console.error(err);
         } finally {
             setTogglingId(null);
         }

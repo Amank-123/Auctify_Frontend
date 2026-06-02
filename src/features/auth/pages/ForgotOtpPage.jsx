@@ -82,20 +82,20 @@ export default function ForgotOtpPage() {
     //  resend OTP
     const handleResend = async () => {
         try {
-            console.log("EMAIL:", email);
+            //console.log("EMAIL:", email);
 
             setTimer(30);
             inputsRef.current[0].focus();
 
             const res = await api.post(API_ENDPOINTS.Otp.RESEND, { email });
 
-            console.log("RES:", res);
+            //console.log("RES:", res);
 
             showSuccess("OTP sent again");
             setOtp(["", "", "", "", "", ""]);
         } catch (err) {
-            console.log("ERROR:", err);
-            console.log("DATA:", err.response?.data);
+            //console.log("ERROR:", err);
+            //console.log("DATA:", err.response?.data);
 
             showError(err.response?.data?.message || err.message || "Failed to resend OTP");
         }

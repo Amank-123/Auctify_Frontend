@@ -19,7 +19,7 @@ export default function NotificationBell({ onClick, refreshKey }) {
         sound.volume = 0.6;
 
         sound.play().catch((err) => {
-            console.warn("🔇 Play blocked:", err);
+            // //console.warn("🔇 Play blocked:", err);
         });
     }, []);
 
@@ -82,7 +82,7 @@ export default function NotificationBell({ onClick, refreshKey }) {
         socket.emit("join_notification", User._id);
 
         const handleNewNotification = (data) => {
-            console.log("🔥 Notification received:", data);
+            // //console.log("🔥 Notification received:", data);
 
             setCount((prev) => prev + 1);
 

@@ -11,7 +11,7 @@ const AuthSuccess = () => {
 
     useEffect(() => {
         if (!Loading) {
-            // console.log("User log from authsuccess: ", User);
+            // //console.log("User log from authsuccess: ", User);
             if (User) {
                 showSuccess("User successfully logged in");
                 navigate("/", { replace: true });

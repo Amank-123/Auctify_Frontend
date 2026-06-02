@@ -39,11 +39,11 @@ const BannerPage = () => {
 
             const res = await api.get("/api/banner/get");
 
-            console.log("BANNER RESPONSE:", res.data);
+            //console.log("BANNER RESPONSE:", res.data);
 
             setBanners(res.data.data || []);
         } catch (error) {
-            console.log(error);
+            //console.log(error);
         } finally {
             setLoading(false);
         }
@@ -56,11 +56,11 @@ const BannerPage = () => {
         try {
             const res = await api.get("/api/category/get");
 
-            console.log("CATEGORY RESPONSE:", res.data);
+            //console.log("CATEGORY RESPONSE:", res.data);
 
             setCategories(res.data.data || []);
         } catch (error) {
-            console.log(error);
+            //console.log(error);
         }
     };
 
@@ -183,7 +183,7 @@ const BannerPage = () => {
                     },
                 });
 
-                console.log(res.data);
+                //console.log(res.data);
             } else {
                 const res = await api.post("/api/banner", formData, {
                     headers: {
@@ -191,16 +191,15 @@ const BannerPage = () => {
                     },
                 });
 
-                console.log(res.data);
+                //console.log(res.data);
             }
 
             resetForm();
 
             fetchBanners();
         } catch (error) {
-            console.log(error);
-
-            console.log(error?.response?.data);
+            //console.log(error);
+            //console.log(error?.response?.data);
         } finally {
             setSubmitting(false);
         }
@@ -221,7 +220,7 @@ const BannerPage = () => {
 
             setBanners((prev) => prev.filter((banner) => banner._id !== id));
         } catch (error) {
-            console.log(error);
+            //console.log(error);
         } finally {
             setDeleteLoading("");
         }

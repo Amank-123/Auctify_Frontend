@@ -532,7 +532,7 @@ export default function Watchlist() {
 
             setItems(res?.data?.data || []);
         } catch (e) {
-            console.error(e);
+            //console.error(e);
             setItems([]);
         } finally {
             setLoading(false);
@@ -549,7 +549,7 @@ export default function Watchlist() {
         try {
             await api.post(API_ENDPOINTS.User.TOGGLE_WATCHLIST(id));
         } catch (e) {
-            console.error(e);
+            //console.error(e);
 
             // rollback
             setItems(previousItems);

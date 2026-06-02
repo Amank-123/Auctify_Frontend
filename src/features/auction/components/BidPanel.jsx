@@ -21,7 +21,7 @@ function FavBtn({ auctionId, sellerId }) {
                 const { data } = await api.get(API_ENDPOINTS.User.FETCH_WATCHLIST);
                 setOn(data?.data?.some((item) => item?._id === auctionId));
             } catch (e) {
-                console.error(e);
+                //console.error(e);
             }
         })();
     }, [auctionId, User?._id]);
@@ -36,7 +36,7 @@ function FavBtn({ auctionId, sellerId }) {
             await api.post(API_ENDPOINTS.User.TOGGLE_WATCHLIST(auctionId));
             setOn((p) => !p);
         } catch (err) {
-            console.error(err);
+            //console.error(err);
             showError(err?.response?.data?.message || "Failed to update watchlist");
         } finally {
             setLoading(false);
@@ -82,7 +82,7 @@ export function BidPanel({
     const [bidSuccess, setBidSuccess] = useState(false);
     const [placing, setPlacing] = useState(false);
 
-    console.log("End Time is ", endTime);
+    //console.log("End Time is ", endTime);
 
     // Sync bidAmount when currentBid changes from parent — guarded by ref to avoid loops
     const prevCurrentBid = useRef(currentBid);

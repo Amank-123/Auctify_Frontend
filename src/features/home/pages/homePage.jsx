@@ -28,7 +28,7 @@ export default function Homepage() {
     usePageTitle("Auctify");
     return (
         <>
-            <style>{GLOBAL_STYLE}</style>
+            {/* <style>{GLOBAL_STYLE}</style> */}
             <div style={{ minHeight: "100vh", background: "#F8F8FF" }}>
                 <AnnouncementBar
                     announcements={[
