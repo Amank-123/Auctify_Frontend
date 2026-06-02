@@ -36,10 +36,10 @@ const ORDER_FILTERS = [
 ];
 
 const AUCTION_FILTERS = [
-    { key: "all", label: "All", icon: ShoppingBag },
-    { key: "draft", label: "Draft", icon: Package },
-    { key: "live", label: "Live", icon: Gavel },
-    { key: "ended", label: "Ended", icon: CheckCircle2 },
+    { key: "all", label: "All" },
+    { key: "draft", label: "Draft" },
+    { key: "active", label: "Live" },
+    { key: "expired", label: "Expired" },
 ];
 
 const STATUS_CONFIG = {
@@ -561,12 +561,16 @@ export default function SellerDashboard() {
         activeTab === "auctions"
             ? {
                   total: auctions.length,
-                  confirmed: auctions.filter((a) => a.status === "live").length,
-                  delivered: auctions.filter((a) => a.status === "ended").length,
+
+                  confirmed: auctions.filter((a) => a.status === "active").length,
+
+                  delivered: auctions.filter((a) => a.status === "expired").length,
               }
             : {
                   total: orders.length,
+
                   confirmed: orders.filter((o) => o.orderStatus === "confirmed").length,
+
                   delivered: orders.filter((o) => o.orderStatus === "delivered").length,
               };
 
