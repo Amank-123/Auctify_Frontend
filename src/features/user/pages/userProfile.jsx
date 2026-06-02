@@ -207,7 +207,7 @@ export default function Profile() {
             {/* ── Page layout ── */}
             <div className="px-4 py-4 md:px-10 md:py-8">
                 <h1 className="hidden md:block text-xl font-semibold text-gray-900 mb-6 max-w-6xl mx-auto">
-                    Account Settings
+                    Profile Settings
                 </h1>
 
                 <div className="max-w-6xl mx-auto flex gap-8 items-start">
