@@ -495,7 +495,6 @@ export default function SellerDashboard() {
     const [otp, setOtp] = useState("");
     const [activeTab, setActiveTab] = useState("auctions");
     const [auctions, setAuctions] = useState([]);
-    const [orders, setOrders] = useState([]);
 
     const fetchOrders = useCallback(async () => {
         try {
