@@ -166,40 +166,55 @@ export default function Profile() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* ── Mobile: user identity strip (no hamburger) ── */}
-            <div className="md:hidden bg-white border-b border-gray-100 px-4 pt-4 pb-0">
-                <div className="flex items-center gap-3 mb-4">
+            {/* ── Mobile: user identity strip + underline tab bar ── */}
+            <div className="md:hidden bg-white border-b border-gray-200">
+                {/* Identity row */}
+                <div className="flex items-center gap-3 px-4 pt-4 pb-3">
                     <img
                         src={User?.profile || defaultUp}
-                        className="h-10 w-10 rounded-full object-cover ring-2 ring-gray-100 flex-shrink-0"
+                        className="h-9 w-9 rounded-full object-cover ring-2 ring-gray-100 flex-shrink-0"
                     />
                     <div className="min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 truncate">
+                        <p className="text-sm font-semibold text-gray-900 truncate leading-tight">
                             {displayName}
                         </p>
                         <p className="text-xs text-gray-400 truncate">{User?.email}</p>
                     </div>
                 </div>
 
-                {/* ── Scrollable pill tab bar ── */}
-                <div className="flex gap-1.5 overflow-x-auto pb-3 scrollbar-hide -mx-4 px-4">
-                    {NAV_ITEMS.map(({ key, label }) => {
-                        const isActive = activeTab === key;
-                        return (
-                            <button
-                                key={key}
-                                onClick={() => setActiveTab(key)}
-                                className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all duration-150
-                                    ${
-                                        isActive
-                                            ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                                            : "bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-800"
-                                    }`}
-                            >
-                                {label}
-                            </button>
-                        );
-                    })}
+                {/* ── Underline tab bar (no scrollbar, no pills) ── */}
+                <div
+                    className="flex overflow-x-auto"
+                    style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                >
+                    <style>{`.mobile-tabs::-webkit-scrollbar { display: none; }`}</style>
+                    <div className="mobile-tabs flex overflow-x-auto w-full">
+                        {NAV_ITEMS.map(({ key, label }) => {
+                            const isActive = activeTab === key;
+                            return (
+                                <button
+                                    key={key}
+                                    onClick={() => setActiveTab(key)}
+                                    className="relative flex-shrink-0 px-4 py-2.5 text-xs font-semibold transition-colors duration-150"
+                                    style={{ color: isActive ? "#2563eb" : "#6b7280" }}
+                                >
+                                    {label}
+                                    {/* animated underline */}
+                                    {isActive && (
+                                        <motion.span
+                                            layoutId="mobile-tab-underline"
+                                            className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"
+                                            transition={{
+                                                type: "spring",
+                                                stiffness: 500,
+                                                damping: 40,
+                                            }}
+                                        />
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
 
