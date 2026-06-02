@@ -510,6 +510,8 @@ export default function SellerDashboard() {
                 api.get("/api/auction/seller"),
                 api.get("/api/order/seller"),
             ]);
+            console.log("AUCTIONS", auctionRes.data.data);
+            console.log("ORDERS", orderRes.data.data);
 
             setAuctions(auctionRes.data.data || []);
             setOrders(orderRes.data.data || []);
