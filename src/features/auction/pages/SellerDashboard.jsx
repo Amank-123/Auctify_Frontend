@@ -493,12 +493,20 @@ export default function SellerDashboard() {
     const [search, setSearch] = useState("");
     const [otpModal, setOtpModal] = useState(null);
     const [otp, setOtp] = useState("");
+    const [activeTab, setActiveTab] = useState("auctions");
+    const [auctions, setAuctions] = useState([]);
+    const [orders, setOrders] = useState([]);
 
     const fetchOrders = useCallback(async () => {
         try {
             setLoading(true);
-            const { data } = await api.get("/api/order/seller");
-            setOrders(data.data);
+            const [auctionRes, orderRes] = await Promise.all([
+                api.get("/api/auction/seller"),
+                api.get("/api/order/seller"),
+            ]);
+
+            setAuctions(auctionRes.data.data || []);
+            setOrders(orderRes.data.data || []);
         } catch (err) {
             showError(err?.response?.data?.message || "Failed to load orders");
         } finally {
@@ -542,8 +550,9 @@ export default function SellerDashboard() {
         );
 
     const stats = {
-        total: orders.length,
-        confirmed: orders.filter((o) => o.orderStatus === "confirmed").length,
+        auctions: auctions.length,
+        liveAuctions: auctions.filter((a) => a.status === "live").length,
+        orders: orders.length,
         delivered: orders.filter((o) => o.orderStatus === "delivered").length,
     };
 
@@ -559,7 +568,7 @@ export default function SellerDashboard() {
                 >
                     <div>
                         <h1 className="text-[22px] sm:text-3xl font-black text-slate-900 tracking-tight">
-                            Seller Orders
+                            Seller Dashboard
                         </h1>
                         <p className="text-[12px] sm:text-[13px] text-slate-500 mt-0.5">
                             Manage deliveries and OTP verification
@@ -612,7 +621,31 @@ export default function SellerDashboard() {
                 </div>
 
                 {/* ── Search bar ── */}
+
                 <div className="relative mb-3">
+                    <div className="flex gap-2 mb-4">
+                        <button
+                            onClick={() => setActiveTab("auctions")}
+                            className={`px-4 py-2 rounded-xl ${
+                                activeTab === "auctions"
+                                    ? "bg-black text-white"
+                                    : "bg-white text-slate-600"
+                            }`}
+                        >
+                            My Auctions
+                        </button>
+
+                        <button
+                            onClick={() => setActiveTab("orders")}
+                            className={`px-4 py-2 rounded-xl ${
+                                activeTab === "orders"
+                                    ? "bg-black text-white"
+                                    : "bg-white text-slate-600"
+                            }`}
+                        >
+                            Orders
+                        </button>
+                    </div>
                     <Search
                         size={15}
                         className="absolute top-1/2 left-3.5 -translate-y-1/2 text-slate-400 pointer-events-none"
@@ -682,14 +715,34 @@ export default function SellerDashboard() {
                         </motion.div>
                     ) : (
                         <AnimatePresence mode="popLayout">
-                            {filtered.map((order) => (
-                                <OrderCard
-                                    key={order._id}
-                                    order={order}
-                                    onSendOTP={sendOTP}
-                                    onVerify={(id) => setOtpModal(id)}
-                                />
-                            ))}
+                            {activeTab === "orders"
+                                ? filtered.map((order) => (
+                                      <OrderCard
+                                          key={order._id}
+                                          order={order}
+                                          onSendOTP={sendOTP}
+                                          onVerify={(id) => setOtpModal(id)}
+                                      />
+                                  ))
+                                : auctions.map((auction) => (
+                                      <div
+                                          key={auction._id}
+                                          className="bg-white rounded-2xl border border-stone-100 p-4"
+                                      >
+                                          <h3 className="font-bold">
+                                              {auction.name || auction.title}
+                                          </h3>
+
+                                          <p className="text-sm text-slate-500">
+                                              Status: {auction.status}
+                                          </p>
+
+                                          <p className="text-sm text-slate-500">
+                                              Current Bid: ₹
+                                              {auction.currentBid || auction.highestBid || 0}
+                                          </p>
+                                      </div>
+                                  ))}
                         </AnimatePresence>
                     )}
                 </div>
