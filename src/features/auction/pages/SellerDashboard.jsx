@@ -36,10 +36,26 @@ const ORDER_FILTERS = [
 ];
 
 const AUCTION_FILTERS = [
-    { key: "all", label: "All" },
-    { key: "draft", label: "Draft" },
-    { key: "active", label: "Live" },
-    { key: "expired", label: "Expired" },
+    {
+        key: "all",
+        label: "All",
+        icon: ShoppingBag,
+    },
+    {
+        key: "draft",
+        label: "Draft",
+        icon: Package,
+    },
+    {
+        key: "active",
+        label: "Live",
+        icon: Gavel,
+    },
+    {
+        key: "expired",
+        label: "Expired",
+        icon: CheckCircle2,
+    },
 ];
 
 const STATUS_CONFIG = {
