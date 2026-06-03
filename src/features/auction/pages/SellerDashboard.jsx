@@ -572,6 +572,17 @@ export default function SellerDashboard() {
                 o?.auctionId?.name?.toLowerCase().includes(search.toLowerCase()) ||
                 o?.buyerId?.firstName?.toLowerCase().includes(search.toLowerCase()),
         );
+    const filteredAuctions = auctions.filter((auction) => {
+        const q = search.toLowerCase();
+
+        const matchesSearch = (auction?.name || "").toLowerCase().includes(q);
+
+        const matchesFilter = filter === "all" ? true : auction?.status === filter;
+
+        return matchesSearch && matchesFilter;
+    });
+
+    const currentData = activeTab === "orders" ? filtered : filteredAuctions;
 
     const stats =
         activeTab === "auctions"
@@ -661,7 +672,10 @@ export default function SellerDashboard() {
                 <div className="relative mb-3">
                     <div className="flex gap-2 mb-4">
                         <button
-                            onClick={() => setActiveTab("auctions")}
+                            onClick={() => {
+                                setActiveTab("auctions");
+                                setFilter("all");
+                            }}
                             className={`px-4 py-2 rounded-xl ${
                                 activeTab === "auctions"
                                     ? "bg-black text-white"
@@ -672,7 +686,10 @@ export default function SellerDashboard() {
                         </button>
 
                         <button
-                            onClick={() => setActiveTab("orders")}
+                            onClick={() => {
+                                setActiveTab("orders");
+                                setFilter("all");
+                            }}
                             className={`px-4 py-2 rounded-xl ${
                                 activeTab === "orders"
                                     ? "bg-black text-white"
@@ -736,7 +753,7 @@ export default function SellerDashboard() {
                             <OrderSkeleton />
                             <OrderSkeleton />
                         </>
-                    ) : filtered.length === 0 ? (
+                    ) : currentData.length === 0 ? (
                         <motion.div
                             initial={{ opacity: 0, scale: 0.98 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -746,13 +763,17 @@ export default function SellerDashboard() {
                             <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3">
                                 <Package size={22} className="text-slate-400" />
                             </div>
+
                             <h3 className="text-[15px] font-bold text-slate-800">
                                 {activeTab === "orders" ? "No orders found" : "No auctions found"}
                             </h3>
+
                             <p className="text-[12px] text-slate-500 mt-1">
                                 {search
                                     ? "Try a different search term."
-                                    : "Orders appear here when buyers win your auctions."}
+                                    : activeTab === "orders"
+                                      ? "Orders appear here when buyers win your auctions."
+                                      : "Your auctions will appear here."}
                             </p>
                         </motion.div>
                     ) : (
@@ -766,108 +787,97 @@ export default function SellerDashboard() {
                                           onVerify={(id) => setOtpModal(id)}
                                       />
                                   ))
-                                : auctions
-                                      .filter((auction) => {
-                                          const q = search.toLowerCase();
+                                : filteredAuctions.map((auction) => {
+                                      const image =
+                                          auction?.media?.[0]?.[0] || auction?.media?.[0] || null;
 
-                                          const matchesSearch = (auction?.name || "")
-                                              .toLowerCase()
-                                              .includes(q);
+                                      const currentPrice =
+                                          auction?.currentHighestBid > 0
+                                              ? auction.currentHighestBid
+                                              : auction?.startPrice || 0;
 
-                                          const matchesFilter =
-                                              filter === "all" ? true : auction?.status === filter;
-
-                                          return matchesSearch && matchesFilter;
-                                      })
-                                      .map((auction) => {
-                                          const image =
-                                              auction?.media?.[0]?.[0] ||
-                                              auction?.media?.[0] ||
-                                              null;
-
-                                          const currentPrice =
-                                              auction?.currentHighestBid > 0
-                                                  ? auction.currentHighestBid
-                                                  : auction?.startPrice || 0;
-
-                                          return (
-                                              <motion.div
-                                                  key={auction._id}
-                                                  layout
-                                                  whileHover={{ y: -2 }}
-                                                  className="bg-white rounded-2xl overflow-hidden border border-stone-100"
-                                                  style={{
-                                                      boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-                                                  }}
-                                              >
-                                                  <div className="flex">
-                                                      <div className="w-28 h-28 shrink-0">
-                                                          {image ? (
-                                                              <img
-                                                                  src={image}
-                                                                  alt={auction.name}
-                                                                  className="w-full h-full object-cover"
+                                      return (
+                                          <motion.div
+                                              key={auction._id}
+                                              layout
+                                              whileHover={{ y: -2 }}
+                                              className="bg-white rounded-2xl overflow-hidden border border-stone-100"
+                                              style={{
+                                                  boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+                                              }}
+                                          >
+                                              <div className="flex">
+                                                  <div className="w-28 h-28 shrink-0">
+                                                      {image ? (
+                                                          <img
+                                                              src={image}
+                                                              alt={auction.name}
+                                                              className="w-full h-full object-cover"
+                                                          />
+                                                      ) : (
+                                                          <div className="w-full h-full bg-stone-100 flex items-center justify-center">
+                                                              <Package
+                                                                  size={22}
+                                                                  className="text-stone-300"
                                                               />
-                                                          ) : (
-                                                              <div className="w-full h-full bg-stone-100 flex items-center justify-center">
-                                                                  <Package
-                                                                      size={22}
-                                                                      className="text-stone-300"
-                                                                  />
-                                                              </div>
-                                                          )}
-                                                      </div>
+                                                          </div>
+                                                      )}
+                                                  </div>
 
-                                                      <div className="flex-1 p-4">
-                                                          <div className="flex justify-between items-start gap-2">
-                                                              <h3 className="font-bold text-stone-900 line-clamp-2">
-                                                                  {auction.name}
-                                                              </h3>
+                                                  <div className="flex-1 p-4">
+                                                      <div className="flex justify-between items-start gap-2">
+                                                          <h3 className="font-bold text-stone-900 line-clamp-2">
+                                                              {auction.name}
+                                                          </h3>
 
-                                                              <span
-                                                                  className={`px-2 py-1 rounded-full text-[10px] font-bold
+                                                          <span
+                                                              className={`px-2 py-1 rounded-full text-[10px] font-bold
                                 ${
-                                    auction.status === "live"
+                                    auction.status === "active"
                                         ? "bg-green-100 text-green-700"
                                         : auction.status === "draft"
                                           ? "bg-gray-100 text-gray-600"
                                           : "bg-red-100 text-red-600"
                                 }`}
-                                                              >
-                                                                  {auction.status}
-                                                              </span>
+                                                          >
+                                                              {auction.status === "active"
+                                                                  ? "Live"
+                                                                  : auction.status === "expired"
+                                                                    ? "Expired"
+                                                                    : "Draft"}
+                                                          </span>
+                                                      </div>
+
+                                                      <p className="text-xs text-stone-500 mt-1 line-clamp-2">
+                                                          {auction.description}
+                                                      </p>
+
+                                                      <div className="flex justify-between items-end mt-4">
+                                                          <div>
+                                                              <p className="text-xs text-stone-400">
+                                                                  Current Price
+                                                              </p>
+
+                                                              <p className="text-lg font-black text-blue-600">
+                                                                  ₹{fmt(currentPrice)}
+                                                              </p>
                                                           </div>
 
-                                                          <p className="text-xs text-stone-500 mt-1 line-clamp-2">
-                                                              {auction.description}
-                                                          </p>
+                                                          <div className="text-right">
+                                                              <p className="text-xs text-stone-400">
+                                                                  Bids
+                                                              </p>
 
-                                                          <div className="flex justify-between items-end mt-4">
-                                                              <div>
-                                                                  <p className="text-xs text-stone-400">
-                                                                      Current Price
-                                                                  </p>
-
-                                                                  <p className="text-lg font-black text-blue-600">
-                                                                      ₹{fmt(currentPrice)}
-                                                                  </p>
-                                                              </div>
-
-                                                              <div className="text-right">
-                                                                  <p className="text-xs text-stone-400">
-                                                                      Bids
-                                                                  </p>
-
-                                                                  <p className="font-bold">
-                                                                      {auction.bidCount || 0}
-                                                                  </p>
-                                                              </div>
+                                                              <p className="font-bold">
+                                                                  {auction.bidCount || 0}
+                                                              </p>
                                                           </div>
                                                       </div>
                                                   </div>
-                                              </motion.div>
-                                          );
-                                      })}
+                                              </div>
+                                          </motion.div>
+                                      );
+                                  })}
                         </AnimatePresence>
                     )}
                 </div>
