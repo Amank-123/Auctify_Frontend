@@ -637,6 +637,13 @@ export default function Profile() {
                                             ) : (
                                                 auctions.map((auction, i) => {
                                                     const image = auction?.media?.[0]?.[0];
+                                                    console.log(
+                                                        auction.name,
+                                                        "currentHighestBid:",
+                                                        auction.currentHighestBid,
+                                                        "startPrice:",
+                                                        auction.startPrice,
+                                                    );
                                                     return (
                                                         <motion.div
                                                             key={auction._id}
