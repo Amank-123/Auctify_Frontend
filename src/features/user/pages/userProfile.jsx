@@ -703,40 +703,49 @@ export default function Profile() {
                                                                     {auction.status}
                                                                 </span>
                                                                 <div className="text-right">
-                                                                    <p className="text-sm font-bold text-blue-600">
-                                                                        ₹
-                                                                        {Number(
-                                                                            auction?.currentHighestBid ||
-                                                                                0,
-                                                                        ) > 0
-                                                                            ? Number(
-                                                                                  auction.currentHighestBid,
-                                                                              ).toLocaleString(
-                                                                                  "en-IN",
-                                                                              )
-                                                                            : Number(
-                                                                                  auction?.startPrice ||
-                                                                                      auction?.startingPrice ||
-                                                                                      auction?.basePrice ||
-                                                                                      0,
-                                                                              ).toLocaleString(
-                                                                                  "en-IN",
-                                                                              )}
-                                                                    </p>
+                                                                    {(() => {
+                                                                        const price =
+                                                                            Number(
+                                                                                auction?.currentHighestBid,
+                                                                            ) > 0
+                                                                                ? Number(
+                                                                                      auction.currentHighestBid,
+                                                                                  )
+                                                                                : Number(
+                                                                                      auction?.startPrice ??
+                                                                                          auction?.startingPrice ??
+                                                                                          auction?.basePrice ??
+                                                                                          auction
+                                                                                              ?.highestBid
+                                                                                              ?.amount ??
+                                                                                          0,
+                                                                                  );
 
-                                                                    <p className="text-xs text-gray-400 mt-0.5">
-                                                                        {Number(
-                                                                            auction?.currentHighestBid ||
-                                                                                0,
-                                                                        ) > 0
-                                                                            ? "Highest Bid"
-                                                                            : "Starting Price"}
-                                                                    </p>
+                                                                        return (
+                                                                            <>
+                                                                                <p className="text-sm font-bold text-blue-600">
+                                                                                    ₹
+                                                                                    {price.toLocaleString(
+                                                                                        "en-IN",
+                                                                                    )}
+                                                                                </p>
 
-                                                                    <p className="text-xs text-gray-400">
-                                                                        {auction?.bidCount || 0}{" "}
-                                                                        bids
-                                                                    </p>
+                                                                                <p className="text-xs text-gray-400 mt-0.5">
+                                                                                    {Number(
+                                                                                        auction?.currentHighestBid,
+                                                                                    ) > 0
+                                                                                        ? "Highest Bid"
+                                                                                        : "Starting Price"}
+                                                                                </p>
+
+                                                                                <p className="text-xs text-gray-400">
+                                                                                    {auction?.bidCount ||
+                                                                                        0}{" "}
+                                                                                    bids
+                                                                                </p>
+                                                                            </>
+                                                                        );
+                                                                    })()}
                                                                 </div>
                                                             </div>
                                                         </motion.div>
