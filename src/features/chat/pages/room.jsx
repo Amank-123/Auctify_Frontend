@@ -34,7 +34,7 @@ function writeRoomsCache(rooms) {
     try {
         window.localStorage.setItem(ROOMS_CACHE_KEY, JSON.stringify(rooms || []));
     } catch {
-        // ignore cache errors
+        // ignore cache write failures
     }
 }
 
@@ -111,6 +111,7 @@ export default function RoomPage() {
 
     useEffect(() => {
         if (!User?._id) return;
+
         if (!socket.connected) socket.connect();
         socket.emit("join_user", User._id);
     }, [User?._id]);
@@ -150,7 +151,7 @@ export default function RoomPage() {
                     }
                 }
             } catch {
-                // keep cached rooms on screen if the network is having one of its little episodes
+                // keep cached sidebar visible if API is slow or dead
             } finally {
                 if (mounted) setLoadingRooms(false);
             }
@@ -188,11 +189,14 @@ export default function RoomPage() {
                 return [updatedRoom, ...next];
             });
 
-            chatCacheRef.current.set(String(msg.roomId), {
-                ...(chatCacheRef.current.get(String(msg.roomId)) || {}),
-                room: chatCacheRef.current.get(String(msg.roomId))?.room || null,
-                lastMessageAt: msg.createdAt,
-            });
+            const cacheKey = String(msg.roomId);
+            const existing = chatCacheRef.current.get(cacheKey);
+            if (existing) {
+                chatCacheRef.current.set(cacheKey, {
+                    ...existing,
+                    lastMessageAt: msg.createdAt,
+                });
+            }
         };
 
         socket.on("receive_message", handler);
@@ -263,7 +267,7 @@ export default function RoomPage() {
     const hasRooms = rooms.length > 0;
 
     return (
-        <div className="h-[100dvh] overflow-hidden bg-zinc-50 text-zinc-900">
+        <div className="fixed inset-0 overflow-hidden bg-zinc-50 text-zinc-900">
             {sidebarOpen && roomId && (
                 <div
                     className="fixed inset-0 z-20 bg-black/30 backdrop-blur-sm md:hidden"
@@ -271,7 +275,7 @@ export default function RoomPage() {
                 />
             )}
 
-            <div className="flex h-[100dvh] min-w-0 overflow-hidden">
+            <div className="flex h-full min-w-0 overflow-hidden">
                 <aside
                     className={`
                         fixed inset-0 z-30 flex w-full flex-col bg-white transition-transform duration-200 ease-out
@@ -330,8 +334,8 @@ export default function RoomPage() {
                         </div>
                     </div>
 
-                    <div className="min-h-0 flex-1 overflow-y-auto p-2">
-                        {loadingRooms && rooms.length === 0 ? (
+                    <div className="min-h-0 flex-1 overflow-y-auto p-2 overscroll-contain">
+                        {loadingRooms ? (
                             <div className="px-4 py-10 text-center text-sm text-zinc-500">
                                 Loading rooms...
                             </div>

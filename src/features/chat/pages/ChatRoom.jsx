@@ -168,6 +168,22 @@ export default function ChatRoom() {
     const partnerIsTyping = typingUsers.some((id) => String(id) === String(partner?._id));
 
     useEffect(() => {
+        if (typeof document !== "undefined") {
+            const prevOverflow = document.body.style.overflow;
+            const prevOverscroll = document.documentElement.style.overscrollBehavior;
+
+            document.body.style.overflow = "hidden";
+            document.documentElement.style.overscrollBehavior = "none";
+
+            return () => {
+                document.body.style.overflow = prevOverflow;
+                document.documentElement.style.overscrollBehavior = prevOverscroll;
+            };
+        }
+        return undefined;
+    }, []);
+
+    useEffect(() => {
         if (!roomId) return;
 
         const roomFromRooms = rooms.find((r) => String(r._id) === String(roomId));
@@ -359,7 +375,7 @@ export default function ChatRoom() {
         });
 
         setText("");
-        inputRef.current?.focus();
+        inputRef.current?.focus({ preventScroll: true });
 
         requestAnimationFrame(() => {
             scrollRef.current?.scrollIntoView({
@@ -378,8 +394,27 @@ export default function ChatRoom() {
         }, {});
     }, [messages]);
 
+    if (loadingMessages && !selectedRoom) {
+        return (
+            <div className="flex h-full items-center justify-center bg-zinc-50">
+                <div className="text-center">
+                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-zinc-200 border-t-orange-500" />
+                    <p className="mt-2 text-sm text-zinc-500">Loading chat...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!selectedRoom) {
+        return (
+            <div className="flex h-full items-center justify-center bg-zinc-50">
+                <p className="text-sm text-zinc-500">Room not found.</p>
+            </div>
+        );
+    }
+
     return (
-        <div className="flex h-[100dvh] flex-col overflow-hidden bg-white">
+        <div className="flex h-full flex-col overflow-hidden bg-white">
             <header className="flex shrink-0 items-center gap-2 border-b border-zinc-200 bg-white px-3 py-3 sm:px-4">
                 <button
                     type="button"
@@ -398,7 +433,7 @@ export default function ChatRoom() {
                             className="h-10 w-10 rounded-xl object-cover border border-zinc-200"
                         />
                     ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-100 text-xs font-semibold text-zinc-500">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-100 text-[10px] font-semibold text-zinc-500">
                             CHAT
                         </div>
                     )}
@@ -426,7 +461,13 @@ export default function ChatRoom() {
                 </div>
             </header>
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-5">
+            <div
+                className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-5"
+                style={{
+                    WebkitOverflowScrolling: "touch",
+                    touchAction: "pan-y",
+                }}
+            >
                 <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
                     {loadingMessages && (
                         <div className="flex justify-center py-4">
@@ -575,9 +616,18 @@ export default function ChatRoom() {
                                     sendMessage();
                                 }
                             }}
+                            onFocus={() => {
+                                requestAnimationFrame(() => {
+                                    scrollRef.current?.scrollIntoView({
+                                        behavior: "auto",
+                                        block: "end",
+                                    });
+                                });
+                            }}
                             placeholder="Write a message..."
                             rows={1}
                             className="max-h-36 w-full resize-none bg-transparent text-sm outline-none placeholder:text-zinc-400"
+                            enterKeyHint="send"
                         />
                     </div>
 

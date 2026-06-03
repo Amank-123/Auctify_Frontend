@@ -1,7 +1,15 @@
 import axios from "axios";
 
+const baseURL = import.meta.env.VITE_API_BASE_URL;
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL,
+    baseURL,
+    withCredentials: true,
+    timeout: 20000,
+});
+
+const authApi = axios.create({
+    baseURL,
     withCredentials: true,
     timeout: 20000,
 });
@@ -10,106 +18,96 @@ let isRefreshing = false;
 let failedQueue = [];
 
 const processQueue = (error = null) => {
-    failedQueue.forEach((promise) => {
+    failedQueue.forEach(({ resolve, reject }) => {
         if (error) {
-            promise.reject(error);
+            reject(error);
         } else {
-            promise.resolve();
+            resolve();
         }
     });
 
     failedQueue = [];
 };
 
+const isAuthRoute = () => {
+    if (typeof window === "undefined") return false;
+    return ["/auth/login", "/auth/register"].includes(window.location.pathname);
+};
+
+const redirectToLogin = () => {
+    if (typeof window === "undefined") return;
+    if (!isAuthRoute()) {
+        window.location.href = "/auth/login";
+    }
+};
+
 api.interceptors.response.use(
     (response) => response,
-
     async (error) => {
-        const originalRequest = error.config;
+        const originalRequest = error?.config;
 
-        // No response from server
-        if (!error.response) {
+        if (!error?.response) {
+            return Promise.reject(error);
+        }
+
+        if (!originalRequest) {
             return Promise.reject(error);
         }
 
         const status = error.response.status;
         const message = error.response.data?.message;
 
-        // If refresh route itself fails
-        if (originalRequest?.url?.includes("/auth/refresh")) {
-            // Prevent redirect loop
-            if (
-                window.location.pathname !== "/auth/login" &&
-                window.location.pathname !== "/auth/register"
-            ) {
-                window.location.href = "/auth/login";
-            }
+        const isRefreshRequest =
+            originalRequest.url?.includes("/auth/refresh") ||
+            originalRequest.url?.includes("/api/auth/refresh");
 
+        if (isRefreshRequest) {
+            redirectToLogin();
             return Promise.reject(error);
         }
 
-        // Handle 401 errors
-        if (status === 401 && !originalRequest._retry) {
-            // Cases where refresh should NOT happen
-            if (
-                message === "NO_TOKEN" ||
-                message === "INVALID_TOKEN" ||
-                message === "INVALID_USER"
-            ) {
-                // Redirect only if not already on auth pages
-                if (
-                    window.location.pathname !== "/auth/login" &&
-                    window.location.pathname !== "/auth/register"
-                ) {
-                    window.location.href = "/auth/login";
-                }
-
-                return Promise.reject(error);
-            }
-
-            // Only refresh expired tokens
-            if (message === "TOKEN_EXPIRED") {
-                originalRequest._retry = true;
-
-                // Queue requests while refresh is happening
-                if (isRefreshing) {
-                    return new Promise((resolve, reject) => {
-                        failedQueue.push({
-                            resolve: () => resolve(api(originalRequest)),
-                            reject,
-                        });
-                    });
-                }
-
-                isRefreshing = true;
-
-                try {
-                    // Refresh access token
-                    await api.post("/api/auth/refresh");
-
-                    processQueue();
-
-                    // Retry original request
-                    return api(originalRequest);
-                } catch (refreshError) {
-                    processQueue(refreshError);
-
-                    // Refresh token also expired
-                    if (
-                        window.location.pathname !== "/auth/login" &&
-                        window.location.pathname !== "/auth/register"
-                    ) {
-                        window.location.href = "/auth/login";
-                    }
-
-                    return Promise.reject(refreshError);
-                } finally {
-                    isRefreshing = false;
-                }
-            }
+        if (status !== 401) {
+            return Promise.reject(error);
         }
 
-        return Promise.reject(error);
+        if (isAuthRoute()) {
+            return Promise.reject(error);
+        }
+
+        if (message === "NO_TOKEN" || message === "INVALID_TOKEN" || message === "INVALID_USER") {
+            redirectToLogin();
+            return Promise.reject(error);
+        }
+
+        if (originalRequest._retry) {
+            return Promise.reject(error);
+        }
+
+        originalRequest._retry = true;
+
+        if (isRefreshing) {
+            return new Promise((resolve, reject) => {
+                failedQueue.push({
+                    resolve: () => resolve(api(originalRequest)),
+                    reject,
+                });
+            });
+        }
+
+        isRefreshing = true;
+
+        try {
+            await authApi.post("/api/auth/refresh");
+
+            processQueue(null);
+            return api(originalRequest);
+        } catch (refreshError) {
+            processQueue(refreshError);
+            redirectToLogin();
+            return Promise.reject(refreshError);
+        } finally {
+            isRefreshing = false;
+        }
     },
 );
 
