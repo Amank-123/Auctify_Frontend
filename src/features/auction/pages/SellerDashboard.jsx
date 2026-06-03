@@ -668,37 +668,36 @@ export default function SellerDashboard() {
                 </div>
 
                 {/* ── Search bar ── */}
+                <div className="flex gap-2 mb-4">
+                    <button
+                        onClick={() => {
+                            setActiveTab("auctions");
+                            setFilter("all");
+                        }}
+                        className={`px-4 py-2 rounded-xl ${
+                            activeTab === "auctions"
+                                ? "bg-black text-white"
+                                : "bg-white text-slate-600"
+                        }`}
+                    >
+                        My Auctions
+                    </button>
 
+                    <button
+                        onClick={() => {
+                            setActiveTab("orders");
+                            setFilter("all");
+                        }}
+                        className={`px-4 py-2 rounded-xl ${
+                            activeTab === "orders"
+                                ? "bg-black text-white"
+                                : "bg-white text-slate-600"
+                        }`}
+                    >
+                        Orders
+                    </button>
+                </div>
                 <div className="relative mb-3">
-                    <div className="flex gap-2 mb-4">
-                        <button
-                            onClick={() => {
-                                setActiveTab("auctions");
-                                setFilter("all");
-                            }}
-                            className={`px-4 py-2 rounded-xl ${
-                                activeTab === "auctions"
-                                    ? "bg-black text-white"
-                                    : "bg-white text-slate-600"
-                            }`}
-                        >
-                            My Auctions
-                        </button>
-
-                        <button
-                            onClick={() => {
-                                setActiveTab("orders");
-                                setFilter("all");
-                            }}
-                            className={`px-4 py-2 rounded-xl ${
-                                activeTab === "orders"
-                                    ? "bg-black text-white"
-                                    : "bg-white text-slate-600"
-                            }`}
-                        >
-                            Orders
-                        </button>
-                    </div>
                     <Search
                         size={15}
                         className="absolute top-1/2 left-3.5 -translate-y-1/2 text-slate-400 pointer-events-none"
