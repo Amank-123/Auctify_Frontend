@@ -591,9 +591,9 @@ export default function SellerDashboard() {
             ? {
                   total: auctions.length,
 
-                  confirmed: auctions.filter((a) => a.status === "active").length,
+                  confirmed: auctions.filter((a) => a.status === "draft").length,
 
-                  delivered: auctions.filter((a) => a.status === "expired").length,
+                  delivered: orders.filter((o) => o.orderStatus === "delivered").length,
               }
             : {
                   total: orders.length,
@@ -644,28 +644,27 @@ export default function SellerDashboard() {
                 {/* ── Stats — full labels, no truncation ── */}
                 <div className="grid grid-cols-3 gap-2.5 sm:gap-3 mb-5">
                     <StatCard
-                        label="Total"
-                        value={stats.total}
+                        label="Total Auctions"
+                        value={auctions.length}
                         icon={ShoppingBag}
                         bg="#dbeafe"
                         iconColor="#2563eb"
-                        loading={loading}
                     />
+
                     <StatCard
-                        label="Confirmed"
-                        value={stats.confirmed}
-                        icon={BadgeCheck}
+                        label="Draft Auctions"
+                        value={auctions.filter((a) => a.status === "draft").length}
+                        icon={Package}
                         bg="#fee2e2"
                         iconColor="#dc2626"
-                        loading={loading}
                     />
+
                     <StatCard
-                        label="Delivered"
-                        value={stats.delivered}
+                        label="Delivered Orders"
+                        value={orders.filter((o) => o.orderStatus === "delivered").length}
                         icon={Truck}
                         bg="#d1fae5"
                         iconColor="#059669"
-                        loading={loading}
                     />
                 </div>
 
