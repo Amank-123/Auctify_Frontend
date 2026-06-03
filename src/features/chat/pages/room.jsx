@@ -111,7 +111,6 @@ export default function RoomPage() {
 
     useEffect(() => {
         if (!User?._id) return;
-
         if (!socket.connected) socket.connect();
         socket.emit("join_user", User._id);
     }, [User?._id]);
@@ -151,7 +150,7 @@ export default function RoomPage() {
                     }
                 }
             } catch {
-                // keep cached sidebar visible if API is slow or dead
+                // keep cached rooms visible if API is slow
             } finally {
                 if (mounted) setLoadingRooms(false);
             }
@@ -334,7 +333,7 @@ export default function RoomPage() {
                         </div>
                     </div>
 
-                    <div className="min-h-0 flex-1 overflow-y-auto p-2 overscroll-contain">
+                    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2">
                         {loadingRooms ? (
                             <div className="px-4 py-10 text-center text-sm text-zinc-500">
                                 Loading rooms...
