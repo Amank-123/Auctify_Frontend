@@ -11,18 +11,8 @@ import HowAppWorks from "./HowAppWorks.jsx";
 import AuctionsGrid from "./AuctionsGrid.jsx";
 import { usePageTitle } from "../../../shared/utils/usePageTitle.js";
 import Watchlist from "@/components/common/watchlist.jsx";
-
-const GLOBAL_STYLE = `
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Outfit:wght@300;400;500;600;700&display=swap');
-  *, body { font-family: 'Outfit', sans-serif; }
-  .scrollbar-hide::-webkit-scrollbar { display: none; }
-  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-  @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-  .skeleton { background: linear-gradient(90deg,#f5f0ea 25%,#ede6da 50%,#f5f0ea 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; }
-  .live-pulse { animation: pulse-ring 1.4s ease-in-out infinite; }
-  @keyframes pulse-ring { 0%,100%{opacity:1} 50%{opacity:0.25} }
-`;
+import SellerCTA from "./SellerCTA.jsx";
+import FinalCTA from "./FinalCTA.jsx";
 
 export default function Homepage() {
     usePageTitle("Auctify");
@@ -46,6 +36,7 @@ export default function Homepage() {
                         subheading="Discover live auctions in real-time"
                         limit={10}
                     />
+                    <SellerCTA />
                     <AuctionsGrid
                         heading="Explore All Instant Auctions"
                         subheading="Bid fast to win the auctions"
@@ -63,6 +54,7 @@ export default function Homepage() {
                         exploreBtn={false}
                     />
                     <HowAppWorks />
+                    <FinalCTA />
                 </div>
             </div>
         </>
