@@ -491,7 +491,10 @@ export default function UserSidebar({ open, onClose, user }) {
                                     text-blue-700
                                 "
                                                 >
-                                                    ₹{auction?.currentHighestBid}
+                                                    ₹
+                                                    {auction?.currentHighestBid > 0
+                                                        ? auction.currentHighestBid
+                                                        : auction?.startPrice || 0}
                                                 </p>
                                             </div>
                                         </div>
