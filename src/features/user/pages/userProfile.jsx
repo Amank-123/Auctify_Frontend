@@ -709,18 +709,18 @@ export default function Profile() {
                                                                             auction?.currentHighestBid ||
                                                                                 0,
                                                                         ) > 0
-                                                                            ? fmt(
-                                                                                  Number(
-                                                                                      auction.currentHighestBid,
-                                                                                  ),
+                                                                            ? Number(
+                                                                                  auction.currentHighestBid,
+                                                                              ).toLocaleString(
+                                                                                  "en-IN",
                                                                               )
-                                                                            : fmt(
-                                                                                  Number(
-                                                                                      auction?.startPrice ||
-                                                                                          auction?.startingPrice ||
-                                                                                          auction?.basePrice ||
-                                                                                          0,
-                                                                                  ),
+                                                                            : Number(
+                                                                                  auction?.startPrice ||
+                                                                                      auction?.startingPrice ||
+                                                                                      auction?.basePrice ||
+                                                                                      0,
+                                                                              ).toLocaleString(
+                                                                                  "en-IN",
                                                                               )}
                                                                     </p>
 
