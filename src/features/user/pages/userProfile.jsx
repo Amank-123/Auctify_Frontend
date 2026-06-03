@@ -698,13 +698,37 @@ export default function Profile() {
                                                                 <div className="text-right">
                                                                     <p className="text-sm font-bold text-blue-600">
                                                                         ₹
-                                                                        {auction.currentHighestBid >
-                                                                        0
-                                                                            ? auction.currentHighestBid
-                                                                            : auction.startPrice}
+                                                                        {Number(
+                                                                            auction?.currentHighestBid ||
+                                                                                0,
+                                                                        ) > 0
+                                                                            ? fmt(
+                                                                                  Number(
+                                                                                      auction.currentHighestBid,
+                                                                                  ),
+                                                                              )
+                                                                            : fmt(
+                                                                                  Number(
+                                                                                      auction?.startPrice ||
+                                                                                          auction?.startingPrice ||
+                                                                                          auction?.basePrice ||
+                                                                                          0,
+                                                                                  ),
+                                                                              )}
                                                                     </p>
+
                                                                     <p className="text-xs text-gray-400 mt-0.5">
-                                                                        {auction.bidCount} bids
+                                                                        {Number(
+                                                                            auction?.currentHighestBid ||
+                                                                                0,
+                                                                        ) > 0
+                                                                            ? "Highest Bid"
+                                                                            : "Starting Price"}
+                                                                    </p>
+
+                                                                    <p className="text-xs text-gray-400">
+                                                                        {auction?.bidCount || 0}{" "}
+                                                                        bids
                                                                     </p>
                                                                 </div>
                                                             </div>
