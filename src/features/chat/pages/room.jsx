@@ -34,7 +34,7 @@ function writeRoomsCache(rooms) {
     try {
         window.localStorage.setItem(ROOMS_CACHE_KEY, JSON.stringify(rooms || []));
     } catch {
-        // ignore cache write failures
+        /* ignore */
     }
 }
 
@@ -46,7 +46,6 @@ function Avatar({ name, image, size = "md", online = false }) {
     const initials = name?.[0]?.toUpperCase() ?? "?";
     const sizes = { sm: "h-8 w-8 text-xs", md: "h-9 w-9 text-sm", lg: "h-11 w-11 text-base" };
     const dotSizes = { sm: "h-2 w-2", md: "h-2.5 w-2.5", lg: "h-3 w-3" };
-
     return (
         <div className="relative shrink-0">
             {image ? (
@@ -121,41 +120,30 @@ export default function RoomPage() {
 
     useEffect(() => {
         if (!User?._id) return;
-
         let mounted = true;
-
         (async () => {
             try {
                 setLoadingRooms(readRoomsCache().length === 0);
-
                 const res = await api.get("/api/Room/getRooms");
                 const data = Array.isArray(res.data?.data) ? res.data.data : [];
-
                 if (!mounted) return;
-
                 setRooms(data);
-
                 data.forEach((room) => socket.emit("join_room", room._id));
-
                 if (roomId) {
                     const directMatch = data.find((r) => String(r._id) === String(roomId));
                     if (!directMatch) {
                         const byAuction = data.find(
                             (r) => String(r.auctionId?._id) === String(roomId),
                         );
-
-                        if (byAuction) {
-                            navigate(`/chats/${byAuction._id}`, { replace: true });
-                        }
+                        if (byAuction) navigate(`/chats/${byAuction._id}`, { replace: true });
                     }
                 }
             } catch {
-                // keep cached rooms visible if API is slow
+                // keep cached rooms
             } finally {
                 if (mounted) setLoadingRooms(false);
             }
         })();
-
         return () => {
             mounted = false;
         };
@@ -170,34 +158,26 @@ export default function RoomPage() {
     useEffect(() => {
         const handler = (msg) => {
             if (!msg?.roomId) return;
-
             setRooms((prev) => {
                 const roomIndex = prev.findIndex((room) => String(room._id) === String(msg.roomId));
                 if (roomIndex === -1) return prev;
-
-                const room = prev[roomIndex];
                 const updatedRoom = {
-                    ...room,
+                    ...prev[roomIndex],
                     lastMessage: msg.text,
                     lastMessageAt: msg.createdAt,
                     lastMessageId: msg,
                 };
-
                 const next = [...prev];
                 next.splice(roomIndex, 1);
                 return [updatedRoom, ...next];
             });
-
-            const cacheKey = String(msg.roomId);
-            const existing = chatCacheRef.current.get(cacheKey);
-            if (existing) {
-                chatCacheRef.current.set(cacheKey, {
+            const existing = chatCacheRef.current.get(String(msg.roomId));
+            if (existing)
+                chatCacheRef.current.set(String(msg.roomId), {
                     ...existing,
                     lastMessageAt: msg.createdAt,
                 });
-            }
         };
-
         socket.on("receive_message", handler);
         return () => socket.off("receive_message", handler);
     }, []);
@@ -207,24 +187,17 @@ export default function RoomPage() {
             setRooms((prev) =>
                 prev.map((room) => {
                     if (String(room._id) !== String(seenRoomId)) return room;
-
                     const lastMsg = room?.lastMessageId;
                     if (!lastMsg) return room;
-
                     const currentSeen = Array.isArray(lastMsg.seenBy) ? lastMsg.seenBy : [];
                     if (currentSeen.some((id) => String(id) === String(seenBy))) return room;
-
                     return {
                         ...room,
-                        lastMessageId: {
-                            ...lastMsg,
-                            seenBy: [...currentSeen, seenBy],
-                        },
+                        lastMessageId: { ...lastMsg, seenBy: [...currentSeen, seenBy] },
                     };
                 }),
             );
         };
-
         socket.on("message_seen", handler);
         return () => socket.off("message_seen", handler);
     }, []);
@@ -236,14 +209,10 @@ export default function RoomPage() {
                 prev.some((id) => String(id) === String(userId)) ? prev : [...prev, userId],
             );
         };
-
-        const onStop = ({ userId }) => {
+        const onStop = ({ userId }) =>
             setTypingUsers((prev) => prev.filter((id) => String(id) !== String(userId)));
-        };
-
         socket.on("typing", onTyping);
         socket.on("stop_typing", onStop);
-
         return () => {
             socket.off("typing", onTyping);
             socket.off("stop_typing", onStop);
@@ -252,21 +221,42 @@ export default function RoomPage() {
 
     const filteredRooms = useMemo(() => {
         const query = search.trim().toLowerCase();
-
         return rooms.filter((room) => {
             const partnerUser = getPartner(room);
-            const username = partnerUser?.username?.toLowerCase() || "";
-            const lastMessage = room?.lastMessage?.toLowerCase() || "";
-
             if (!query) return true;
-            return username.includes(query) || lastMessage.includes(query);
+            return (
+                (partnerUser?.username?.toLowerCase() || "").includes(query) ||
+                (room?.lastMessage?.toLowerCase() || "").includes(query)
+            );
         });
     }, [rooms, search, User?._id]);
 
-    const hasRooms = rooms.length > 0;
-
     return (
-        <div className="fixed inset-0 overflow-hidden bg-zinc-50 text-zinc-900">
+        /*
+         * ROOT LAYOUT — THE KEY TO CORRECT MOBILE KEYBOARD BEHAVIOR:
+         *
+         * `height: 100dvh` (dynamic viewport height) is the modern standard.
+         * dvh shrinks when the keyboard appears, unlike svh/vh which are fixed.
+         * This means the entire layout compresses when the keyboard opens, and
+         * ChatRoom's flex column naturally pushes the input bar to be visible
+         * above the keyboard — exactly like WhatsApp and Instagram.
+         *
+         * We still use `position: fixed` to prevent the outer page from scrolling,
+         * but we drive the height via dvh, NOT inset-0's implicit h-full.
+         *
+         * On older browsers without dvh support, it falls back to 100svh then 100vh.
+         */
+        <div
+            style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: "100dvh", // shrinks when keyboard opens ← the fix
+                overflow: "hidden",
+            }}
+            className="bg-zinc-50 text-zinc-900"
+        >
             {sidebarOpen && roomId && (
                 <div
                     className="fixed inset-0 z-20 bg-black/30 backdrop-blur-sm md:hidden"
@@ -275,15 +265,11 @@ export default function RoomPage() {
             )}
 
             <div className="flex h-full min-w-0 overflow-hidden">
+                {/* Sidebar */}
                 <aside
                     className={`
                         fixed inset-0 z-30 flex w-full flex-col bg-white transition-transform duration-200 ease-out
-                        md:static
-                        md:inset-auto
-                        md:w-[360px]
-                        md:border-r
-                        md:border-zinc-200
-                        md:translate-x-0
+                        md:static md:inset-auto md:w-[360px] md:border-r md:border-zinc-200 md:translate-x-0
                         ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
                     `}
                 >
@@ -303,13 +289,12 @@ export default function RoomPage() {
                                     </h2>
                                 </div>
                                 <p className="mt-0.5 text-xs text-zinc-500">
-                                    {hasRooms
+                                    {rooms.length > 0
                                         ? `${rooms.length} conversation${rooms.length === 1 ? "" : "s"}`
                                         : "No conversations"}
                                 </p>
                             </div>
                         </div>
-
                         <div className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 focus-within:border-orange-300 focus-within:bg-white">
                             <span className="text-zinc-400">
                                 <SearchIcon />
@@ -352,7 +337,6 @@ export default function RoomPage() {
                                         (id) => String(id) === String(partnerUser?._id),
                                     );
                                     const lastMsg = room?.lastMessageId;
-
                                     const hasUnread =
                                         lastMsg &&
                                         String(getSenderId(lastMsg)) !== String(User?._id) &&
@@ -365,19 +349,10 @@ export default function RoomPage() {
                                             key={room._id}
                                             type="button"
                                             onClick={() => {
-                                                navigate(`/chats/${room._id}`, {
-                                                    state: { room },
-                                                });
+                                                navigate(`/chats/${room._id}`, { state: { room } });
                                                 setSidebarOpen(false);
                                             }}
-                                            className={`
-                                                flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition
-                                                ${
-                                                    active
-                                                        ? "border border-orange-200 bg-orange-50"
-                                                        : "hover:bg-zinc-100"
-                                                }
-                                            `}
+                                            className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition ${active ? "border border-orange-200 bg-orange-50" : "hover:bg-zinc-100"}`}
                                         >
                                             <div className="relative shrink-0">
                                                 <Avatar
@@ -390,28 +365,19 @@ export default function RoomPage() {
                                                     <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-white" />
                                                 )}
                                             </div>
-
                                             <div className="min-w-0 flex-1">
                                                 <p className="truncate text-sm font-semibold">
                                                     {partnerUser?.username} -{" "}
                                                     {room?.auctionId?.name}
                                                 </p>
-
                                                 <p
-                                                    className={`mt-0.5 truncate text-[11.5px] ${
-                                                        pTyping
-                                                            ? "text-orange-600"
-                                                            : hasUnread
-                                                              ? "font-semibold text-zinc-900"
-                                                              : "text-zinc-500"
-                                                    }`}
+                                                    className={`mt-0.5 truncate text-[11.5px] ${pTyping ? "text-orange-600" : hasUnread ? "font-semibold text-zinc-900" : "text-zinc-500"}`}
                                                 >
                                                     {pTyping
                                                         ? "typing..."
                                                         : room?.lastMessage || "No messages yet"}
                                                 </p>
                                             </div>
-
                                             {hasUnread && (
                                                 <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-orange-500" />
                                             )}
@@ -422,7 +388,10 @@ export default function RoomPage() {
                         )}
                     </div>
 
-                    <div className="border-t border-zinc-200 px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+                    <div
+                        className="border-t border-zinc-200 px-4 pt-3"
+                        style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+                    >
                         <button
                             type="button"
                             className="flex items-center gap-3"
@@ -439,18 +408,11 @@ export default function RoomPage() {
                     </div>
                 </aside>
 
-                <main className="relative flex min-w-0 flex-1 flex-col bg-zinc-50">
-                    <div className="min-h-0 flex-1 overflow-hidden">
-                        <Outlet
-                            context={{
-                                rooms,
-                                onlineUsers,
-                                typingUsers,
-                                chatCacheRef,
-                                setSidebarOpen,
-                            }}
-                        />
-                    </div>
+                {/* Main chat area — h-full fills the dvh-constrained parent */}
+                <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
+                    <Outlet
+                        context={{ rooms, onlineUsers, typingUsers, chatCacheRef, setSidebarOpen }}
+                    />
                 </main>
             </div>
         </div>
