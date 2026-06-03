@@ -41,15 +41,34 @@ function getSenderId(message) {
     return typeof message?.senderId === "object" ? message.senderId?._id : message?.senderId;
 }
 
+function getMessageTimestamp(message) {
+    const candidates = [message?.createdAt, message?.updatedAt, message?.sentAt];
+
+    for (const value of candidates) {
+        const ts = new Date(value).getTime();
+        if (!Number.isNaN(ts)) return ts;
+    }
+
+    const id = String(message?._id || "");
+    if (/^[a-f\d]{24}$/i.test(id)) {
+        return parseInt(id.slice(0, 8), 16) * 1000;
+    }
+
+    return 0;
+}
+
 function getDateKey(ts) {
     if (!ts) return "Unknown";
 
     const d = new Date(ts);
     const now = new Date();
-    const diff = Math.floor((now - d) / 86400000);
 
-    if (diff === 0) return "Today";
-    if (diff === 1) return "Yesterday";
+    const dDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diffDays = Math.round((nowDay - dDay) / 86400000);
+
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Yesterday";
 
     return d.toLocaleDateString("en-US", {
         weekday: "long",
@@ -65,9 +84,7 @@ function getTimeLabel(ts) {
 }
 
 function sortMessages(list = []) {
-    return [...list].sort(
-        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-    );
+    return [...list].sort((a, b) => getMessageTimestamp(a) - getMessageTimestamp(b));
 }
 
 function Avatar({ name, image, size = "md", online = false }) {
@@ -138,7 +155,7 @@ export default function ChatRoom() {
     const [text, setText] = useState("");
     const [loadingMessages, setLoadingMessages] = useState(true);
 
-    const scrollRef = useRef(null);
+    const scrollContainerRef = useRef(null);
     const inputRef = useRef(null);
     const typingTimeout = useRef(null);
     const selectedRoomRef = useRef(buildFallbackRoom(roomId));
@@ -163,25 +180,18 @@ export default function ChatRoom() {
         return media[0] || "";
     };
 
+    const scrollToBottom = (behavior = "auto") => {
+        const el = scrollContainerRef.current;
+        if (!el) return;
+        el.scrollTo({
+            top: el.scrollHeight,
+            behavior,
+        });
+    };
+
     const partner = getPartner(selectedRoom);
     const isOnline = onlineUsers.some((id) => String(id) === String(partner?._id));
     const partnerIsTyping = typingUsers.some((id) => String(id) === String(partner?._id));
-
-    useEffect(() => {
-        if (typeof document !== "undefined") {
-            const prevOverflow = document.body.style.overflow;
-            const prevOverscroll = document.documentElement.style.overscrollBehavior;
-
-            document.body.style.overflow = "hidden";
-            document.documentElement.style.overscrollBehavior = "none";
-
-            return () => {
-                document.body.style.overflow = prevOverflow;
-                document.documentElement.style.overscrollBehavior = prevOverscroll;
-            };
-        }
-        return undefined;
-    }, []);
 
     useEffect(() => {
         if (!roomId) return;
@@ -224,8 +234,9 @@ export default function ChatRoom() {
         }
 
         if (cachedMessages.length > 0) {
-            setMessages(cachedMessages);
+            setMessages(sortMessages(cachedMessages));
             setLoadingMessages(false);
+            requestAnimationFrame(() => scrollToBottom("auto"));
         } else {
             setMessages([]);
             setLoadingMessages(true);
@@ -254,12 +265,16 @@ export default function ChatRoom() {
                     roomId,
                     userId: User._id,
                 });
+
+                requestAnimationFrame(() => scrollToBottom("auto"));
             } catch {
-                // keep cached messages if the request fails
+                // keep cached messages if request fails
             } finally {
                 if (mounted && currentRequestId === requestIdRef.current) {
                     setLoadingMessages(false);
-                    requestAnimationFrame(() => inputRef.current?.focus());
+                    requestAnimationFrame(() => {
+                        inputRef.current?.focus({ preventScroll: true });
+                    });
                 }
             }
         })();
@@ -279,7 +294,7 @@ export default function ChatRoom() {
                 const exists = prev.some((m) => String(m._id) === String(msg._id));
                 if (exists) return prev;
 
-                const next = [...prev, msg];
+                const next = sortMessages([...prev, msg]);
 
                 const cache = chatCacheRef.current.get(activeRoomId);
                 if (cache) {
@@ -303,6 +318,8 @@ export default function ChatRoom() {
                     userId: User._id,
                 });
             }
+
+            requestAnimationFrame(() => scrollToBottom("smooth"));
         };
 
         socket.on("receive_message", handler);
@@ -351,13 +368,10 @@ export default function ChatRoom() {
     }, []);
 
     useEffect(() => {
-        if (loadingMessages) return;
-
-        scrollRef.current?.scrollIntoView({
-            behavior: "smooth",
-            block: "end",
-        });
-    }, [messages, loadingMessages]);
+        if (!loadingMessages) {
+            requestAnimationFrame(() => scrollToBottom("auto"));
+        }
+    }, [messages, loadingMessages, selectedRoom?._id]);
 
     const sendMessage = () => {
         const trimmed = text.trim();
@@ -378,16 +392,13 @@ export default function ChatRoom() {
         inputRef.current?.focus({ preventScroll: true });
 
         requestAnimationFrame(() => {
-            scrollRef.current?.scrollIntoView({
-                behavior: "smooth",
-                block: "end",
-            });
+            scrollToBottom("smooth");
         });
     };
 
     const groupedMessages = useMemo(() => {
         return sortMessages(messages).reduce((acc, msg) => {
-            const key = getDateKey(msg.createdAt);
+            const key = getDateKey(getMessageTimestamp(msg));
             if (!acc[key]) acc[key] = [];
             acc[key].push(msg);
             return acc;
@@ -461,14 +472,18 @@ export default function ChatRoom() {
                 </div>
             </header>
 
+            {/* FIX: removed overscroll-contain Tailwind class and moved to inline style
+                so it's properly scoped and not overridden by any document-level rules */}
             <div
-                className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-5"
+                ref={scrollContainerRef}
+                className="min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-5"
                 style={{
                     WebkitOverflowScrolling: "touch",
                     touchAction: "pan-y",
+                    overscrollBehavior: "contain",
                 }}
             >
-                <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
+                <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col justify-end gap-4">
                     {loadingMessages && (
                         <div className="flex justify-center py-4">
                             <div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-200 border-t-orange-500" />
@@ -476,7 +491,7 @@ export default function ChatRoom() {
                     )}
 
                     {!loadingMessages && messages.length === 0 ? (
-                        <div className="flex items-center justify-center py-20 text-sm text-zinc-500">
+                        <div className="flex min-h-[200px] items-center justify-center text-sm text-zinc-500">
                             No messages yet.
                         </div>
                     ) : (
@@ -494,11 +509,15 @@ export default function ChatRoom() {
                                     {msgs.map((msg, idx) => {
                                         const senderId = getSenderId(msg);
                                         const mine = String(senderId) === String(User?._id);
-                                        const prevSenderId =
-                                            idx > 0 ? getSenderId(msgs[idx - 1]) : null;
-                                        const firstInCluster =
-                                            !prevSenderId ||
-                                            String(prevSenderId) !== String(senderId);
+
+                                        const nextSenderId =
+                                            idx < msgs.length - 1
+                                                ? getSenderId(msgs[idx + 1])
+                                                : null;
+                                        const lastInCluster =
+                                            !nextSenderId ||
+                                            String(nextSenderId) !== String(senderId);
+
                                         const seenByPartner = Array.isArray(msg.seenBy)
                                             ? msg.seenBy.some(
                                                   (id) => String(id) === String(partner?._id),
@@ -518,7 +537,7 @@ export default function ChatRoom() {
                                                     }`}
                                                 >
                                                     <div className="w-8 shrink-0">
-                                                        {firstInCluster && (
+                                                        {lastInCluster && (
                                                             <Avatar
                                                                 name={
                                                                     mine
@@ -582,11 +601,17 @@ export default function ChatRoom() {
                     )}
 
                     {partnerIsTyping && <TypingBubble partner={partner} />}
-                    <div ref={scrollRef} />
+                    <div />
                 </div>
             </div>
 
-            <div className="shrink-0 border-t border-zinc-200 bg-white px-3 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] sm:px-4">
+            {/* FIX: use inline style with max() for safe-area padding instead of
+                Tailwind calc — env() variables aren't reliably available at Tailwind
+                class parse time on all mobile browsers */}
+            <div
+                className="shrink-0 border-t border-zinc-200 bg-white px-3 pt-3 sm:px-4"
+                style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+            >
                 <div className="mx-auto flex w-full max-w-5xl items-end gap-2">
                     <div className="flex-1 rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 transition focus-within:border-orange-300 focus-within:bg-white">
                         <textarea
@@ -617,12 +642,7 @@ export default function ChatRoom() {
                                 }
                             }}
                             onFocus={() => {
-                                requestAnimationFrame(() => {
-                                    scrollRef.current?.scrollIntoView({
-                                        behavior: "auto",
-                                        block: "end",
-                                    });
-                                });
+                                setTimeout(() => scrollToBottom("smooth"), 320);
                             }}
                             placeholder="Write a message..."
                             rows={1}
