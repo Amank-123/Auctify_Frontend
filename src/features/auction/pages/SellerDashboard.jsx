@@ -643,29 +643,41 @@ export default function SellerDashboard() {
 
                 {/* ── Stats — full labels, no truncation ── */}
                 <div className="grid grid-cols-3 gap-2.5 sm:gap-3 mb-5">
-                    <StatCard
-                        label="Total Auctions"
-                        value={auctions.length}
-                        icon={ShoppingBag}
-                        bg="#dbeafe"
-                        iconColor="#2563eb"
-                    />
+                    {activeTab === "auctions" ? (
+                        <StatCard
+                            label="Total Auctions"
+                            value={auctions.length}
+                            icon={ShoppingBag}
+                            bg="#dbeafe"
+                            iconColor="#2563eb"
+                        />
+                    ) : (
+                        <>
+                            <StatCard
+                                label="Total Orders"
+                                value={orders.length}
+                                icon={ShoppingBag}
+                                bg="#dbeafe"
+                                iconColor="#2563eb"
+                            />
 
-                    <StatCard
-                        label="Draft Auctions"
-                        value={auctions.filter((a) => a.status === "draft").length}
-                        icon={Package}
-                        bg="#fee2e2"
-                        iconColor="#dc2626"
-                    />
+                            <StatCard
+                                label="Confirmed"
+                                value={orders.filter((o) => o.orderStatus === "confirmed").length}
+                                icon={Package}
+                                bg="#fee2e2"
+                                iconColor="#dc2626"
+                            />
 
-                    <StatCard
-                        label="Delivered Orders"
-                        value={orders.filter((o) => o.orderStatus === "delivered").length}
-                        icon={Truck}
-                        bg="#d1fae5"
-                        iconColor="#059669"
-                    />
+                            <StatCard
+                                label="Delivered"
+                                value={orders.filter((o) => o.orderStatus === "delivered").length}
+                                icon={Truck}
+                                bg="#d1fae5"
+                                iconColor="#059669"
+                            />
+                        </>
+                    )}
                 </div>
 
                 {/* ── Search bar ── */}
