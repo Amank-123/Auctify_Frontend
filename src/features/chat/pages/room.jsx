@@ -16,12 +16,6 @@ const SearchIcon = () => (
     </svg>
 );
 
-const MenuIcon = () => (
-    <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-    </svg>
-);
-
 function getSenderId(message) {
     return typeof message?.senderId === "object" ? message.senderId?._id : message?.senderId;
 }
@@ -89,20 +83,6 @@ export default function RoomPage() {
         return String(room?.buyerId?._id) === String(User?._id) ? room?.sellerId : room?.buyerId;
     };
 
-    const getRoomTitle = (room) => {
-        const partnerUser = getPartner(room);
-        const auctionTitle = room?.auctionId?.name || "Auction";
-        const username = partnerUser?.username || "User";
-        return `${auctionTitle} (${username})`;
-    };
-
-    const getAuctionImage = (room) => {
-        const media = room?.auctionId?.media;
-        if (!Array.isArray(media) || media.length === 0) return "";
-        if (Array.isArray(media[0])) return media[0][0] || "";
-        return media[0] || "";
-    };
-
     useEffect(() => {
         if (!User?._id) return;
         if (!socket.connected) socket.connect();
@@ -110,11 +90,7 @@ export default function RoomPage() {
     }, [User?._id]);
 
     useEffect(() => {
-        if (!roomId) {
-            setSidebarOpen(true);
-        } else {
-            setSidebarOpen(false);
-        }
+        setSidebarOpen(!roomId);
     }, [roomId]);
 
     useEffect(() => {
@@ -144,13 +120,11 @@ export default function RoomPage() {
 
                         if (byAuction) {
                             navigate(`/chats/${byAuction._id}`, { replace: true });
-                        } else {
-                            // navigate("/chats", { replace: true });
                         }
                     }
                 }
             } catch (err) {
-                // keep silent
+                // silent
             } finally {
                 if (mounted) setLoadingRooms(false);
             }
@@ -259,7 +233,7 @@ export default function RoomPage() {
     const hasRooms = rooms.length > 0;
 
     return (
-        <div className="h-screen overflow-hidden bg-zinc-50 text-zinc-900">
+        <div className="h-[100dvh] overflow-hidden bg-zinc-50 text-zinc-900">
             {sidebarOpen && roomId && (
                 <div
                     className="fixed inset-0 z-20 bg-black/30 backdrop-blur-sm md:hidden"
@@ -267,20 +241,18 @@ export default function RoomPage() {
                 />
             )}
 
-            <div className="flex h-screen min-w-0 overflow-hidden">
+            <div className="flex h-[100dvh] min-w-0 overflow-hidden">
                 <aside
                     className={`
-        fixed inset-0 z-30 flex w-full flex-col bg-white transition-transform duration-200 ease-out
-
-        md:static
-        md:inset-auto
-        md:w-[360px]
-        md:border-r
-        md:border-zinc-200
-        md:translate-x-0
-
-        ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-    `}
+                        fixed inset-0 z-30 flex w-full flex-col bg-white transition-transform duration-200 ease-out
+                        md:static
+                        md:inset-auto
+                        md:w-[360px]
+                        md:border-r
+                        md:border-zinc-200
+                        md:translate-x-0
+                        ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+                    `}
                 >
                     <div className="border-b border-zinc-200 px-4 py-4">
                         <div className="mb-4 flex items-center justify-between">
@@ -328,7 +300,7 @@ export default function RoomPage() {
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-2">
+                    <div className="min-h-0 flex-1 overflow-y-auto p-2">
                         {loadingRooms ? (
                             <div className="px-4 py-10 text-center text-sm text-zinc-500">
                                 Loading rooms...
@@ -366,13 +338,13 @@ export default function RoomPage() {
                                                 setSidebarOpen(false);
                                             }}
                                             className={`
-                                                    flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition
-                                                    ${
-                                                        active
-                                                            ? "border border-orange-200 bg-orange-50"
-                                                            : "hover:bg-zinc-100"
-                                                    }
-                                                `}
+                                                flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition
+                                                ${
+                                                    active
+                                                        ? "border border-orange-200 bg-orange-50"
+                                                        : "hover:bg-zinc-100"
+                                                }
+                                            `}
                                         >
                                             <div className="relative shrink-0">
                                                 <Avatar
@@ -417,10 +389,11 @@ export default function RoomPage() {
                         )}
                     </div>
 
-                    <div className="border-t border-zinc-200 px-4 py-3">
+                    <div className="border-t border-zinc-200 px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
                         <button
+                            type="button"
                             className="flex items-center gap-3"
-                            onclick={() => navigate("/profile")}
+                            onClick={() => navigate("/profile")}
                         >
                             <Avatar name={User?.username} image={User?.profile} size="sm" online />
                             <div className="min-w-0 flex-1">
@@ -434,7 +407,7 @@ export default function RoomPage() {
                 </aside>
 
                 <main className="relative flex min-w-0 flex-1 flex-col bg-zinc-50">
-                    <div className="flex-1 overflow-hidden">
+                    <div className="min-h-0 flex-1 overflow-hidden">
                         <Outlet
                             context={{
                                 rooms,

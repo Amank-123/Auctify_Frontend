@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
     Package,
     Search,
@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { showError, showSuccess } from "@/shared/utils/toast.js";
 import { api } from "@/shared/services/axios";
+import { API_ENDPOINTS } from "../../../shared/constants/apiEndpoints";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -288,14 +289,14 @@ function OrderCard({ order, onSendOTP, onVerify }) {
                     {!delivered && (
                         <button
                             onClick={() => onVerify(order._id)}
-                            className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all duration-200"
+                            className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-lg transition-all duration-200"
                             style={{
                                 background: "#f0fdf4",
                                 color: "#15803d",
                                 border: "1px solid #bbf7d0",
                             }}
                         >
-                            <ShieldCheck size={10} />
+                            <ShieldCheck size={14} />
                             Verify OTP
                         </button>
                     )}
@@ -319,13 +320,14 @@ function OrderCard({ order, onSendOTP, onVerify }) {
                         onClick={() => setExpanded((p) => !p)}
                         className="ml-auto flex items-center gap-0.5 text-[11px] text-stone-400 hover:text-stone-700 font-medium transition-colors"
                     >
-                        <Eye size={11} />
+                        <Eye size={15} />
+                        Details
                         <motion.span
                             animate={{ rotate: expanded ? 90 : 0 }}
                             transition={{ duration: 0.18 }}
                             className="flex"
                         >
-                            <ChevronRight size={11} />
+                            <ChevronRight size={15} />
                         </motion.span>
                     </button>
                 </div>
@@ -351,7 +353,9 @@ function OrderCard({ order, onSendOTP, onVerify }) {
                                 {
                                     icon: Calendar,
                                     label: "Auction Ends",
-                                    value: fmtDate(order?.auctionId?.endTime),
+                                    value: fmtDate(
+                                        order?.auctionId?.endedTime || order?.auctionId?.endTime,
+                                    ),
                                 },
                                 {
                                     icon: MapPin,
@@ -510,6 +514,7 @@ function OTPModal({ otp, setOtp, onVerify, onClose }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SellerDashboard() {
+    const navigate = useNavigate();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState("all");
@@ -522,12 +527,9 @@ export default function SellerDashboard() {
     const fetchOrders = useCallback(async () => {
         try {
             setLoading(true);
-            const [auctionRes, orderRes] = await Promise.all([
-                api.get("/api/auction/seller"),
-                api.get("/api/order/seller"),
-            ]);
-            console.log("AUCTIONS", auctionRes.data.data);
-            console.log("ORDERS", orderRes.data.data);
+
+            const auctionRes = await api.get(API_ENDPOINTS.Auction.GET_BY_SELLER);
+            const orderRes = await api.get(API_ENDPOINTS.Order.GET_MY_ORDERS);
 
             setAuctions(auctionRes.data.data || []);
             setOrders(orderRes.data.data || []);
@@ -800,13 +802,14 @@ export default function SellerDashboard() {
                                               key={auction._id}
                                               layout
                                               whileHover={{ y: -2 }}
-                                              className="bg-white rounded-2xl overflow-hidden border border-stone-100"
+                                              onClick={() => navigate(`/auction/${auction._id}`)}
+                                              className="bg-white cursor-pointer rounded-2xl overflow-hidden border border-stone-100"
                                               style={{
                                                   boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
                                               }}
                                           >
                                               <div className="flex">
-                                                  <div className="w-28 h-28 shrink-0">
+                                                  <div className="w-38 h-auto max-h-38 shrink-0">
                                                       {image ? (
                                                           <img
                                                               src={image}

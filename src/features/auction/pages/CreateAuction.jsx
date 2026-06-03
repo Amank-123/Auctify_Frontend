@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { api } from "@/shared/services/axios";
 import { API_ENDPOINTS } from "@/shared/constants/apiEndpoints";
 import { showError, showSuccess } from "@/shared/utils/toast";
@@ -9,9 +9,7 @@ import {
     ArrowRight,
     Check,
     Gavel,
-    ImagePlus,
     Loader2,
-    Tag,
     Clock,
     Upload,
     X,
@@ -83,7 +81,7 @@ export default function CreateAuction() {
                 const res = await api.get("/api/category/get");
                 setCategories(res.data.data || []);
             } catch (e) {
-                //console.log(e);
+                // console.log(e);
             }
         })();
     }, []);
@@ -95,37 +93,61 @@ export default function CreateAuction() {
         setFiles(valid);
         setPreview(valid.map((f) => URL.createObjectURL(f)));
     };
+
     const handleDrop = (e) => {
         e.preventDefault();
         setDragOver(false);
         processFiles(Array.from(e.dataTransfer.files));
     };
+
     const removeImage = (i) => {
         setFiles(files.filter((_, idx) => idx !== i));
         setPreview(preview.filter((_, idx) => idx !== i));
     };
 
+    const goNext = (required) => {
+        const missing = required.some((f) => !form[f]?.toString().trim());
+        if (missing) {
+            showError("Please fill all required fields");
+            return false;
+        }
+        setStep((s) => s + 1);
+        return true;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Hard guard: submit should only be allowed on the final step
+        if (step !== 3) {
+            return;
+        }
+
         if (!files.length) {
             showError("Please upload at least one photo");
             return;
         }
+
         if (form.auctionType === "long" && new Date(form.endTime) <= new Date(form.startTime)) {
             showError("End time must be after start time");
             return;
         }
+
         try {
             setLoading(true);
             const fd = new FormData();
+
             Object.entries(form).forEach(([k, v]) => {
-                if (v !== "" && v !== null && v !== undefined)
+                if (v !== "" && v !== null && v !== undefined) {
                     fd.append(
                         k,
                         k === "startTime" || k === "endTime" ? new Date(v).toISOString() : v,
                     );
+                }
             });
+
             files.forEach((f) => fd.append("media", f));
+
             const res = await api.post(API_ENDPOINTS.Auction.CREATE, fd);
             showSuccess("Auction created successfully!");
             navigate(`/auction/${res?.data?.data?._id}`);
@@ -136,18 +158,10 @@ export default function CreateAuction() {
         }
     };
 
-    const goNext = (required) => {
-        if (!required.every((f) => form[f]?.toString().trim())) {
-            showError("Please fill all required fields");
-            return;
-        }
-        setStep((s) => s + 1);
-    };
-
     const progressPct = (step / STEPS.length) * 100;
 
     return (
-        <div className="min-h-screen bg-[#f7f8fc] ">
+        <div className="min-h-screen bg-[#f7f8fc]">
             {/* LOADING OVERLAY */}
             <AnimatePresence>
                 {loading && (
@@ -288,6 +302,7 @@ export default function CreateAuction() {
                                 </motion.div>
                             </AnimatePresence>
                         </div>
+
                         <div className="mx-6 sm:mx-8 border-t border-slate-100 mt-5" />
 
                         {/* FORM BODY */}
@@ -490,7 +505,9 @@ export default function CreateAuction() {
                                                     multiple
                                                     accept="image/*"
                                                     onChange={(e) =>
-                                                        processFiles(Array.from(e.target.files))
+                                                        processFiles(
+                                                            Array.from(e.target.files || []),
+                                                        )
                                                     }
                                                     disabled={loading}
                                                     className="hidden"
@@ -623,11 +640,14 @@ export default function CreateAuction() {
                                         <button
                                             type="button"
                                             disabled={loading}
-                                            onClick={() => {
-                                                if (step === 1)
+                                            onClick={(e) => {
+                                                e.preventDefault();
+
+                                                if (step === 1) {
                                                     goNext(["name", "category", "description"]);
-                                                else if (step === 2)
+                                                } else if (step === 2) {
                                                     goNext(["startPrice", "startTime"]);
+                                                }
                                             }}
                                             className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#1a2d6e] hover:bg-[#1e3580] text-white font-semibold text-[13px] py-3 transition-all shadow-md shadow-[#1a2d6e]/25 active:scale-[0.99] disabled:opacity-40"
                                         >

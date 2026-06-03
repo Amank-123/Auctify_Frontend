@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useOutletContext, useParams } from "react-router-dom";
-import { HiOutlinePaperAirplane, HiOutlineArrowLeft } from "react-icons/hi2";
+import { useLocation, useNavigate, useOutletContext, useParams } from "react-router-dom";
+import { HiOutlinePaperAirplane } from "react-icons/hi2";
 import { api } from "@/shared/services/axios";
 import { useAuth } from "@/hooks/useAuth";
 import { socket } from "@/shared/services/socket";
-import { ArrowLeft, MenuIcon } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 const CheckIcon = ({ double = false }) => (
     <svg className="h-3.5 w-3.5" viewBox="0 0 16 11" fill="none">
@@ -125,8 +125,9 @@ function TypingBubble({ partner }) {
 export default function ChatRoom() {
     const { roomId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const { User } = useAuth();
-    const { rooms, onlineUsers, typingUsers, chatCacheRef, setSidebarOpen } = useOutletContext();
+    const { rooms, onlineUsers, typingUsers, chatCacheRef } = useOutletContext();
 
     const [selectedRoom, setSelectedRoom] = useState(null);
     const [messages, setMessages] = useState([]);
@@ -162,12 +163,6 @@ export default function ChatRoom() {
     const partnerIsTyping = typingUsers.some((id) => String(id) === String(partner?._id));
 
     useEffect(() => {
-        if (!loadingMessages && !selectedRoom) {
-            // navigate("/chats", { replace: true });
-        }
-    }, [loadingMessages, selectedRoom, navigate]);
-
-    useEffect(() => {
         if (!roomId || !User?._id) return;
 
         const activeRoomAlreadyLoaded =
@@ -180,22 +175,26 @@ export default function ChatRoom() {
         (async () => {
             try {
                 setLoadingMessages(true);
-                setSelectedRoom(null);
-                setMessages([]);
 
-                const room = rooms.find((r) => String(r._id) === String(roomId)) ?? null;
+                const stateRoom = location.state?.room;
+                const roomFromState =
+                    stateRoom && String(stateRoom?._id) === String(roomId) ? stateRoom : null;
+
+                const room =
+                    rooms.find((r) => String(r._id) === String(roomId)) ?? roomFromState ?? null;
 
                 if (!mounted) return;
 
                 if (!room) {
-                    setLoadingMessages(false);
+                    setSelectedRoom(null);
+                    setMessages([]);
                     return;
                 }
 
-                const cached = chatCacheRef.current.get(room._id);
-
                 setSelectedRoom(room);
                 selectedRoomRef.current = room;
+
+                const cached = chatCacheRef.current.get(room._id);
 
                 if (cached?.messages) {
                     setMessages(cached.messages);
@@ -205,8 +204,7 @@ export default function ChatRoom() {
                         userId: User._id,
                     });
 
-                    setTimeout(() => inputRef.current?.focus(), 50);
-                    setLoadingMessages(false);
+                    requestAnimationFrame(() => inputRef.current?.focus());
                     return;
                 }
 
@@ -231,9 +229,9 @@ export default function ChatRoom() {
                     userId: User._id,
                 });
 
-                setTimeout(() => inputRef.current?.focus(), 50);
+                requestAnimationFrame(() => inputRef.current?.focus());
             } catch (err) {
-                // keep silent
+                // silent
             } finally {
                 if (mounted) setLoadingMessages(false);
             }
@@ -242,7 +240,7 @@ export default function ChatRoom() {
         return () => {
             mounted = false;
         };
-    }, [roomId, rooms, User?._id, chatCacheRef]);
+    }, [roomId, rooms, User?._id, chatCacheRef, location.state]);
 
     useEffect(() => {
         const handler = (msg) => {
@@ -369,9 +367,9 @@ export default function ChatRoom() {
         }, {});
     }, [messages]);
 
-    if (loadingMessages) {
+    if (loadingMessages && !selectedRoom) {
         return (
-            <div className="flex h-full items-center justify-center bg-zinc-50">
+            <div className="flex h-[100dvh] items-center justify-center bg-zinc-50">
                 <div className="text-center">
                     <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-zinc-200 border-t-orange-500" />
                     <p className="mt-2 text-sm text-zinc-500">Loading chat...</p>
@@ -382,15 +380,15 @@ export default function ChatRoom() {
 
     if (!selectedRoom) {
         return (
-            <div className="flex h-full items-center justify-center bg-zinc-50">
+            <div className="flex h-[100dvh] items-center justify-center bg-zinc-50">
                 <p className="text-sm text-zinc-500">Room not found.</p>
             </div>
         );
     }
 
     return (
-        <div className="flex h-full flex-col overflow-hidden bg-white">
-            <header className="flex h-16 shrink-0 items-center gap-2 border-b border-zinc-200 bg-white px-3 sm:px-4">
+        <div className="flex h-[100dvh] flex-col overflow-hidden bg-white">
+            <header className="flex shrink-0 items-center gap-2 border-b border-zinc-200 bg-white px-3 py-3 sm:px-4">
                 <button
                     type="button"
                     className="rounded-xl p-1 text-zinc-600 hover:bg-zinc-100 md:hidden"
@@ -430,8 +428,14 @@ export default function ChatRoom() {
                 </div>
             </header>
 
-            <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-5">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-5">
                 <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
+                    {loadingMessages && (
+                        <div className="flex justify-center py-4">
+                            <div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-200 border-t-orange-500" />
+                        </div>
+                    )}
+
                     {Object.entries(groupedMessages).map(([dateLabel, msgs]) => (
                         <div key={dateLabel} className="space-y-2">
                             <div className="flex items-center gap-3 py-1">
@@ -464,7 +468,7 @@ export default function ChatRoom() {
                                             }`}
                                         >
                                             <div
-                                                className={`flex items-end gap-2 max-w-[78%] ${
+                                                className={`flex max-w-[78%] items-end gap-2 ${
                                                     mine ? "flex-row-reverse" : "flex-row"
                                                 }`}
                                             >
@@ -487,13 +491,13 @@ export default function ChatRoom() {
                                                 </div>
 
                                                 <div
-                                                    className={`px-3 py-2 rounded-2xl shadow-sm ${
+                                                    className={`rounded-2xl px-3 py-2 shadow-sm ${
                                                         mine
-                                                            ? "bg-orange-500 text-white rounded-br-md"
-                                                            : "bg-white border border-zinc-200 text-zinc-900 rounded-bl-md"
+                                                            ? "rounded-br-md bg-orange-500 text-white"
+                                                            : "rounded-bl-md border border-zinc-200 bg-white text-zinc-900"
                                                     }`}
                                                 >
-                                                    <p className="text-[13px] leading-[1.45] break-words">
+                                                    <p className="break-words text-[13px] leading-[1.45]">
                                                         {msg.text}
                                                     </p>
 
@@ -534,7 +538,7 @@ export default function ChatRoom() {
                 </div>
             </div>
 
-            <div className="border-t border-zinc-200 bg-white px-3 py-3 sm:px-4">
+            <div className="shrink-0 border-t border-zinc-200 bg-white px-3 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] sm:px-4">
                 <div className="mx-auto flex w-full max-w-5xl items-end gap-2">
                     <div className="flex-1 rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 transition focus-within:border-orange-300 focus-within:bg-white">
                         <textarea

@@ -42,6 +42,7 @@ const API_ENDPOINTS = {
     Order: {
         CREATE: "/api/order",
         GET_MY_ORDERS: "/api/order/my",
+        GET_ORDERS_BY_SELLER: "/api/order/seller",
     },
 
     Payment: {

@@ -4,7 +4,6 @@ import { HiOutlineX, HiOutlineLogout } from "react-icons/hi";
 
 import { useAuth } from "@/hooks/useAuth.js";
 import { api } from "@/shared/services/axios.js";
-import { API_ENDPOINTS } from "@/shared/constants/apiEndpoints.js";
 import { showSuccess } from "@/shared/utils/toast.js";
 
 import SidebarSection from "./SidebarSection.jsx";
@@ -13,6 +12,7 @@ import AuctionItem from "./AuctionItem.jsx";
 import BidItem from "./BidItem.jsx";
 
 import defaultUp from "@/assets/default.png";
+import { API_ENDPOINTS } from "../../../shared/constants/apiEndpoints.js";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -47,21 +47,13 @@ export default function UserSidebar({ open, onClose, user }) {
 
                 setError("");
 
-                const [userRes, auctionRes, bidRes] = await Promise.all([
-                    api.get(API_ENDPOINTS.User.GET),
-
-                    api.get(API_ENDPOINTS.Auction.GET_BY_SELLER),
-
-                    api.get(API_ENDPOINTS.Bid.GET_USER_BIDS),
-                ]);
-
-                if (!alive) return;
-
-                setProfile(userRes?.data?.data || null);
-
-                setAuctions(auctionRes?.data?.data || []);
+                const bidRes = await api.get(API_ENDPOINTS.Bid.GET_USER_BIDS);
 
                 setBids(bidRes?.data?.data || []);
+
+                const auctionRes = await api.get(API_ENDPOINTS.Auction.GET_BY_SELLER);
+
+                setAuctions(auctionRes?.data?.data || []);
             } catch (err) {
                 if (!alive) return;
 
@@ -650,7 +642,7 @@ export default function UserSidebar({ open, onClose, user }) {
                         )}
                     </SidebarSection>
                     {/* ERROR */}
-                    {error && (
+                    {/* {error && (
                         <div
                             className="
                                 text-sm text-red-500
@@ -665,7 +657,7 @@ export default function UserSidebar({ open, onClose, user }) {
                         >
                             {error}
                         </div>
-                    )}
+                    )} */}
                 </div>
 
                 {/* FOOTER */}
