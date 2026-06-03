@@ -122,6 +122,10 @@ function TypingBubble({ partner }) {
     );
 }
 
+function buildFallbackRoom(roomId) {
+    return roomId ? { _id: roomId, auctionId: { name: "Conversation", media: [] } } : null;
+}
+
 export default function ChatRoom() {
     const { roomId } = useParams();
     const navigate = useNavigate();
@@ -129,7 +133,7 @@ export default function ChatRoom() {
     const { User } = useAuth();
     const { rooms, onlineUsers, typingUsers, chatCacheRef } = useOutletContext();
 
-    const [selectedRoom, setSelectedRoom] = useState(null);
+    const [selectedRoom, setSelectedRoom] = useState(() => buildFallbackRoom(roomId));
     const [messages, setMessages] = useState([]);
     const [text, setText] = useState("");
     const [loadingMessages, setLoadingMessages] = useState(true);
@@ -137,7 +141,8 @@ export default function ChatRoom() {
     const scrollRef = useRef(null);
     const inputRef = useRef(null);
     const typingTimeout = useRef(null);
-    const selectedRoomRef = useRef(null);
+    const selectedRoomRef = useRef(buildFallbackRoom(roomId));
+    const requestIdRef = useRef(0);
 
     const getPartner = (room) => {
         if (!room || !User?._id) return null;
@@ -146,9 +151,9 @@ export default function ChatRoom() {
 
     const getRoomTitle = (room) => {
         const partnerUser = getPartner(room);
-        const auctionTitle = room?.auctionId?.name || "Auction";
-        const username = partnerUser?.username || "User";
-        return `${auctionTitle} (${username})`;
+        const auctionTitle = room?.auctionId?.name || "Conversation";
+        const username = partnerUser?.username || "";
+        return username ? `${auctionTitle} (${username})` : auctionTitle;
     };
 
     const getAuctionImage = (room) => {
@@ -163,84 +168,90 @@ export default function ChatRoom() {
     const partnerIsTyping = typingUsers.some((id) => String(id) === String(partner?._id));
 
     useEffect(() => {
+        if (!roomId) return;
+
+        const roomFromRooms = rooms.find((r) => String(r._id) === String(roomId));
+        const roomFromState =
+            location.state?.room && String(location.state?.room?._id) === String(roomId)
+                ? location.state.room
+                : null;
+        const roomFromCache = chatCacheRef.current.get(roomId)?.room;
+
+        const resolvedRoom =
+            roomFromRooms || roomFromState || roomFromCache || buildFallbackRoom(roomId);
+
+        setSelectedRoom(resolvedRoom);
+        selectedRoomRef.current = resolvedRoom;
+
+        if (resolvedRoom?._id) {
+            const existingCache = chatCacheRef.current.get(resolvedRoom._id) || {};
+            chatCacheRef.current.set(resolvedRoom._id, {
+                ...existingCache,
+                room: resolvedRoom,
+                messages: existingCache.messages || [],
+            });
+        }
+    }, [roomId, rooms, location.state, chatCacheRef]);
+
+    useEffect(() => {
         if (!roomId || !User?._id) return;
 
-        const activeRoomAlreadyLoaded =
-            selectedRoomRef.current && String(selectedRoomRef.current?._id) === String(roomId);
-
-        if (activeRoomAlreadyLoaded) return;
-
         let mounted = true;
+        const currentRequestId = ++requestIdRef.current;
+
+        const cachedEntry = chatCacheRef.current.get(roomId);
+        const cachedMessages = Array.isArray(cachedEntry?.messages) ? cachedEntry.messages : [];
+
+        if (cachedEntry?.room) {
+            setSelectedRoom(cachedEntry.room);
+            selectedRoomRef.current = cachedEntry.room;
+        }
+
+        if (cachedMessages.length > 0) {
+            setMessages(cachedMessages);
+            setLoadingMessages(false);
+        } else {
+            setMessages([]);
+            setLoadingMessages(true);
+        }
 
         (async () => {
             try {
-                setLoadingMessages(true);
-
-                const stateRoom = location.state?.room;
-                const roomFromState =
-                    stateRoom && String(stateRoom?._id) === String(roomId) ? stateRoom : null;
-
-                const room =
-                    rooms.find((r) => String(r._id) === String(roomId)) ?? roomFromState ?? null;
-
-                if (!mounted) return;
-
-                if (!room) {
-                    setSelectedRoom(null);
-                    setMessages([]);
-                    return;
-                }
-
-                setSelectedRoom(room);
-                selectedRoomRef.current = room;
-
-                const cached = chatCacheRef.current.get(room._id);
-
-                if (cached?.messages) {
-                    setMessages(cached.messages);
-
-                    socket.emit("message_seen", {
-                        roomId: room._id,
-                        userId: User._id,
-                    });
-
-                    requestAnimationFrame(() => inputRef.current?.focus());
-                    return;
-                }
-
                 const msgRes = await api.post("/api/message/get", {
-                    roomId: room._id,
+                    roomId,
                 });
 
-                if (!mounted) return;
+                if (!mounted || currentRequestId !== requestIdRef.current) return;
 
                 const msgs = Array.isArray(msgRes.data?.data) ? msgRes.data.data : [];
                 const sorted = sortMessages(msgs);
 
-                chatCacheRef.current.set(room._id, {
-                    room,
+                const roomToStore = selectedRoomRef.current || buildFallbackRoom(roomId);
+                chatCacheRef.current.set(roomId, {
+                    room: roomToStore,
                     messages: sorted,
                 });
 
                 setMessages(sorted);
 
                 socket.emit("message_seen", {
-                    roomId: room._id,
+                    roomId,
                     userId: User._id,
                 });
-
-                requestAnimationFrame(() => inputRef.current?.focus());
-            } catch (err) {
-                // silent
+            } catch {
+                // keep cached messages if the request fails
             } finally {
-                if (mounted) setLoadingMessages(false);
+                if (mounted && currentRequestId === requestIdRef.current) {
+                    setLoadingMessages(false);
+                    requestAnimationFrame(() => inputRef.current?.focus());
+                }
             }
         })();
 
         return () => {
             mounted = false;
         };
-    }, [roomId, rooms, User?._id, chatCacheRef, location.state]);
+    }, [roomId, User?._id, chatCacheRef]);
 
     useEffect(() => {
         const handler = (msg) => {
@@ -367,25 +378,6 @@ export default function ChatRoom() {
         }, {});
     }, [messages]);
 
-    if (loadingMessages && !selectedRoom) {
-        return (
-            <div className="flex h-[100dvh] items-center justify-center bg-zinc-50">
-                <div className="text-center">
-                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-zinc-200 border-t-orange-500" />
-                    <p className="mt-2 text-sm text-zinc-500">Loading chat...</p>
-                </div>
-            </div>
-        );
-    }
-
-    if (!selectedRoom) {
-        return (
-            <div className="flex h-[100dvh] items-center justify-center bg-zinc-50">
-                <p className="text-sm text-zinc-500">Room not found.</p>
-            </div>
-        );
-    }
-
     return (
         <div className="flex h-[100dvh] flex-col overflow-hidden bg-white">
             <header className="flex shrink-0 items-center gap-2 border-b border-zinc-200 bg-white px-3 py-3 sm:px-4">
@@ -399,11 +391,17 @@ export default function ChatRoom() {
                 </button>
 
                 <div className="relative shrink-0">
-                    <img
-                        src={getAuctionImage(selectedRoom)}
-                        alt={selectedRoom?.auctionId?.name}
-                        className="h-10 w-10 rounded-xl object-cover border border-zinc-200"
-                    />
+                    {getAuctionImage(selectedRoom) ? (
+                        <img
+                            src={getAuctionImage(selectedRoom)}
+                            alt={selectedRoom?.auctionId?.name || "Conversation"}
+                            className="h-10 w-10 rounded-xl object-cover border border-zinc-200"
+                        />
+                    ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-100 text-xs font-semibold text-zinc-500">
+                            CHAT
+                        </div>
+                    )}
 
                     {isOnline && (
                         <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-white" />
@@ -436,102 +434,111 @@ export default function ChatRoom() {
                         </div>
                     )}
 
-                    {Object.entries(groupedMessages).map(([dateLabel, msgs]) => (
-                        <div key={dateLabel} className="space-y-2">
-                            <div className="flex items-center gap-3 py-1">
-                                <div className="h-px flex-1 bg-zinc-200" />
-                                <span className="shrink-0 rounded-full border border-zinc-200 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-400">
-                                    {dateLabel}
-                                </span>
-                                <div className="h-px flex-1 bg-zinc-200" />
-                            </div>
+                    {!loadingMessages && messages.length === 0 ? (
+                        <div className="flex items-center justify-center py-20 text-sm text-zinc-500">
+                            No messages yet.
+                        </div>
+                    ) : (
+                        Object.entries(groupedMessages).map(([dateLabel, msgs]) => (
+                            <div key={dateLabel} className="space-y-2">
+                                <div className="flex items-center gap-3 py-1">
+                                    <div className="h-px flex-1 bg-zinc-200" />
+                                    <span className="shrink-0 rounded-full border border-zinc-200 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-400">
+                                        {dateLabel}
+                                    </span>
+                                    <div className="h-px flex-1 bg-zinc-200" />
+                                </div>
 
-                            <div className="space-y-1.5">
-                                {msgs.map((msg, idx) => {
-                                    const senderId = getSenderId(msg);
-                                    const mine = String(senderId) === String(User?._id);
-                                    const prevSenderId =
-                                        idx > 0 ? getSenderId(msgs[idx - 1]) : null;
-                                    const firstInCluster =
-                                        !prevSenderId || String(prevSenderId) !== String(senderId);
-                                    const seenByPartner = Array.isArray(msg.seenBy)
-                                        ? msg.seenBy.some(
-                                              (id) => String(id) === String(partner?._id),
-                                          )
-                                        : false;
+                                <div className="space-y-1.5">
+                                    {msgs.map((msg, idx) => {
+                                        const senderId = getSenderId(msg);
+                                        const mine = String(senderId) === String(User?._id);
+                                        const prevSenderId =
+                                            idx > 0 ? getSenderId(msgs[idx - 1]) : null;
+                                        const firstInCluster =
+                                            !prevSenderId ||
+                                            String(prevSenderId) !== String(senderId);
+                                        const seenByPartner = Array.isArray(msg.seenBy)
+                                            ? msg.seenBy.some(
+                                                  (id) => String(id) === String(partner?._id),
+                                              )
+                                            : false;
 
-                                    return (
-                                        <div
-                                            key={msg._id}
-                                            className={`flex w-full ${
-                                                mine ? "justify-end" : "justify-start"
-                                            }`}
-                                        >
+                                        return (
                                             <div
-                                                className={`flex max-w-[78%] items-end gap-2 ${
-                                                    mine ? "flex-row-reverse" : "flex-row"
+                                                key={msg._id}
+                                                className={`flex w-full ${
+                                                    mine ? "justify-end" : "justify-start"
                                                 }`}
                                             >
-                                                <div className="w-8 shrink-0">
-                                                    {firstInCluster && (
-                                                        <Avatar
-                                                            name={
-                                                                mine
-                                                                    ? User?.username
-                                                                    : partner?.username
-                                                            }
-                                                            image={
-                                                                mine
-                                                                    ? User?.profile
-                                                                    : partner?.profile
-                                                            }
-                                                            size="sm"
-                                                        />
-                                                    )}
-                                                </div>
-
                                                 <div
-                                                    className={`rounded-2xl px-3 py-2 shadow-sm ${
-                                                        mine
-                                                            ? "rounded-br-md bg-orange-500 text-white"
-                                                            : "rounded-bl-md border border-zinc-200 bg-white text-zinc-900"
+                                                    className={`flex max-w-[78%] items-end gap-2 ${
+                                                        mine ? "flex-row-reverse" : "flex-row"
                                                     }`}
                                                 >
-                                                    <p className="break-words text-[13px] leading-[1.45]">
-                                                        {msg.text}
-                                                    </p>
-
-                                                    <div className="mt-1 flex items-center justify-end gap-1">
-                                                        <span
-                                                            className={`text-[10px] ${
-                                                                mine
-                                                                    ? "text-orange-100"
-                                                                    : "text-zinc-400"
-                                                            }`}
-                                                        >
-                                                            {getTimeLabel(msg.createdAt)}
-                                                        </span>
-
-                                                        {mine && (
-                                                            <span
-                                                                className={
-                                                                    seenByPartner
-                                                                        ? "text-orange-100"
-                                                                        : "text-orange-200"
+                                                    <div className="w-8 shrink-0">
+                                                        {firstInCluster && (
+                                                            <Avatar
+                                                                name={
+                                                                    mine
+                                                                        ? User?.username
+                                                                        : partner?.username
                                                                 }
-                                                            >
-                                                                <CheckIcon double={seenByPartner} />
-                                                            </span>
+                                                                image={
+                                                                    mine
+                                                                        ? User?.profile
+                                                                        : partner?.profile
+                                                                }
+                                                                size="sm"
+                                                            />
                                                         )}
+                                                    </div>
+
+                                                    <div
+                                                        className={`rounded-2xl px-3 py-2 shadow-sm ${
+                                                            mine
+                                                                ? "rounded-br-md bg-orange-500 text-white"
+                                                                : "rounded-bl-md border border-zinc-200 bg-white text-zinc-900"
+                                                        }`}
+                                                    >
+                                                        <p className="break-words text-[13px] leading-[1.45]">
+                                                            {msg.text}
+                                                        </p>
+
+                                                        <div className="mt-1 flex items-center justify-end gap-1">
+                                                            <span
+                                                                className={`text-[10px] ${
+                                                                    mine
+                                                                        ? "text-orange-100"
+                                                                        : "text-zinc-400"
+                                                                }`}
+                                                            >
+                                                                {getTimeLabel(msg.createdAt)}
+                                                            </span>
+
+                                                            {mine && (
+                                                                <span
+                                                                    className={
+                                                                        seenByPartner
+                                                                            ? "text-orange-100"
+                                                                            : "text-orange-200"
+                                                                    }
+                                                                >
+                                                                    <CheckIcon
+                                                                        double={seenByPartner}
+                                                                    />
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))
+                    )}
 
                     {partnerIsTyping && <TypingBubble partner={partner} />}
                     <div ref={scrollRef} />

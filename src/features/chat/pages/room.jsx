@@ -6,6 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { socket } from "@/shared/services/socket";
 import { usePageTitle } from "../../../shared/utils/usePageTitle";
 
+const ROOMS_CACHE_KEY = "auctify_rooms_cache_v1";
+
 const SearchIcon = () => (
     <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
         <path
@@ -15,6 +17,26 @@ const SearchIcon = () => (
         />
     </svg>
 );
+
+function readRoomsCache() {
+    if (typeof window === "undefined") return [];
+    try {
+        const raw = window.localStorage.getItem(ROOMS_CACHE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
+function writeRoomsCache(rooms) {
+    if (typeof window === "undefined") return;
+    try {
+        window.localStorage.setItem(ROOMS_CACHE_KEY, JSON.stringify(rooms || []));
+    } catch {
+        // ignore cache errors
+    }
+}
 
 function getSenderId(message) {
     return typeof message?.senderId === "object" ? message.senderId?._id : message?.senderId;
@@ -69,12 +91,12 @@ export default function RoomPage() {
     const { User } = useAuth();
     usePageTitle("Auctify | Chats");
 
-    const [rooms, setRooms] = useState([]);
+    const [rooms, setRooms] = useState(() => readRoomsCache());
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [typingUsers, setTypingUsers] = useState([]);
     const [search, setSearch] = useState("");
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [loadingRooms, setLoadingRooms] = useState(true);
+    const [loadingRooms, setLoadingRooms] = useState(() => readRoomsCache().length === 0);
 
     const chatCacheRef = useRef(new Map());
 
@@ -82,6 +104,10 @@ export default function RoomPage() {
         if (!room || !User?._id) return null;
         return String(room?.buyerId?._id) === String(User?._id) ? room?.sellerId : room?.buyerId;
     };
+
+    useEffect(() => {
+        writeRoomsCache(rooms);
+    }, [rooms]);
 
     useEffect(() => {
         if (!User?._id) return;
@@ -100,7 +126,7 @@ export default function RoomPage() {
 
         (async () => {
             try {
-                setLoadingRooms(true);
+                setLoadingRooms(readRoomsCache().length === 0);
 
                 const res = await api.get("/api/Room/getRooms");
                 const data = Array.isArray(res.data?.data) ? res.data.data : [];
@@ -123,8 +149,8 @@ export default function RoomPage() {
                         }
                     }
                 }
-            } catch (err) {
-                // silent
+            } catch {
+                // keep cached rooms on screen if the network is having one of its little episodes
             } finally {
                 if (mounted) setLoadingRooms(false);
             }
@@ -150,7 +176,6 @@ export default function RoomPage() {
                 if (roomIndex === -1) return prev;
 
                 const room = prev[roomIndex];
-
                 const updatedRoom = {
                     ...room,
                     lastMessage: msg.text,
@@ -160,8 +185,13 @@ export default function RoomPage() {
 
                 const next = [...prev];
                 next.splice(roomIndex, 1);
-
                 return [updatedRoom, ...next];
+            });
+
+            chatCacheRef.current.set(String(msg.roomId), {
+                ...(chatCacheRef.current.get(String(msg.roomId)) || {}),
+                room: chatCacheRef.current.get(String(msg.roomId))?.room || null,
+                lastMessageAt: msg.createdAt,
             });
         };
 
@@ -301,7 +331,7 @@ export default function RoomPage() {
                     </div>
 
                     <div className="min-h-0 flex-1 overflow-y-auto p-2">
-                        {loadingRooms ? (
+                        {loadingRooms && rooms.length === 0 ? (
                             <div className="px-4 py-10 text-center text-sm text-zinc-500">
                                 Loading rooms...
                             </div>
