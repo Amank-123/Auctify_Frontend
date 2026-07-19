@@ -227,7 +227,7 @@ export default function ChatbotWidget() {
             setLoading(true);
             try {
                 const res = await fetch(
-                    "https://auctifyragaichatbot-production-0d64.up.railway.app/chat",
+                    "http://auctify-rag-ai-chatbot-xlzl.onrender.com/chat",
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
